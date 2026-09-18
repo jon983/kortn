@@ -114,6 +114,34 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (!player.hasOpened) player.hasOpened = true;
       return { ok: true, match: withRound(match, next) };
     }
+    case 'layoff': {
+      if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'Draw before laying off.' };
+      const player = round.players[seat];
+      if (!player.hasOpened) return { ok: false, reason: 'You must open before laying off.' };
+      if (round.drawObligation && round.drawObligation.id === action.cardId)
+        return { ok: false, reason: 'A card taken from the discard must go into a new meld.' };
+      const card = player.hand.find((c) => c.id === action.cardId);
+      if (!card) return { ok: false, reason: 'Card not in hand.' };
+      const meld = round.melds.find((m) => m.id === action.meldId);
+      if (!meld) return { ok: false, reason: 'Meld not found.' };
+      if (meld.kind === 'set' && meld.cards.length >= 4) return { ok: false, reason: 'That set is closed.' };
+
+      const next = cloneRound(round);
+      const nMeld = next.melds.find((m) => m.id === action.meldId)!;
+      const candidate = [...nMeld.cards, card];
+      const v = validateMeld(candidate, nMeld.kind);
+      if (!v.valid) {
+        // try prepending for runs
+        const v2 = validateMeld([card, ...nMeld.cards], nMeld.kind);
+        if (!v2.valid) return { ok: false, reason: v.reason };
+        nMeld.cards = [card, ...nMeld.cards];
+      } else {
+        nMeld.cards = candidate;
+      }
+      next.players[seat].hand = next.players[seat].hand.filter((c) => c.id !== action.cardId);
+      if (nMeld.ownerSeat !== seat) next.addedToOpponentThisTurn = true;
+      return { ok: true, match: withRound(match, next) };
+    }
     default:
       return { ok: false, reason: 'Action not handled yet.' };
   }
