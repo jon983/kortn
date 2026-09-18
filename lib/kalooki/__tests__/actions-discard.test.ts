@@ -47,4 +47,49 @@ describe('discard & go-out', () => {
     const r = applyAction(m, 0, { type: 'discard', cardId: 'A-clubs-5' }, () => 0.5);
     expect(r.ok).toBe(false);
   });
+
+  it('awards treasure when going out having laid all 13 in one turn', () => {
+    const m = fixture([nat(5, 'clubs')]);
+    (m.round as any).players[0].hasOpened = true;
+    (m.round as any).turnStartHandSize = 13;
+    (m.round as any).openedAtTurnStart = false;
+    (m.round as any).addedToOpponentThisTurn = false;
+    m.treasureUsed = false;
+    const r = applyAction(m, 0, { type: 'discard', cardId: 'A-clubs-5' }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.match.round.finished).toBe(true);
+      expect(r.match.round.winnerSeat).toBe(0);
+      expect(r.match.round.goOutType).toBe('treasure');
+      expect(r.match.treasureUsed).toBe(true);
+    }
+  });
+
+  it('downgrades to kalooki when the treasure was already used', () => {
+    const m = fixture([nat(5, 'clubs')]);
+    (m.round as any).turnStartHandSize = 13;
+    (m.round as any).openedAtTurnStart = false;
+    (m.round as any).addedToOpponentThisTurn = false;
+    m.treasureUsed = true;
+    const r = applyAction(m, 0, { type: 'discard', cardId: 'A-clubs-5' }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.match.round.goOutType).toBe('kalooki');
+      expect(r.match.treasureUsed).toBe(true);
+    }
+  });
+
+  it('downgrades to kalooki when a card was added to an opponent meld this turn', () => {
+    const m = fixture([nat(5, 'clubs')]);
+    (m.round as any).turnStartHandSize = 13;
+    (m.round as any).openedAtTurnStart = false;
+    (m.round as any).addedToOpponentThisTurn = true;
+    m.treasureUsed = false;
+    const r = applyAction(m, 0, { type: 'discard', cardId: 'A-clubs-5' }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.match.round.goOutType).toBe('kalooki');
+      expect(r.match.treasureUsed).toBe(false);
+    }
+  });
 });
