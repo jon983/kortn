@@ -21,3 +21,37 @@ export function settleRound(match: MatchState): MatchState {
   }
   return { ...match, scores, pot };
 }
+
+export function applyBusts(match: MatchState): MatchState {
+  const statuses = match.statuses.slice();
+  for (let s = 0; s < match.seats; s++) {
+    if (statuses[s] === 'active' && match.scores[s] > 150) statuses[s] = 'busted';
+  }
+  return { ...match, statuses };
+}
+
+export function rebuy(match: MatchState, seat: number): MatchState {
+  if (match.statuses[seat] !== 'busted') throw new Error('Only a busted seat can rebuy.');
+  if (match.rebought[seat]) throw new Error('A seat may only rebuy once.');
+  const activeScores = match.scores.filter((_, s) => match.statuses[s] === 'active');
+  const highest = activeScores.length ? Math.max(...activeScores) : 0;
+  const scores = match.scores.slice();
+  scores[seat] = highest;
+  const statuses = match.statuses.slice();
+  statuses[seat] = 'active';
+  const rebought = match.rebought.slice();
+  rebought[seat] = true;
+  return { ...match, scores, statuses, rebought, pot: match.pot + 4 };
+}
+
+export function matchWinner(match: MatchState): number | null {
+  const active = match.statuses
+    .map((s, i) => (s === 'active' ? i : -1))
+    .filter((i) => i >= 0);
+  return active.length === 1 ? active[0] : null;
+}
+
+export function awardPot(match: MatchState): MatchState {
+  const winner = matchWinner(match);
+  return { ...match, finished: winner !== null, winnerSeat: winner };
+}
