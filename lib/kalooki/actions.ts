@@ -62,9 +62,12 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (!top || top.kind !== 'joker') return { ok: false, reason: 'Top of discard is not a joker.' };
       const next = cloneRound(round);
       next.discard.pop();
+      // Draw the top of stock FIRST so the player can never immediately
+      // re-draw the joker they just declined.
+      if (next.stock.length === 0) return { ok: false, reason: 'Stock is empty.' };
+      next.players[seat].hand.push(next.stock.shift()!);
       const pos = Math.floor(rng() * (next.stock.length + 1));
       next.stock.splice(pos, 0, top);
-      next.players[seat].hand.push(next.stock.shift()!);
       next.phase = 'awaitingDiscard';
       return { ok: true, match: withRound(match, next) };
     }

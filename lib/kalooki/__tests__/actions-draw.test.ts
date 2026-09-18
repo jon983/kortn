@@ -46,4 +46,30 @@ describe('draw', () => {
       expect(r.match.round.players[seat].hand.map((c) => c.id)).toContain(top.id);
     }
   });
+
+  it('drawJokerDecline never draws the declined joker back into hand', () => {
+    const m0 = startMatch({ seats: 2, seed: 3 });
+    // Force a joker onto the top of the discard pile.
+    const jokerId = 'A-joker';
+    const round = m0.round;
+    const joker = round.stock.find((c) => c.id === jokerId)!;
+    const stock = round.stock.filter((c) => c.id !== jokerId);
+    const m = {
+      ...m0,
+      round: { ...round, stock, discard: [...round.discard, joker] },
+    };
+    const seat = m.round.turn;
+    const stockLen = m.round.stock.length;
+    const r = applyAction(m, seat, { type: 'drawJokerDecline' }, makeRng(1));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      // The player must NOT be holding the declined joker.
+      expect(r.match.round.players[seat].hand.map((c) => c.id)).not.toContain(jokerId);
+      // The joker is back in the stock.
+      expect(r.match.round.stock.map((c) => c.id)).toContain(jokerId);
+      // One card drawn from stock, joker reinserted: net stock length unchanged.
+      expect(r.match.round.stock.length).toBe(stockLen);
+      expect(r.match.round.phase).toBe('awaitingDiscard');
+    }
+  });
 });
