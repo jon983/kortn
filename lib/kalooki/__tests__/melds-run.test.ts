@@ -29,6 +29,16 @@ describe('validateRun', () => {
     }
   });
 
+  it('resolves a leading joker at index 0', () => {
+    const r = validateRun([joker(), nat(5, 'hearts'), nat(6, 'hearts')]);
+    expect(r.valid).toBe(true);
+    if (r.valid) {
+      expect(r.resolved[0].rank).toBe(4);
+      expect(r.resolved[0].suit).toBe('hearts');
+      expect(r.points).toBe(15); // 4 + 5 + 6
+    }
+  });
+
   it('rejects wraparound K-A-2', () => {
     expect(validateRun([nat(13, 'hearts'), nat(14, 'hearts'), nat(2, 'hearts')]).valid).toBe(false);
   });
