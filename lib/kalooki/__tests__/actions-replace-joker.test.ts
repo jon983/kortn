@@ -48,4 +48,50 @@ describe('replaceJoker (run)', () => {
     }, () => 0.5);
     expect(r.ok).toBe(false);
   });
+
+  it('rejects when the natural cannot legally replace the joker in the run', () => {
+    const m = fixture();
+    // 4h-[joker as 5h]-6h; inserting 7h yields 4h,7h,6h which is not a valid run.
+    m.round.players[0].hand = [nat(7, 'hearts'), nat(9, 'clubs'), nat(9, 'diamonds')];
+    const r = applyAction(m, 0, {
+      type: 'replaceJoker', meldId: 'm1-0', jokerId: 'A-joker', naturalCardId: 'A-hearts-7',
+      newMeld: { kind: 'set', cardIds: ['A-joker', 'A-clubs-9', 'A-diamonds-9'] },
+    }, () => 0.5);
+    expect(r.ok).toBe(false);
+  });
+});
+
+function setFixture(): MatchState {
+  // Table set of rank 9 owned by seat 1: 9c, 9h, [joker as 9s].
+  const tableSet = [nat(9, 'clubs', 'B'), nat(9, 'hearts', 'B'), joker('A')];
+  // Seat 0 holds the natural 9s (absent suit) plus two diamonds to re-home the joker.
+  const hand = [nat(9, 'spades'), nat(4, 'diamonds'), nat(6, 'diamonds')];
+  const round = {
+    players: [{ seat: 0, hand, hasOpened: true }, { seat: 1, hand: [], hasOpened: true }],
+    melds: [{ id: 'm1-0', kind: 'set' as const, ownerSeat: 1, cards: tableSet }],
+    stock: [nat(2, 'clubs')], discard: [], turn: 0, dealerSeat: 1,
+    phase: 'awaitingDiscard' as const, drawObligation: null, addedToOpponentThisTurn: false,
+    finished: false, winnerSeat: null, goOutType: null,
+  };
+  return { seats: 2, pot: 8, treasureUsed: false, scores: [0, 0], statuses: ['active', 'active'],
+    rebought: [false, false], round, roundNumber: 1, finished: false, winnerSeat: null };
+}
+
+describe('replaceJoker (set)', () => {
+  it('swaps a natural of the set rank in an absent suit and re-melds the freed joker', () => {
+    const m = setFixture();
+    const r = applyAction(m, 0, {
+      type: 'replaceJoker',
+      meldId: 'm1-0', jokerId: 'A-joker', naturalCardId: 'A-spades-9',
+      newMeld: { kind: 'run', cardIds: ['A-diamonds-4', 'A-joker', 'A-diamonds-6'] },
+    }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const set = r.match.round.melds.find((x) => x.id === 'm1-0')!;
+      expect(set.cards.some((c) => c.id === 'A-spades-9')).toBe(true);
+      expect(set.cards.some((c) => c.kind === 'joker')).toBe(false);
+      const newRun = r.match.round.melds.find((x) => x.id !== 'm1-0')!;
+      expect(newRun.cards.some((c) => c.id === 'A-joker')).toBe(true);
+    }
+  });
 });
