@@ -142,6 +142,46 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (nMeld.ownerSeat !== seat) next.addedToOpponentThisTurn = true;
       return { ok: true, match: withRound(match, next) };
     }
+    case 'replaceJoker': {
+      if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'Draw before replacing a joker.' };
+      const player = round.players[seat];
+      if (!player.hasOpened) return { ok: false, reason: 'You must open before replacing jokers.' };
+      const meld = round.melds.find((m) => m.id === action.meldId);
+      if (!meld) return { ok: false, reason: 'Meld not found.' };
+      if (meld.kind === 'set' && meld.cards.length >= 4) return { ok: false, reason: 'That set is closed.' };
+      const jokerCard = meld.cards.find((c) => c.id === action.jokerId && c.kind === 'joker');
+      if (!jokerCard) return { ok: false, reason: 'Joker not in that meld.' };
+      const natural = player.hand.find((c) => c.id === action.naturalCardId);
+      if (!natural || natural.kind !== 'natural') return { ok: false, reason: 'Natural card not in hand.' };
+
+      // Build the meld with the natural swapped for the joker; must stay valid.
+      const swapped = meld.cards.map((c) => (c.id === action.jokerId ? natural : c));
+      const v = validateMeld(swapped, meld.kind);
+      if (!v.valid) return { ok: false, reason: 'That card cannot replace the joker here.' };
+
+      // The freed joker must be immediately melded via newMeld (which must include it).
+      if (!action.newMeld.cardIds.includes(action.jokerId))
+        return { ok: false, reason: 'The freed joker must be used immediately in a new meld.' };
+
+      const next = cloneRound(round);
+      const nMeld = next.melds.find((m) => m.id === action.meldId)!;
+      nMeld.cards = nMeld.cards.map((c) => (c.id === action.jokerId ? natural : c));
+      // remove natural from hand, add joker to a temporary pool for the new meld
+      next.players[seat].hand = next.players[seat].hand.filter((c) => c.id !== action.naturalCardId);
+      const pool = new Map<string, Card>([[jokerCard.id, jokerCard], ...next.players[seat].hand.map((c) => [c.id, c] as const)]);
+      const newCards: Card[] = [];
+      const used = new Set<string>();
+      for (const id of action.newMeld.cardIds) {
+        const c = pool.get(id);
+        if (!c || used.has(id)) return { ok: false, reason: 'Invalid card in new meld.' };
+        used.add(id); newCards.push(c);
+      }
+      const nv = validateMeld(newCards, action.newMeld.kind);
+      if (!nv.valid) return { ok: false, reason: nv.reason };
+      next.players[seat].hand = next.players[seat].hand.filter((c) => !used.has(c.id));
+      next.melds.push({ id: `m${match.roundNumber}-${next.melds.length}`, kind: action.newMeld.kind, ownerSeat: seat, cards: newCards });
+      return { ok: true, match: withRound(match, next) };
+    }
     default:
       return { ok: false, reason: 'Action not handled yet.' };
   }
