@@ -23,6 +23,8 @@ export interface RoundState {
   finished: boolean;
   winnerSeat: number | null;
   goOutType: GoOutType | null;
+  turnStartHandSize?: number;
+  openedAtTurnStart?: boolean;
 }
 export interface MatchState {
   seats: number;

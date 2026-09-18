@@ -43,6 +43,8 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
     case 'draw': {
       if (round.phase !== 'awaitingDraw') return { ok: false, reason: 'You have already drawn.' };
       const next = cloneRound(round);
+      next.turnStartHandSize = round.players[seat].hand.length;
+      next.openedAtTurnStart = round.players[seat].hasOpened;
       if (action.source === 'stock') {
         ensureStock(next, rng);
         if (next.stock.length === 0) return { ok: false, reason: 'Stock is empty.' };
@@ -68,6 +70,8 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
         round.players.every((p) => p.hand.length === 13);
       if (!pristine) return { ok: false, reason: 'You can only decline the joker on the opening flip.' };
       const next = cloneRound(round);
+      next.turnStartHandSize = round.players[seat].hand.length;
+      next.openedAtTurnStart = round.players[seat].hasOpened;
       next.discard.pop();
       // Draw the top of stock FIRST so the player can never immediately
       // re-draw the joker they just declined.
@@ -182,7 +186,43 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       next.melds.push({ id: `m${match.roundNumber}-${next.melds.length}`, kind: action.newMeld.kind, ownerSeat: seat, cards: newCards });
       return { ok: true, match: withRound(match, next) };
     }
-    default:
-      return { ok: false, reason: 'Action not handled yet.' };
+    case 'discard': {
+      if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'You must draw first.' };
+      if (round.drawObligation) return { ok: false, reason: 'The card taken from the discard must be melded this turn.' };
+      const player = round.players[seat];
+      const card = player.hand.find((c) => c.id === action.cardId);
+      if (!card) return { ok: false, reason: 'Card not in hand.' };
+
+      const next = cloneRound(round);
+      next.players[seat].hand = next.players[seat].hand.filter((c) => c.id !== action.cardId);
+      next.discard.push(card);
+
+      if (next.players[seat].hand.length === 0) {
+        next.finished = true;
+        next.winnerSeat = seat;
+        const kalooki = round.turnStartHandSize === 13 && round.openedAtTurnStart === false;
+        let type: 'normal' | 'kalooki' | 'treasure' = 'normal';
+        let out = withRound(match, next);
+        if (kalooki) {
+          if (!match.treasureUsed && !next.addedToOpponentThisTurn) {
+            type = 'treasure';
+            out = { ...out, treasureUsed: true };
+          } else {
+            type = 'kalooki';
+          }
+        }
+        next.goOutType = type;
+        return { ok: true, match: { ...out, round: next } };
+      }
+
+      // advance to next active seat
+      let t = (seat + 1) % match.seats;
+      while (match.statuses[t] !== 'active') t = (t + 1) % match.seats;
+      next.turn = t;
+      next.phase = 'awaitingDraw';
+      next.drawObligation = null;
+      next.addedToOpponentThisTurn = false;
+      return { ok: true, match: withRound(match, next) };
+    }
   }
 }
