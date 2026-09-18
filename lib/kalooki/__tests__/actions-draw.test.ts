@@ -47,17 +47,23 @@ describe('draw', () => {
     }
   });
 
-  it('drawJokerDecline never draws the declined joker back into hand', () => {
+  // Build a pristine opening state whose single discard card is a joker.
+  function openingStateWithJokerFlip(jokerId = 'A-joker') {
     const m0 = startMatch({ seats: 2, seed: 3 });
-    // Force a joker onto the top of the discard pile.
-    const jokerId = 'A-joker';
     const round = m0.round;
     const joker = round.stock.find((c) => c.id === jokerId)!;
-    const stock = round.stock.filter((c) => c.id !== jokerId);
-    const m = {
-      ...m0,
-      round: { ...round, stock, discard: [...round.discard, joker] },
+    // Swap the flipped discard card back into stock and flip the joker instead,
+    // keeping discard length 1 (pristine opening).
+    const flipped = round.discard[round.discard.length - 1];
+    const stock = round.stock.filter((c) => c.id !== jokerId).concat(flipped);
+    return {
+      match: { ...m0, round: { ...round, stock, discard: [joker] } },
+      jokerId,
     };
+  }
+
+  it('drawJokerDecline never draws the declined joker back into hand', () => {
+    const { match: m, jokerId } = openingStateWithJokerFlip();
     const seat = m.round.turn;
     const stockLen = m.round.stock.length;
     const r = applyAction(m, seat, { type: 'drawJokerDecline' }, makeRng(1));
@@ -71,5 +77,17 @@ describe('draw', () => {
       expect(r.match.round.stock.length).toBe(stockLen);
       expect(r.match.round.phase).toBe('awaitingDiscard');
     }
+  });
+
+  it('rejects drawJokerDecline when it is not the opening flip', () => {
+    const { match: m } = openingStateWithJokerFlip();
+    const seat = m.round.turn;
+    // Simulate mid-game: a player already has fewer than 13 cards (has drawn/melded).
+    const players = m.round.players.map((p, i) =>
+      i === seat ? { ...p, hand: p.hand.slice(0, 12) } : p,
+    );
+    const mid = { ...m, round: { ...m.round, players } };
+    const r = applyAction(mid, seat, { type: 'drawJokerDecline' }, makeRng(1));
+    expect(r.ok).toBe(false);
   });
 });

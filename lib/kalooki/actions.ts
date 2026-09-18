@@ -60,6 +60,11 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (round.phase !== 'awaitingDraw') return { ok: false, reason: 'You have already drawn.' };
       const top = round.discard[round.discard.length - 1];
       if (!top || top.kind !== 'joker') return { ok: false, reason: 'Top of discard is not a joker.' };
+      const pristine =
+        round.discard.length === 1 &&
+        round.melds.length === 0 &&
+        round.players.every((p) => p.hand.length === 13);
+      if (!pristine) return { ok: false, reason: 'You can only decline the joker on the opening flip.' };
       const next = cloneRound(round);
       next.discard.pop();
       // Draw the top of stock FIRST so the player can never immediately
