@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeDeck, meldPoints, makeRng, shuffle } from '../cards';
+import { makeDeck, meldPoints, shuffle } from '../cards';
 import { makeRng as rngFromRng } from '../rng';
 
 describe('makeDeck', () => {
