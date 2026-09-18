@@ -1,4 +1,5 @@
 import { MatchState, RoundState } from './state';
+import type { GoOutType } from './state';
 import type { MeldKind } from './melds';
 import { validateMeld } from './melds';
 import { shuffle } from './rng';
@@ -201,18 +202,18 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
         next.finished = true;
         next.winnerSeat = seat;
         const kalooki = round.turnStartHandSize === 13 && round.openedAtTurnStart === false;
-        let type: 'normal' | 'kalooki' | 'treasure' = 'normal';
-        let out = withRound(match, next);
+        let type: GoOutType = 'normal';
+        let treasureUsed = match.treasureUsed;
         if (kalooki) {
           if (!match.treasureUsed && !next.addedToOpponentThisTurn) {
             type = 'treasure';
-            out = { ...out, treasureUsed: true };
+            treasureUsed = true;
           } else {
             type = 'kalooki';
           }
         }
         next.goOutType = type;
-        return { ok: true, match: { ...out, round: next } };
+        return { ok: true, match: { ...match, treasureUsed, round: next } };
       }
 
       // advance to next active seat

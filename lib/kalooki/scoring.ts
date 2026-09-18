@@ -7,6 +7,22 @@ export function handScore(hand: Card[]): number {
 
 const BIT_COST: Record<string, number> = { normal: 1, kalooki: 2, treasure: 4 };
 
+/**
+ * Tally hand-point penalties and bit payments for the round that just ended.
+ *
+ * CALL-ORDER INVARIANT (not self-enforced by the engine):
+ * settleRound MUST be called at round end BEFORE applyBusts, while every seat
+ * that was dealt into the round is still 'active'. The function only processes
+ * seats currently marked 'active' — non-active seats are silently skipped.
+ * Callers must NOT flip any seat to 'busted' before settling the round that
+ * seat played; doing so will silently drop that seat's hand-point penalties.
+ *
+ * Correct sequence:
+ *   1. settleRound  — scores hand points, collects bit payments
+ *   2. applyBusts   — marks seats that now exceed 150 points as 'busted'
+ *   3. rebuy()      — (optional) re-enters each busted seat that chooses to rebuy
+ *   4. awardPot / matchWinner — determines if the match is over
+ */
 export function settleRound(match: MatchState): MatchState {
   const round = match.round;
   if (!round.finished || round.winnerSeat === null) throw new Error('Round not finished.');
@@ -44,6 +60,17 @@ export function rebuy(match: MatchState, seat: number): MatchState {
   return { ...match, scores, statuses, rebought, pot: match.pot + 4 };
 }
 
+/**
+ * Returns the winning seat index if exactly one seat is still 'active',
+ * or null if the match is still ongoing.
+ *
+ * CALL-ORDER INVARIANT (not self-enforced by the engine):
+ * A busted seat that still intends to rebuy must have rebuy() applied BEFORE
+ * matchWinner / awardPot is called. Both functions treat a 'busted' seat as
+ * permanently eliminated. Calling awardPot while a not-yet-rebuyed seat is
+ * 'busted' can cause the match to be declared over prematurely (if only one
+ * 'active' seat remains), which is incorrect when that seat would have rebuyed.
+ */
 export function matchWinner(match: MatchState): number | null {
   const active = match.statuses
     .map((s, i) => (s === 'active' ? i : -1))
@@ -51,6 +78,13 @@ export function matchWinner(match: MatchState): number | null {
   return active.length === 1 ? active[0] : null;
 }
 
+/**
+ * Marks the match finished if exactly one 'active' seat remains, and records
+ * that seat as the winner. Returns the updated MatchState unchanged if the
+ * match is still ongoing.
+ *
+ * See matchWinner for the call-order invariant regarding rebuy and busted seats.
+ */
 export function awardPot(match: MatchState): MatchState {
   const winner = matchWinner(match);
   return { ...match, finished: winner !== null, winnerSeat: winner };
