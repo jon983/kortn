@@ -10,4 +10,4 @@ export interface RuntimeDeps {
 
 export type SubmitResult = { ok: true } | { ok: false; reason: string };
 
-export type ServerAction = EngineAction | { type: 'rebuy' } | { type: 'decline' };
+export type ServerAction = EngineAction | { type: 'rebuy' } | { type: 'decline' } | { type: 'readyNext' };

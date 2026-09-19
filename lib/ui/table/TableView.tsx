@@ -237,16 +237,15 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       )}
 
       {/* overlays */}
-      {view.roundFinished && !view.matchFinished && (
-        <RoundSummary view={view} onContinue={() => { /* SSE will advance */ }} />
-      )}
       {view.matchFinished && <MatchSummary view={view} />}
-      {view.you.status === 'busted' && !view.matchFinished && (
+      {!view.matchFinished && view.roundFinished && view.you.status === 'busted' && !view.you.rebought ? (
         <RebuyPrompt
           onRebuy={() => submit({ type: 'rebuy' })}
           onDecline={() => submit({ type: 'decline' })}
         />
-      )}
+      ) : (!view.matchFinished && view.roundFinished && (
+        <RoundSummary view={view} onReady={() => submit({ type: 'readyNext' })} />
+      ))}
     </div>
   );
 }

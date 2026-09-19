@@ -33,6 +33,8 @@ export interface MatchState {
   scores: number[];
   /** Running bit balance per seat: losers pay the hand winner each round (pot is separate, for antes/rebuys). */
   bits: number[];
+  /** Between hands: which seats have clicked "Next hand". Reset when a new round is dealt. */
+  readyNext?: boolean[];
   statuses: SeatStatus[];
   rebought: boolean[];
   round: RoundState;
@@ -68,6 +70,7 @@ export function startMatch(opts: { seats: number; seed: number }): MatchState {
     treasureUsed: false,
     scores: new Array(opts.seats).fill(0),
     bits: new Array(opts.seats).fill(0),
+    readyNext: new Array(opts.seats).fill(false),
     statuses: new Array(opts.seats).fill('active'),
     rebought: new Array(opts.seats).fill(false),
     round: dealRound({ seats: opts.seats, dealerSeat: 0, rng }),

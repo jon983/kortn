@@ -8,14 +8,18 @@ function Scrim({ children }: { children: React.ReactNode }) {
   </div>;
 }
 
-export function RoundSummary({ view, onContinue }: { view: ClientView; onContinue: () => void }) {
-  const rows = [
-    { seat: view.you.seat, score: view.you.score, bits: view.you.bits, you: true },
-    ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, bits: o.bits, you: false })),
+export function RoundSummary({ view, onReady }: { view: ClientView; onReady: () => void }) {
+  const seats = [
+    { seat: view.you.seat, score: view.you.score, bits: view.you.bits, status: view.you.status, you: true },
+    ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, bits: o.bits, status: o.status, you: false })),
   ].sort((a, b) => a.seat - b.seat);
   const fmtBits = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+  const participants = seats.filter((s) => s.status === 'active');
+  const readyCount = participants.filter((s) => view.readyNext[s.seat]).length;
+  const youParticipate = view.you.status === 'active';
+  const youReady = view.readyNext[view.seat];
   return <Scrim>
-    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Round over</h3>
+    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Hand over</h3>
     <p className="mt-2">{view.roundWinnerSeat !== null ? view.seatNames[view.roundWinnerSeat] : 'Someone'} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
     <table className="mt-4 w-full text-sm">
       <thead>
@@ -23,19 +27,32 @@ export function RoundSummary({ view, onContinue }: { view: ClientView; onContinu
           <th className="text-left font-normal">Player</th>
           <th className="text-right font-normal">Points</th>
           <th className="text-right font-normal">Bits</th>
+          <th className="text-right font-normal">Ready</th>
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
+        {seats.map((r) => (
           <tr key={r.seat} className={r.seat === view.roundWinnerSeat ? 'text-brass' : ''}>
             <td className="text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
             <td className="text-right tabular-nums">{r.score}</td>
             <td className="text-right tabular-nums">{fmtBits(r.bits)}</td>
+            <td className="text-right">{r.status !== 'active' ? '—' : view.readyNext[r.seat] ? '✓' : '·'}</td>
           </tr>
         ))}
       </tbody>
     </table>
-    <button type="button" className="mt-4 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold" onClick={onContinue}>Continue</button>
+    {youParticipate ? (
+      <button
+        type="button"
+        disabled={youReady}
+        className="mt-4 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold disabled:opacity-50"
+        onClick={onReady}
+      >
+        {youReady ? `Waiting… ${readyCount}/${participants.length}` : 'Next hand'}
+      </button>
+    ) : (
+      <p className="mt-4 text-sm text-[#c9b48a]">Waiting for the next hand… {readyCount}/{participants.length} ready</p>
+    )}
   </Scrim>;
 }
 

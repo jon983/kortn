@@ -8,6 +8,8 @@ export interface SelfView {
   seat: number; hand: Card[]; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
   /** If you took the discard this turn and haven't melded it yet, its card id — else null. */
   drawObligationId: string | null;
+  /** Whether you've resolved a bust (rebought or declined). */
+  rebought: boolean;
 }
 export interface OpponentView {
   seat: number; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
@@ -30,6 +32,8 @@ export interface ClientView {
   goOutType: GoOutType | null;
   matchFinished: boolean;
   matchWinnerSeat: number | null;
+  /** Between hands: which seats have clicked "Next hand" (seat-indexed). */
+  readyNext: boolean[];
 }
 
 export function redactStateFor(state: MatchState, seat: number, names: (string | null)[] = []): ClientView {
@@ -45,6 +49,7 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     status: state.statuses[seat],
     hasOpened: self.hasOpened,
     drawObligationId: round.turn === seat ? (round.drawObligation?.id ?? null) : null,
+    rebought: state.rebought[seat] ?? false,
   };
   const opponents: OpponentView[] = round.players
     .filter((p) => p.seat !== seat)
@@ -74,5 +79,6 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     goOutType: round.goOutType,
     matchFinished: state.finished,
     matchWinnerSeat: state.winnerSeat,
+    readyNext: Array.from({ length: state.seats }, (_, i) => state.readyNext?.[i] ?? false),
   };
 }

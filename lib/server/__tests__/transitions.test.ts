@@ -27,7 +27,7 @@ function finishedRoundState(): MatchState {
 }
 
 describe('finishRoundTransition', () => {
-  it('settles a normal round, records it, and deals the next round', async () => {
+  it('settles a normal round, then deals the next hand once both players are ready', async () => {
     const { db, client } = await makeTestDb();
     close = () => client.close();
     const d = mkDeps(db);
@@ -40,17 +40,28 @@ describe('finishRoundTransition', () => {
     const state = finishedRoundState();
     await initGameState(db as any, m.id, state);
 
-    const next = await finishRoundTransition(d, m.id, state);
-    // seat 1 held a 9 → +9; seat 0 (winner) 0
-    expect(next.scores).toEqual([0, 9]);
-    expect(next.roundNumber).toBe(2);            // next round dealt
-    expect(next.round.players[0].hand).toHaveLength(13);
-    expect(next.finished).toBe(false);
-    const persisted = await loadGameState(db as any, m.id);
+    // settle → pause on the finished hand (scorecard shows), no next round yet
+    const paused = await finishRoundTransition(d, m.id, state);
+    expect(paused.scores).toEqual([0, 9]);       // seat 1 held a 9 → +9
+    expect(paused.round.finished).toBe(true);
+    expect(paused.roundNumber).toBe(1);          // not advanced yet
+    expect(paused.finished).toBe(false);
+
+    // one player ready → still paused
+    await submitAction(d, { matchId: m.id, userId: 'u1', action: { type: 'readyNext' } });
+    let persisted = await loadGameState(db as any, m.id);
+    expect(persisted!.state.roundNumber).toBe(1);
+
+    // both ready → next hand dealt
+    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'readyNext' } });
+    expect(res.ok).toBe(true);
+    persisted = await loadGameState(db as any, m.id);
     expect(persisted!.state.roundNumber).toBe(2);
+    expect(persisted!.state.round.players[0].hand).toHaveLength(13);
+    expect(persisted!.state.finished).toBe(false);
   });
 
-  it('ends the match when only one player remains under 150', async () => {
+  it('pauses for a busted player, then ends the match when they decline', async () => {
     const { db, client } = await makeTestDb();
     close = () => client.close();
     const d = mkDeps(db);
@@ -65,9 +76,16 @@ describe('finishRoundTransition', () => {
     state.scores = [0, 145];
     await initGameState(db as any, m.id, state);
 
-    const done = await finishRoundTransition(d, m.id, state);
-    expect(done.finished).toBe(true);
-    expect(done.winnerSeat).toBe(0);
+    const paused = await finishRoundTransition(d, m.id, state);
+    expect(paused.finished).toBe(false);         // paused for the rebuy decision
+    expect(paused.statuses[1]).toBe('busted');
+
+    // seat 1 declines → only seat 0 active → match ends
+    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'decline' } });
+    expect(res.ok).toBe(true);
+    const persisted = await loadGameState(db as any, m.id);
+    expect(persisted!.state.finished).toBe(true);
+    expect(persisted!.state.winnerSeat).toBe(0);
   });
 
   it('all-decline match-end awards gamesPlayed to every player', async () => {
