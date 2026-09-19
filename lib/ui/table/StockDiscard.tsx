@@ -13,7 +13,7 @@ export function StockDiscard({
           aria-label="Draw from stock"
           onClick={onDrawStock}
           disabled={!onDrawStock || stockCount === 0}
-          className={`${onDrawStock && stockCount > 0 ? 'cursor-pointer' : 'cursor-default'} disabled:opacity-60`}
+          className={`block border-0 bg-transparent p-0 leading-none ${onDrawStock && stockCount > 0 ? 'cursor-pointer' : 'cursor-default'} disabled:opacity-60`}
         >
           {stockCount > 0
             ? <CardBack pack="A" />
