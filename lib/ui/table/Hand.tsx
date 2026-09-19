@@ -40,9 +40,9 @@ export function Hand({
           ↕ Sort
         </button>
       </div>
-      <div className="flex justify-center">
+      <div className="flex justify-center overflow-x-auto pt-6 pb-2">
         {cards.map((c) => (
-          <div key={c.id} className="-ml-3 first:ml-0" draggable
+          <div key={c.id} className="-ml-10 first:ml-0 shrink-0" draggable
             onDragStart={() => (dragId.current = c.id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(c.id)}>
