@@ -86,16 +86,18 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   return (
     <div className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
-      <div className="flex items-center justify-between bg-black/40 px-4 py-2 text-xs">
-        <span>Round {view.roundNumber} · 40 to open</span>
-        {isMyTurn(view) ? (
-          <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
-            ● Your turn
-          </span>
-        ) : (
-          <span className="text-[#c9b48a]">Seat {view.currentTurn}&apos;s turn</span>
-        )}
-        <span className="text-[#c9a24b]">Pot {view.pot}</span>
+      <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
+        <span className="justify-self-start">Round {view.roundNumber} · 40 to open</span>
+        <span className="justify-self-center">
+          {isMyTurn(view) ? (
+            <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
+              ● Your turn
+            </span>
+          ) : (
+            <span className="text-[#c9b48a]">Seat {view.currentTurn}&apos;s turn</span>
+          )}
+        </span>
+        <span className="justify-self-end text-[#c9a24b]">Pot {view.pot}</span>
       </div>
 
       {/* opponents */}
