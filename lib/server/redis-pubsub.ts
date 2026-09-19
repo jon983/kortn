@@ -3,18 +3,18 @@ import type { PubSub } from './pubsub';
 
 export class RedisPubSub implements PubSub {
   private url: string;
-  private publisher: RedisClientType | null = null;
+  private publisherPromise: Promise<RedisClientType> | null = null;
 
   constructor(url: string) {
     this.url = url;
   }
 
   private async getPublisher(): Promise<RedisClientType> {
-    if (!this.publisher) {
-      this.publisher = createClient({ url: this.url });
-      await this.publisher.connect();
+    if (!this.publisherPromise) {
+      const client = createClient({ url: this.url });
+      this.publisherPromise = client.connect().then(() => client);
     }
-    return this.publisher;
+    return this.publisherPromise;
   }
 
   async publish(channel: string, message: unknown): Promise<void> {
@@ -23,7 +23,8 @@ export class RedisPubSub implements PubSub {
   }
 
   async subscribe(channel: string, handler: (message: unknown) => void): Promise<() => Promise<void>> {
-    const sub: RedisClientType = createClient({ url: this.url });
+    const base = await this.getPublisher();
+    const sub: RedisClientType = base.duplicate();
     await sub.connect();
     await sub.subscribe(channel, (raw) => {
       handler(JSON.parse(raw));
@@ -35,9 +36,10 @@ export class RedisPubSub implements PubSub {
   }
 
   async close(): Promise<void> {
-    if (this.publisher) {
-      await this.publisher.quit();
-      this.publisher = null;
+    if (this.publisherPromise) {
+      const client = await this.publisherPromise;
+      await client.quit();
+      this.publisherPromise = null;
     }
   }
 }
