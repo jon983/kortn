@@ -45,6 +45,7 @@ export const matchPlayers = pgTable('match_players', {
   finalPlacing: integer('final_placing'),
 }, (t) => ({
   pk: primaryKey({ columns: [t.matchId, t.seatIndex] }),
+  uniqueUserPerMatch: uniqueIndex('match_players_match_user_uq').on(t.matchId, t.userId),
 }));
 
 export const rounds = pgTable('rounds', {

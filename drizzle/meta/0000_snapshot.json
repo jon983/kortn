@@ -1,5 +1,5 @@
 {
-  "id": "54d5f50b-8e26-41c4-9996-c5ddd16a7b61",
+  "id": "77e39d1f-ca43-479d-93d0-d196ef162e66",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -115,7 +115,29 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "match_players_match_user_uq": {
+          "name": "match_players_match_user_uq",
+          "columns": [
+            {
+              "expression": "match_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "match_players_match_id_matches_id_fk": {
           "name": "match_players_match_id_matches_id_fk",

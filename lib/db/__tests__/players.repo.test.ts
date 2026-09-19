@@ -39,4 +39,14 @@ describe('players repository', () => {
     // empty update is a no-op and must not throw
     await updatePlayer(db as any, matchId, 0, {});
   });
+
+  it('rejects a second addPlayer with the same userId in the same match', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    const matchId = await seed(db);
+    await addPlayer(db as any, { matchId, userId: 'u1', seatIndex: 0 });
+    await expect(
+      addPlayer(db as any, { matchId, userId: 'u1', seatIndex: 1 }),
+    ).rejects.toThrow();
+  });
 });

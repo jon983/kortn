@@ -73,5 +73,6 @@ ALTER TABLE "matches" ADD CONSTRAINT "matches_created_by_users_id_fk" FOREIGN KE
 ALTER TABLE "matches" ADD CONSTRAINT "matches_winner_user_id_users_id_fk" FOREIGN KEY ("winner_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "moves" ADD CONSTRAINT "moves_match_id_matches_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rounds" ADD CONSTRAINT "rounds_match_id_matches_id_fk" FOREIGN KEY ("match_id") REFERENCES "public"."matches"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "match_players_match_user_uq" ON "match_players" USING btree ("match_id","user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "moves_match_sequence_uq" ON "moves" USING btree ("match_id","sequence");--> statement-breakpoint
 CREATE UNIQUE INDEX "rounds_match_number_uq" ON "rounds" USING btree ("match_id","round_number");

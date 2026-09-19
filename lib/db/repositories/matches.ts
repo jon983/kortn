@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { DB } from '../client';
 import { matches, matchPlayers, type MatchSettings } from '../schema';
 
@@ -52,5 +52,5 @@ export async function setMatchWinner(db: DB, id: string, winnerUserId: string): 
   await db
     .update(matches)
     .set({ winnerUserId, status: 'finished', finishedAt: sql`now()` })
-    .where(and(eq(matches.id, id)));
+    .where(eq(matches.id, id));
 }
