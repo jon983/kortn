@@ -18,11 +18,12 @@ const SIZES = {
 } as const;
 
 export function Card({
-  card, size = 'md', selected = false, onClick,
-}: { card: CardT; size?: 'sm' | 'md'; selected?: boolean; onClick?: () => void }) {
+  card, size = 'md', selected = false, highlight = false, onClick,
+}: { card: CardT; size?: 'sm' | 'md'; selected?: boolean; highlight?: boolean; onClick?: () => void }) {
   const s = SIZES[size];
   const lift = selected ? '-translate-y-5 ring-2 ring-brass' : '';
-  const base = `relative inline-flex items-center justify-center rounded-md bg-[#f6f2e6] border border-[#cfc9b4] shadow font-bold select-none ${s.box} ${lift}`;
+  const glow = highlight ? 'ring-4 ring-amber-300 z-10 animate-pulse' : '';
+  const base = `relative inline-flex items-center justify-center rounded-md bg-[#f6f2e6] border border-[#cfc9b4] shadow font-bold select-none ${s.box} ${lift} ${glow}`;
 
   if (card.kind === 'joker') {
     return (

@@ -1,6 +1,6 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMatchStream } from './useMatchStream';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
@@ -25,6 +25,20 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Highlight newly-arrived cards (e.g. the one you just drew) so it's easy to spot.
+  const prevHandIds = useRef<Set<string>>(new Set(view.you.hand.map((c) => c.id)));
+  const [newIds, setNewIds] = useState<string[]>([]);
+  useEffect(() => {
+    const current = view.you.hand.map((c) => c.id);
+    const added = current.filter((id) => !prevHandIds.current.has(id));
+    prevHandIds.current = new Set(current);
+    if (added.length) {
+      setNewIds(added);
+      const t = setTimeout(() => setNewIds([]), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [view.you.hand]);
 
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
@@ -161,6 +175,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             }
             onReorder={setOrder}
             onSort={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
+            highlightIds={newIds}
           />
         </div>
       </div>

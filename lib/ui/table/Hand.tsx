@@ -18,10 +18,10 @@ export function sortHand(cards: Card[]): Card[] {
 }
 
 export function Hand({
-  cards, selectedIds, onToggle, onReorder, onSort,
+  cards, selectedIds, onToggle, onReorder, onSort, highlightIds = [],
 }: {
   cards: Card[]; selectedIds: string[]; onToggle: (id: string) => void;
-  onReorder: (ids: string[]) => void; onSort: () => void;
+  onReorder: (ids: string[]) => void; onSort: () => void; highlightIds?: string[];
 }) {
   const dragId = useRef<string | null>(null);
   function onDrop(targetId: string) {
@@ -46,7 +46,7 @@ export function Hand({
             onDragStart={() => (dragId.current = c.id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(c.id)}>
-            <CardFace card={c} selected={selectedIds.includes(c.id)} onClick={() => onToggle(c.id)} />
+            <CardFace card={c} selected={selectedIds.includes(c.id)} highlight={highlightIds.includes(c.id)} onClick={() => onToggle(c.id)} />
           </div>
         ))}
       </div>
