@@ -23,13 +23,21 @@ export function Card({
   const s = SIZES[size];
   const lift = selected ? '-translate-y-5 ring-2 ring-brass' : '';
   const glow = highlight ? 'ring-4 ring-amber-300 z-10 animate-pulse' : '';
-  const base = `relative inline-flex items-center justify-center rounded-md bg-[#f6f2e6] border border-[#cfc9b4] shadow font-bold select-none ${s.box} ${lift} ${glow}`;
+  const base = `relative inline-flex items-center justify-center overflow-hidden rounded-md bg-[#f6f2e6] border border-[#cfc9b4] shadow font-bold select-none ${s.box} ${lift} ${glow}`;
+
+  // Real card art overlaid on the CSS face; a missing image (404) simply reveals
+  // the CSS fallback beneath (rank + suit index + centre pip).
+  const artUrl = card.kind === 'joker' ? '/art/faces/joker.png' : `/art/faces/${card.suit}-${card.rank}.png`;
+  const Art = () => (
+    <span className="absolute inset-0 rounded-md bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url(${artUrl})` }} />
+  );
 
   if (card.kind === 'joker') {
     return (
       <button type="button" onClick={onClick} className={`${base} flex-col text-maroon`}>
         <span className={`${s.star} leading-none`}>★</span>
         <span className={`${s.joker} leading-none tracking-widest`}>JOKER</span>
+        <Art />
       </button>
     );
   }
@@ -52,6 +60,7 @@ export function Card({
       <Index corner="tl" />
       <span className={`${s.pip} leading-none`}>{glyph}</span>
       <Index corner="br" />
+      <Art />
     </button>
   );
 }
