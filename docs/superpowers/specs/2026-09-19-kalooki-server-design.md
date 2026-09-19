@@ -93,9 +93,11 @@ Inside `submitAction`, after the engine reports a go-out (round finished), in th
 1. `settleRound` (losers add hand points, pay bits) → `recordRound` → `incrementUserStats` (gamesPlayed on match end, roundsWon for the round winner, bitsNet deltas).
 2. `applyBusts` (score > 150 → `busted`).
 3. **Rebuy window:** busted, not-yet-rebought seats have a pending decision, resolved via an explicit `rebuy` / `decline` action (server function exists this phase; UI prompt in Phase 5). Resolve before award.
-4. If exactly one active seat remains → `matchWinner` / `awardPot`, status → `finished`, `setMatchWinner`. Otherwise **deal the next round** (`dealRound`, dealer rotates, new `game_states` at version 0) and publish.
+4. If exactly one active seat remains → `matchWinner` / `awardPot`, status → `finished`, `setMatchWinner`. Otherwise **deal the next round** (`dealRound`, dealer rotates) and publish.
 
 Rebuy stays explicit so no player is auto-charged 4 bits.
+
+**Versioning note:** the single `game_states` row per match keeps a **monotonic `version`** across the whole match — dealing the next round `UPDATE`s that row via `saveGameState` (version + 1), rather than resetting to 0. `version` is only 0 once, at `initGameState` in `startGame`. A per-match monotonic version keeps the client's SSE-resume cache coherent (a strictly increasing counter it can compare) and avoids ambiguity from a version that resets mid-match.
 
 ## 7. Testing
 
