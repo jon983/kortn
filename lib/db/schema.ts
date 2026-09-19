@@ -1,7 +1,8 @@
 // lib/db/schema.ts
 import {
-  pgTable, pgEnum, text, integer, boolean, timestamp, uuid, jsonb, primaryKey,
+  pgTable, pgEnum, text, integer, boolean, timestamp, uuid, jsonb, primaryKey, uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { MatchState, Action } from '../kalooki';
 
 export type MatchSettings = { note?: string };
 
@@ -44,4 +45,36 @@ export const matchPlayers = pgTable('match_players', {
   finalPlacing: integer('final_placing'),
 }, (t) => ({
   pk: primaryKey({ columns: [t.matchId, t.seatIndex] }),
+}));
+
+export const rounds = pgTable('rounds', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  matchId: uuid('match_id').notNull().references(() => matches.id, { onDelete: 'cascade' }),
+  roundNumber: integer('round_number').notNull(),
+  dealerSeat: integer('dealer_seat').notNull(),
+  winnerSeat: integer('winner_seat'),
+  goOutType: goOutTypeEnum('go_out_type'),
+  scores: jsonb('scores').$type<number[]>(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  uqRound: uniqueIndex('rounds_match_number_uq').on(t.matchId, t.roundNumber),
+}));
+
+export const gameStates = pgTable('game_states', {
+  matchId: uuid('match_id').primaryKey().references(() => matches.id, { onDelete: 'cascade' }),
+  state: jsonb('state').$type<MatchState>().notNull(),
+  version: integer('version').notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const moves = pgTable('moves', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  matchId: uuid('match_id').notNull().references(() => matches.id, { onDelete: 'cascade' }),
+  roundNumber: integer('round_number').notNull(),
+  seatIndex: integer('seat_index').notNull(),
+  sequence: integer('sequence').notNull(),
+  action: jsonb('action').$type<Action>().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  uqSeq: uniqueIndex('moves_match_sequence_uq').on(t.matchId, t.sequence),
 }));
