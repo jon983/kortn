@@ -142,7 +142,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       )}
 
       {/* opponents */}
-      <div className="flex flex-wrap justify-around p-3">
+      <div className="flex flex-wrap justify-around gap-4 p-3">
         {view.opponents.map((o) => (
           <OpponentSeat
             key={o.seat}
