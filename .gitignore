@@ -3,3 +3,10 @@ dist/
 .superpowers/
 *.log
 .DS_Store
+.vercel-token
+.vercel
+.env*
+AGENTS.md
+CLAUDE.md
+.next/
+tsconfig.tsbuildinfo
