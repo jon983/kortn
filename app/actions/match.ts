@@ -1,5 +1,5 @@
 'use server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { getProdDeps, startGame } from '../../lib/server';
 import { db, getMatch, listPlayersWithNames } from '../../lib/db';
 
@@ -11,17 +11,19 @@ export type LobbyState = {
 };
 
 export async function getLobbyState(matchId: string): Promise<LobbyState> {
+  const { userId } = await auth();
+  if (!userId) throw new Error('unauthorized');
   const match = await getMatch(db, matchId);
   if (!match) throw new Error('No such match');
   const players = await listPlayersWithNames(db, matchId);
-  const me = await currentUser();
+  if (!players.some((p) => p.userId === userId)) throw new Error('forbidden');
   return {
     seats: match.seats,
     hostUserId: match.createdBy,
     status: match.status,
     players: players.map((p) => ({
       seat: p.seatIndex,
-      name: p.userId === me?.id ? 'You' : p.displayName,
+      name: p.userId === userId ? 'You' : p.displayName,
     })),
   };
 }
