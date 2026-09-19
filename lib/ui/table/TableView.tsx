@@ -48,7 +48,10 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     return base.map((id) => byId.get(id)!).filter(Boolean);
   }, [view.you.hand, order]);
 
-  const selectedCards = hand.filter((c) => selected.includes(c.id));
+  // Cards moved into the laying-down tray shouldn't also appear in the hand.
+  const stagedIds = useMemo(() => new Set(staged.flatMap((g) => g.cards.map((c) => c.id))), [staged]);
+  const handInPlay = hand.filter((c) => !stagedIds.has(c.id));
+  const selectedCards = handInPlay.filter((c) => selected.includes(c.id));
   const trayIncludesObligation = !obligationId || staged.some((g) => g.cards.some((c) => c.id === obligationId));
   const layDownEnabled = staged.length > 0 && canOpen(view, staged) && trayIncludesObligation;
   const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation);
@@ -214,7 +217,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         />
         <div className="mt-2">
           <Hand
-            cards={hand}
+            cards={handInPlay}
             selectedIds={selected}
             onToggle={(id) =>
               setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
