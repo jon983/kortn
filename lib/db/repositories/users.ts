@@ -23,6 +23,13 @@ export async function incrementUserStats(db: DB, userId: string, delta: UserStat
   await db.update(users).set(setObj).where(eq(users.id, userId));
 }
 
+export async function getUserStats(db: DB, userId: string): Promise<{ gamesPlayed: number; roundsWon: number; bitsNet: number } | null> {
+  const [u] = await db.select({
+    gamesPlayed: users.gamesPlayed, roundsWon: users.roundsWon, bitsNet: users.bitsNet,
+  }).from(users).where(eq(users.id, userId)).limit(1);
+  return u ?? null;
+}
+
 export async function upsertUser(db: DB, input: UpsertUserInput): Promise<void> {
   await db
     .insert(users)
