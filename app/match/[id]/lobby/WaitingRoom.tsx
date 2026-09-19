@@ -21,17 +21,28 @@ export function WaitingRoom({
   const [state, setState] = useState<LobbyState>(initial);
 
   useEffect(() => {
+    let closed = false;
     const es = new EventSource(`/api/matches/${matchId}/stream`);
     const refresh = async () => {
       const s = await getLobbyState(matchId);
+      if (closed) return;
       setState(s);
       if (s.status === 'active') {
+        closed = true;
+        clearInterval(poll);
         es.close();
         router.push(`/match/${matchId}/table`);
       }
     };
     es.onmessage = refresh;
-    return () => es.close();
+    // Polling backstop: SSE (Redis pub/sub) can miss a message across a reconnect,
+    // so re-sync the lobby every few seconds until the game starts.
+    const poll = setInterval(refresh, 4000);
+    return () => {
+      closed = true;
+      clearInterval(poll);
+      es.close();
+    };
   }, [matchId, router]);
 
   const bySeat = new Map(state.players.map((p) => [p.seat, p]));
