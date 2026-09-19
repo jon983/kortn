@@ -169,24 +169,29 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         ))}
       </div>
 
-      {/* middle of the table: stock + discard centered, viewer melds beneath */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
-        <StockDiscard
-          stockCount={view.stockCount}
-          discardTop={view.discard[view.discard.length - 1]}
-          onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-          onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
-        />
+      {/* spacer: keeps opponents pinned to the top and the hand to the bottom */}
+      <div className="flex-1" />
+
+      {/* Stock/discard + viewer melds are centered in a fixed overlay so nothing
+          below (staged tray, lay-off hint, hand) can reflow or "jerk" them. */}
+      <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center gap-6 px-4">
+        <div className="pointer-events-auto">
+          <StockDiscard
+            stockCount={view.stockCount}
+            discardTop={view.discard[view.discard.length - 1]}
+            onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+            onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+          />
+        </div>
 
         {/* viewer's melds */}
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="pointer-events-auto flex flex-wrap justify-center gap-3">
           {view.melds
             .filter((m) => m.ownerSeat === view.seat)
             .map((m) => (
               <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
             ))}
         </div>
-        {/* reserved fixed-height slot so arming/disarming lay-off never reflows the table */}
         <div className="h-4 text-center text-xs italic text-brass">
           {layoffArmed ? 'Tap a meld to lay off your selected card' : ''}
         </div>
