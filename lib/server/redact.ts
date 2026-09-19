@@ -1,0 +1,69 @@
+// lib/server/redact.ts
+import {
+  layoutMeld,
+  type MatchState, type Card, type TableMeld, type Phase, type GoOutType, type SeatStatus,
+} from '../kalooki';
+
+export interface SelfView {
+  seat: number; hand: Card[]; handCount: number; score: number; status: SeatStatus; hasOpened: boolean;
+}
+export interface OpponentView {
+  seat: number; handCount: number; score: number; status: SeatStatus; hasOpened: boolean;
+}
+export interface ClientView {
+  seat: number;
+  you: SelfView;
+  opponents: OpponentView[];
+  stockCount: number;
+  discard: Card[];
+  melds: TableMeld[];
+  currentTurn: number;
+  phase: Phase;
+  pot: number;
+  roundNumber: number;
+  roundFinished: boolean;
+  roundWinnerSeat: number | null;
+  goOutType: GoOutType | null;
+  matchFinished: boolean;
+  matchWinnerSeat: number | null;
+}
+
+export function redactStateFor(state: MatchState, seat: number): ClientView {
+  const round = state.round;
+  const self = round.players[seat];
+  const you: SelfView = {
+    seat,
+    hand: self.hand.slice(),
+    handCount: self.hand.length,
+    score: state.scores[seat],
+    status: state.statuses[seat],
+    hasOpened: self.hasOpened,
+  };
+  const opponents: OpponentView[] = round.players
+    .filter((p) => p.seat !== seat)
+    .map((p) => ({
+      seat: p.seat,
+      handCount: p.hand.length,
+      score: state.scores[p.seat],
+      status: state.statuses[p.seat],
+      hasOpened: p.hasOpened,
+    }));
+  const melds: TableMeld[] = round.melds.map((m) => ({ ...m, cards: layoutMeld(m.cards, m.kind) }));
+  return {
+    seat,
+    you,
+    opponents,
+    stockCount: round.stock.length,
+    discard: round.discard.slice(),
+    melds,
+    currentTurn: round.turn,
+    phase: round.phase,
+    pot: state.pot,
+    roundNumber: state.roundNumber,
+    roundFinished: round.finished,
+    roundWinnerSeat: round.winnerSeat,
+    goOutType: round.goOutType,
+    matchFinished: state.finished,
+    matchWinnerSeat: state.winnerSeat,
+  };
+}
