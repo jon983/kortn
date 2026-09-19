@@ -1,48 +1,37 @@
-// lib/ui/table/overlays.tsx
-// Minimal stub overlays — Task 8 will expand these.
 'use client';
+import Link from 'next/link';
 import type { ClientView } from '../../server';
 
-const scrim = 'fixed inset-0 z-50 flex items-center justify-center bg-black/70';
-const card = 'rounded-xl bg-[#2a1a0e] border border-[#8b5e3c] p-8 text-bone text-center shadow-2xl';
-const btn = 'mt-4 rounded-md border-2 border-[#8b5e3c] bg-[#6b4a30] px-6 py-2 text-sm font-bold text-bone';
+function Scrim({ children }: { children: React.ReactNode }) {
+  return <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-6">
+    <div className="max-w-sm rounded-xl border-2 border-brass bg-[#2a1c12] p-6 text-center text-bone shadow-2xl">{children}</div>
+  </div>;
+}
 
 export function RoundSummary({ view, onContinue }: { view: ClientView; onContinue: () => void }) {
-  const winner = view.roundWinnerSeat != null ? `Seat ${view.roundWinnerSeat}` : 'Nobody';
-  return (
-    <div className={scrim}>
-      <div className={card}>
-        <h2 className="text-2xl font-bold mb-2">Round {view.roundNumber} over</h2>
-        <p>{winner} wins the round</p>
-        <button type="button" className={btn} onClick={onContinue}>Continue</button>
-      </div>
-    </div>
-  );
+  return <Scrim>
+    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Round over</h3>
+    <p className="mt-2">Seat {view.roundWinnerSeat} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
+    <p className="mt-1 text-sm text-[#c9b48a]">Pot: {view.pot} bits</p>
+    <button type="button" className="mt-4 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold" onClick={onContinue}>Continue</button>
+  </Scrim>;
 }
 
 export function RebuyPrompt({ onRebuy, onDecline }: { onRebuy: () => void; onDecline: () => void }) {
-  return (
-    <div className={scrim}>
-      <div className={card}>
-        <h2 className="text-2xl font-bold mb-2">Busted!</h2>
-        <p>Would you like to rebuy and continue?</p>
-        <div className="flex gap-4 justify-center">
-          <button type="button" className={btn} onClick={onRebuy}>Rebuy</button>
-          <button type="button" className={btn} onClick={onDecline}>Decline</button>
-        </div>
-      </div>
+  return <Scrim>
+    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">You're out — over 150</h3>
+    <p className="mt-2 text-sm">Buy back in for 4 bits and re-enter at the current top score?</p>
+    <div className="mt-4 flex justify-center gap-3">
+      <button type="button" className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 font-bold" onClick={onRebuy}>Buy back in</button>
+      <button type="button" className="rounded-md border-2 border-sage-deep bg-[linear-gradient(180deg,#c6d0b3,#a6b589)] px-4 py-2 font-bold text-ink" onClick={onDecline}>Decline</button>
     </div>
-  );
+  </Scrim>;
 }
 
 export function MatchSummary({ view }: { view: ClientView }) {
-  const winner = view.matchWinnerSeat != null ? `Seat ${view.matchWinnerSeat}` : 'Nobody';
-  return (
-    <div className={scrim}>
-      <div className={card}>
-        <h2 className="text-2xl font-bold mb-2">Match over</h2>
-        <p>{winner} wins the match!</p>
-      </div>
-    </div>
-  );
+  return <Scrim>
+    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Winner!</h3>
+    <p className="mt-2">Seat {view.matchWinnerSeat} takes the pot of {view.pot} bits.</p>
+    <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the front room</Link>
+  </Scrim>;
 }

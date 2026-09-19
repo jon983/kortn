@@ -1,6 +1,6 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMatchStream } from './useMatchStream';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
@@ -20,6 +20,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [order, setOrder] = useState<string[] | null>(null);
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
@@ -141,10 +146,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
 
       {/* toast */}
       {toast && (
-        <div
-          className="absolute left-1/2 top-16 -translate-x-1/2 rounded bg-maroon px-3 py-2 text-sm"
-          onAnimationEnd={() => setToast(null)}
-        >
+        <div className="absolute left-1/2 top-16 -translate-x-1/2 rounded bg-maroon px-3 py-2 text-sm">
           {toast}
         </div>
       )}
