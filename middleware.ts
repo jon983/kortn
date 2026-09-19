@@ -1,7 +1,12 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export default clerkMiddleware();
+const isPublic = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/api/(.*)']);
 
-export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)', '/api/(.*)'],
-};
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublic(req)) {
+    const { userId, redirectToSignIn } = await auth();
+    if (!userId) return redirectToSignIn();
+  }
+});
+
+export const config = { matcher: ['/((?!_next|.*\\..*).*)', '/api/(.*)'] };
