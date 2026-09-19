@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "node"]
   },
-  "include": ["lib", "vitest.config.ts"]
+  "include": ["lib", "vitest.config.ts", "drizzle.config.ts"]
 }
