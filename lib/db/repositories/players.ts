@@ -31,6 +31,11 @@ export interface UpdatePlayerFields {
   finalPlacing?: number | null;
 }
 
+export async function reseatOne(db: DB, matchId: string, fromSeat: number, toSeat: number): Promise<void> {
+  await db.update(matchPlayers).set({ seatIndex: toSeat })
+    .where(and(eq(matchPlayers.matchId, matchId), eq(matchPlayers.seatIndex, fromSeat)));
+}
+
 export async function updatePlayer(
   db: DB,
   matchId: string,

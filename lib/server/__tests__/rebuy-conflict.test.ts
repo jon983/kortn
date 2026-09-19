@@ -20,7 +20,7 @@ import { makeTestDb } from '../../db/__tests__/helpers';
 import { InMemoryPubSub } from '../pubsub';
 import { createLobby, joinLobby, startGame } from '../matches';
 import { submitAction } from '../runtime';
-import { getMatch, loadGameState } from '../../db';
+import { getMatch, loadGameState, listPlayers } from '../../db';
 import { gameStates } from '../../db/schema';
 import { makeRng, type MatchState } from '../../kalooki';
 
@@ -44,15 +44,21 @@ describe('submitAction rebuy/decline conflict recovery', () => {
     });
     await startGame(d as any, { matchId, userId: 'u1' });
 
-    // Patch the live state to have seat 0 busted.
+    // Patch the live state to have u1's seat busted.
     // Use db.update directly (not saveGameState) so it bypasses the mock,
     // keeping the mock call counter at 0 for the submitAction call below.
+    const players = await listPlayers(db as any, matchId);
+    const u1Seat = players.find((p) => p.userId === 'u1')!.seatIndex;
     const loaded = await loadGameState(db as any, matchId);
     expect(loaded).not.toBeNull();
+    const statuses = [...loaded!.state.statuses] as MatchState['statuses'];
+    const rebought = [...loaded!.state.rebought] as MatchState['rebought'];
+    statuses[u1Seat] = 'busted';
+    rebought[u1Seat] = false;
     const bustedState: MatchState = {
       ...loaded!.state,
-      statuses: ['busted', loaded!.state.statuses[1]],
-      rebought: [false, loaded!.state.rebought[1]],
+      statuses,
+      rebought,
     };
     await (db as any).update(gameStates)
       .set({ state: bustedState, version: loaded!.version, updatedAt: sql`now()` })

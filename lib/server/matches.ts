@@ -1,10 +1,10 @@
 import type { RuntimeDeps, SubmitResult } from './deps';
 import {
   upsertUser, addPlayer, listPlayers, getMatch, getMatchByJoinCode,
-  updateMatchStatus, updatePlayer, initGameState,
+  updateMatchStatus, updatePlayer, initGameState, reseatOne,
   createMatch as createMatchRow,
 } from '../db';
-import { startMatch as engineStartMatch } from '../kalooki';
+import { startMatch as engineStartMatch, shuffle } from '../kalooki';
 
 function makeJoinCode(rng: () => number): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -49,6 +49,13 @@ export async function joinLobby(
   return { matchId: match.id, seatIndex };
 }
 
+async function reseatPlayers(deps: RuntimeDeps, matchId: string): Promise<void> {
+  const players = await listPlayers(deps.db, matchId);
+  const targets = shuffle(players.map((_, i) => i), deps.rng);
+  for (let i = 0; i < players.length; i++) await reseatOne(deps.db, matchId, players[i].seatIndex, -(i + 1));
+  for (let i = 0; i < players.length; i++) await reseatOne(deps.db, matchId, -(i + 1), targets[i]);
+}
+
 export async function startGame(
   deps: RuntimeDeps,
   input: { matchId: string; userId: string },
@@ -59,6 +66,8 @@ export async function startGame(
   if (match.status !== 'lobby') return { ok: false, reason: 'Already started' };
   const players = await listPlayers(deps.db, input.matchId);
   if (players.length !== match.seats) return { ok: false, reason: 'Seats not filled' };
+
+  await reseatPlayers(deps, input.matchId);
 
   const seed = Math.floor(deps.rng() * 2_147_483_647);
   const state = engineStartMatch({ seats: match.seats, seed });
