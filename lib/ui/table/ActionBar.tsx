@@ -9,11 +9,12 @@ const btn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#
 
 export function ActionBar({
   view, selectedCards, stagedGroups, layDownEnabled, discardEnabled,
-  onStageMeld, onLayDown, onDiscard, onClearTray,
+  onStageMeld, onLayDown, onDiscard, onClearTray, onReturnDiscard,
 }: {
   view: ClientView; selectedCards: Card[]; stagedGroups: { cards: Card[] }[];
   layDownEnabled: boolean; discardEnabled: boolean;
   onStageMeld: () => void; onLayDown: () => void; onDiscard: () => void; onClearTray: () => void;
+  onReturnDiscard: () => void;
 }) {
   if (!isMyTurn(view)) {
     return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for seat {view.currentTurn}…</div>;
@@ -26,6 +27,14 @@ export function ActionBar({
   const toOpen = Math.max(0, OPEN_THRESHOLD - staged);
   return (
     <div className="flex flex-col items-center gap-2">
+      {view.you.drawObligationId && (
+        <div className="flex items-center gap-3 rounded-md bg-black/30 px-3 py-1">
+          <span className="text-xs italic text-[#c9b48a]">Can&apos;t use the card you took?</span>
+          <button type="button" className="text-xs font-bold underline text-brass" onClick={onReturnDiscard}>
+            Put it back &amp; draw from stock
+          </button>
+        </div>
+      )}
       {stagedGroups.length > 0 && (
         <div className="flex items-center gap-3 rounded-md bg-black/30 px-3 py-1">
           <span className="text-xs text-[#c9b48a]">Laying down:</span>

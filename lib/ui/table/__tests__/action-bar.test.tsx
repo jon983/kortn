@@ -14,26 +14,35 @@ describe('ActionBar', () => {
     const onStage = vi.fn();
     render(<ActionBar view={view() as any} selectedCards={[nat(7, 'clubs'), nat(7, 'hearts'), nat(7, 'spades')]}
       stagedGroups={[]} layDownEnabled={false} discardEnabled={false}
-      onStageMeld={onStage} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} />);
+      onStageMeld={onStage} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
     expect(screen.getByRole('button', { name: /^meld/i })).toBeEnabled();
   });
   it('disables Meld for an invalid selection and shows points-to-open', () => {
     render(<ActionBar view={view() as any} selectedCards={[nat(3, 'clubs'), nat(3, 'hearts')]}
       stagedGroups={[{ cards: [nat(3, 'clubs'), nat(3, 'hearts'), nat(3, 'spades')] }]} layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} />);
+      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
     expect(screen.getByRole('button', { name: /^meld/i })).toBeDisabled();
     expect(screen.getByText(/to open/i)).toBeInTheDocument(); // 9 staged, 31 to open
   });
   it('draw phase prompts tapping the piles', () => {
     render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any} selectedCards={[]} stagedGroups={[]}
       layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} />);
+      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
     expect(screen.queryByRole('button', { name: /meld/i })).toBeNull();
+  });
+  it('offers to return the taken discard when you hold an unusable draw obligation', () => {
+    const onReturn = vi.fn();
+    render(<ActionBar view={view({ you: { hasOpened: false, drawObligationId: 'A-diamonds-9' } }) as any}
+      selectedCards={[]} stagedGroups={[]} layDownEnabled={false} discardEnabled={false}
+      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={onReturn} />);
+    const btn = screen.getByRole('button', { name: /put it back/i });
+    btn.click();
+    expect(onReturn).toHaveBeenCalled();
   });
   it('shows waiting message when not your turn', () => {
     render(<ActionBar view={view({ currentTurn: 1 }) as any} selectedCards={[]} stagedGroups={[]}
       layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} />);
+      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
     expect(screen.getByText(/waiting/i)).toBeInTheDocument();
   });
 });

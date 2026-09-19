@@ -7,6 +7,7 @@ import type { Card } from './cards';
 
 export type Action =
   | { type: 'draw'; source: 'stock' | 'discard' }
+  | { type: 'returnDiscard' }
   | { type: 'drawJokerDecline' }
   | { type: 'meld'; groups: { kind: MeldKind; cardIds: string[] }[] }
   | { type: 'layoff'; cardId: string; meldId: string }
@@ -60,6 +61,25 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
         next.phase = 'awaitingDiscard';
         return { ok: true, match: withRound(match, next) };
       }
+    }
+    case 'returnDiscard': {
+      // A player who took the discard but can't (or won't) use it may put it
+      // back and re-enter the draw phase to take from stock instead. Legal only
+      // while the taken card is still uncommitted (no meld has consumed it — any
+      // successful meld this turn would have cleared the obligation).
+      if (round.phase !== 'awaitingDiscard' || !round.drawObligation) {
+        return { ok: false, reason: 'Nothing to return.' };
+      }
+      const next = cloneRound(round);
+      const obligationId = round.drawObligation.id;
+      const hand = next.players[seat].hand;
+      const idx = hand.findIndex((c) => c.id === obligationId);
+      if (idx === -1) return { ok: false, reason: 'The taken card is no longer in your hand.' };
+      const [card] = hand.splice(idx, 1);
+      next.discard.push(card);
+      next.drawObligation = null;
+      next.phase = 'awaitingDraw';
+      return { ok: true, match: withRound(match, next) };
     }
     case 'drawJokerDecline': {
       if (round.phase !== 'awaitingDraw') return { ok: false, reason: 'You have already drawn.' };

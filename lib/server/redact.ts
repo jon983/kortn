@@ -6,6 +6,8 @@ import {
 
 export interface SelfView {
   seat: number; hand: Card[]; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
+  /** If you took the discard this turn and haven't melded it yet, its card id — else null. */
+  drawObligationId: string | null;
 }
 export interface OpponentView {
   seat: number; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
@@ -39,6 +41,7 @@ export function redactStateFor(state: MatchState, seat: number): ClientView {
     bits: state.bits?.[seat] ?? 0,
     status: state.statuses[seat],
     hasOpened: self.hasOpened,
+    drawObligationId: round.turn === seat ? (round.drawObligation?.id ?? null) : null,
   };
   const opponents: OpponentView[] = round.players
     .filter((p) => p.seat !== seat)

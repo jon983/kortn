@@ -84,6 +84,15 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     }
   }
 
+  // Put the just-taken discard back and draw from stock instead.
+  async function handleReturnDiscard() {
+    const res = await playAction(matchId, { type: 'returnDiscard' });
+    if (!res.ok) { setToast(res.reason ?? 'illegal move'); return; }
+    setObligationId(null);
+    setSelected([]);
+    await playAction(matchId, { type: 'draw', source: 'stock' });
+  }
+
   return (
     <div className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
@@ -201,6 +210,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             setSelected([]);
           }}
           onClearTray={() => setStaged([])}
+          onReturnDiscard={handleReturnDiscard}
         />
         <div className="mt-2">
           <Hand
