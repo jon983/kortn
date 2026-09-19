@@ -44,9 +44,9 @@ export async function finishRoundTransition(
   const winnerSeat = matchWinner(busted);
   if (winnerSeat !== null) {
     const done = awardPot(busted);
-    const wUser = await userIdForSeat(deps, matchId, winnerSeat);
-    if (wUser) await setMatchWinner(deps.db, matchId, wUser);
     const players = await listPlayers(deps.db, matchId);
+    const wUser = players.find((p) => p.seatIndex === winnerSeat)?.userId ?? null;
+    if (wUser) await setMatchWinner(deps.db, matchId, wUser);
     for (const p of players) await incrementUserStats(deps.db, p.userId, { gamesPlayed: 1 });
     return persist(deps, matchId, done);
   }
@@ -94,8 +94,10 @@ export async function submitAction(
       const winnerSeat = matchWinner(updated);
       if (winnerSeat !== null) {
         const done = awardPot(updated);
-        const wUser = await userIdForSeat(deps, input.matchId, winnerSeat);
+        const players = await listPlayers(deps.db, input.matchId);
+        const wUser = players.find((p) => p.seatIndex === winnerSeat)?.userId ?? null;
         if (wUser) await setMatchWinner(deps.db, input.matchId, wUser);
+        for (const p of players) await incrementUserStats(deps.db, p.userId, { gamesPlayed: 1 });
         toPublish = await persist(deps, input.matchId, done);
       } else {
         const nextRound = dealRound({ seats: updated.seats, dealerSeat: (updated.round.dealerSeat + 1) % updated.seats, rng: deps.rng });

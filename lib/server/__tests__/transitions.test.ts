@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { makeTestDb } from '../../db/__tests__/helpers';
 import { InMemoryPubSub } from '../pubsub';
-import { finishRoundTransition } from '../runtime';
+import { finishRoundTransition, submitAction } from '../runtime';
 import { upsertUser, createMatch, addPlayer, initGameState, loadGameState, recordRound as _rr } from '../../db';
+import { users } from '../../db/schema';
 import { startMatch, makeRng, type MatchState } from '../../kalooki';
 
 function mkDeps(db: any) { return { db, pubsub: new InMemoryPubSub(), rng: makeRng(7) }; }
@@ -66,5 +68,39 @@ describe('finishRoundTransition', () => {
     const done = await finishRoundTransition(d, m.id, state);
     expect(done.finished).toBe(true);
     expect(done.winnerSeat).toBe(0);
+  });
+
+  it('all-decline match-end awards gamesPlayed to every player', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    const d = mkDeps(db);
+    await upsertUser(db as any, { id: 'u1', displayName: 'A' });
+    await upsertUser(db as any, { id: 'u2', displayName: 'B' });
+    const m = await createMatch(db as any, { createdBy: 'u1', seats: 2, joinCode: 'T3' });
+    await addPlayer(db as any, { matchId: m.id, userId: 'u1', seatIndex: 0 });
+    await addPlayer(db as any, { matchId: m.id, userId: 'u2', seatIndex: 1 });
+
+    // seat 1 is already busted and has not yet decided; seat 0 stays active.
+    const base = startMatch({ seats: 2, seed: 1 });
+    const state: MatchState = {
+      ...base,
+      statuses: ['active', 'busted'],
+      rebought: [false, false],
+      scores: [0, 154],
+    };
+    await initGameState(db as any, m.id, state);
+
+    // seat 1's user declines -> no seat pending -> only seat 0 active -> match ends
+    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'decline' } });
+    expect(res.ok).toBe(true);
+
+    const persisted = await loadGameState(db as any, m.id);
+    expect(persisted!.state.finished).toBe(true);
+    expect(persisted!.state.winnerSeat).toBe(0);
+
+    const [u1] = await db.select().from(users).where(eq(users.id, 'u1'));
+    const [u2] = await db.select().from(users).where(eq(users.id, 'u2'));
+    expect(u1.gamesPlayed).toBe(1);
+    expect(u2.gamesPlayed).toBe(1);
   });
 });
