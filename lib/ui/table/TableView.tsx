@@ -101,7 +101,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {/* status bar */}
       <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
         <span className="flex items-center gap-3 justify-self-start">
-          <span>Round {view.roundNumber} · 40 to open</span>
+          <span>Round {view.roundNumber}</span>
           <button
             type="button"
             onClick={() => setShowScores((s) => !s)}
