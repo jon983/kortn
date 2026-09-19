@@ -9,6 +9,11 @@ export async function POST(req: Request) {
   const user = await currentUser();
   const displayName = user?.username ?? user?.firstName ?? 'Player';
   const { joinCode } = await req.json();
-  const res = await joinLobby(getProdDeps(), { userId, displayName, joinCode });
+  let res;
+  try {
+    res = await joinLobby(getProdDeps(), { userId, displayName, joinCode });
+  } catch (e) {
+    return NextResponse.json({ ok: false, reason: (e as Error).message }, { status: 400 });
+  }
   return NextResponse.json({ ok: true, ...res });
 }

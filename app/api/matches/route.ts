@@ -9,6 +9,11 @@ export async function POST(req: Request) {
   const user = await currentUser();
   const displayName = user?.username ?? user?.firstName ?? 'Player';
   const { seats } = await req.json();
-  const res = await createLobby(getProdDeps(), { userId, displayName, seats: Number(seats) });
+  let res;
+  try {
+    res = await createLobby(getProdDeps(), { userId, displayName, seats: Number(seats) });
+  } catch (e) {
+    return NextResponse.json({ ok: false, reason: (e as Error).message }, { status: 400 });
+  }
   return NextResponse.json({ ok: true, ...res });
 }
