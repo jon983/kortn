@@ -122,21 +122,28 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         <span className="justify-self-end text-[#c9a24b]">Pot {view.pot}</span>
       </div>
 
-      {/* points scoreboard (toggle) */}
+      {/* scoreboard (toggle) */}
       {showScores && (
-        <div className="absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded-lg border-2 border-brass bg-[#2a1c12] p-3 text-sm shadow-2xl">
-          <div className="mb-1 text-center text-[11px] uppercase tracking-widest text-[#c9b48a]">Points</div>
-          <table className="min-w-[10rem]">
+        <div className="absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded-lg border-2 border-brass bg-[#2a1c12] p-4 text-sm shadow-2xl">
+          <table className="min-w-[14rem]">
+            <thead>
+              <tr className="border-b border-brass/30 text-[11px] uppercase tracking-widest text-[#c9b48a]">
+                <th className="pb-1 text-left font-normal">Player</th>
+                <th className="pb-1 pl-6 text-right font-normal">Points</th>
+                <th className="pb-1 pl-4 text-right font-normal">Bits</th>
+              </tr>
+            </thead>
             <tbody>
               {[
-                { seat: view.you.seat, score: view.you.score, you: true },
-                ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, you: false })),
+                { seat: view.you.seat, score: view.you.score, bits: view.you.bits, you: true },
+                ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, bits: o.bits, you: false })),
               ]
                 .sort((a, b) => a.seat - b.seat)
                 .map((r) => (
                   <tr key={r.seat}>
-                    <td className="pr-6 text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
-                    <td className="text-right tabular-nums">{r.score}</td>
+                    <td className="py-0.5 text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
+                    <td className="py-0.5 pl-6 text-right tabular-nums">{r.score}</td>
+                    <td className="py-0.5 pl-4 text-right tabular-nums">{r.bits > 0 ? `+${r.bits}` : r.bits}</td>
                   </tr>
                 ))}
             </tbody>
