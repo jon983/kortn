@@ -67,12 +67,12 @@ export async function startGame(
   const players = await listPlayers(deps.db, input.matchId);
   if (players.length !== match.seats) return { ok: false, reason: 'Seats not filled' };
 
+  for (const p of players) await updatePlayer(deps.db, input.matchId, p.seatIndex, { bitsPaid: 4 });
   await reseatPlayers(deps, input.matchId);
 
   const seed = Math.floor(deps.rng() * 2_147_483_647);
   const state = engineStartMatch({ seats: match.seats, seed });
   await initGameState(deps.db, input.matchId, state);
-  for (const p of players) await updatePlayer(deps.db, input.matchId, p.seatIndex, { bitsPaid: 4 });
   await updateMatchStatus(deps.db, input.matchId, 'active');
   await deps.pubsub.publish('match:' + input.matchId, state);
   return { ok: true };

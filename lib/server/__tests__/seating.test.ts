@@ -29,5 +29,8 @@ describe('randomised seating', () => {
     const joinOrder = ['u1', 'u2', 'u3', 'u4'];
     const bySeat = [...players].sort((a, b) => a.seatIndex - b.seatIndex).map((p) => p.userId);
     expect(bySeat).not.toEqual(joinOrder);
+
+    // every player was charged the buy-in despite reseating
+    expect(players.every((p) => p.bitsPaid === 4)).toBe(true);
   });
 });
