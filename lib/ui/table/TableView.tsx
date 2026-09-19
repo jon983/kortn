@@ -179,9 +179,10 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
             ))}
         </div>
-        {layoffArmed && (
-          <div className="text-center text-xs italic text-brass">Tap a meld to lay off your selected card</div>
-        )}
+        {/* reserved fixed-height slot so arming/disarming lay-off never reflows the table */}
+        <div className="h-4 text-center text-xs italic text-brass">
+          {layoffArmed ? 'Tap a meld to lay off your selected card' : ''}
+        </div>
       </div>
 
       {/* viewer's area */}
