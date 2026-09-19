@@ -19,7 +19,6 @@ export function StockDiscard({
             ? <CardBack pack="A" />
             : <span className="inline-block h-32 w-24 rounded-md border-2 border-dashed border-[#cfc9b4]/40" />}
         </button>
-        <div className="mt-1 text-[10px] uppercase tracking-widest text-[#c9b48a]">Stock</div>
       </div>
       <div className="text-center">
         <div
@@ -34,7 +33,6 @@ export function StockDiscard({
             ? <CardFace card={discardTop} />
             : <span className="inline-block h-32 w-24 rounded-md border-2 border-dashed border-[#cfc9b4]/40" />}
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-widest text-[#c9b48a]">Discard</div>
       </div>
     </div>
   );

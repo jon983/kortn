@@ -19,9 +19,7 @@ export function ActionBar({
     return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for seat {view.currentTurn}…</div>;
   }
   if (view.phase === 'awaitingDraw') {
-    return (
-      <div className="text-center text-sm italic text-brass">Tap the stock or the discard pile to draw</div>
-    );
+    return null;
   }
   const meldValid = !!evaluateMeld(selectedCards);
   const staged = stagedPoints(stagedGroups);

@@ -18,9 +18,9 @@ describe('felt pieces', () => {
     expect(screen.getAllByText('6').length).toBeGreaterThan(0);
   });
   it('StockDiscard shows a stock pile and the discard top', () => {
-    render(<StockDiscard stockCount={40} discardTop={nat(9, 'diamonds')} />);
-    expect(screen.getByText(/stock/i)).toBeInTheDocument();
-    expect(screen.getByText(/discard/i)).toBeInTheDocument();
+    render(<StockDiscard stockCount={40} discardTop={nat(9, 'diamonds')} onDrawStock={() => {}} onTakeDiscard={() => {}} />);
+    expect(screen.getByRole('button', { name: /draw from stock/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /take discard/i })).toBeInTheDocument();
     expect(screen.getAllByText('9').length).toBeGreaterThan(0); // discard top card
   });
   it('OpponentSeat shows name, count, opened badge, and a mini-fan sized to the count', () => {

@@ -28,7 +28,7 @@ describe('ActionBar', () => {
     render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any} selectedCards={[]} stagedGroups={[]}
       layDownEnabled={false} discardEnabled={false}
       onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} />);
-    expect(screen.getByText(/tap the stock/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /meld/i })).toBeNull();
   });
   it('shows waiting message when not your turn', () => {
     render(<ActionBar view={view({ currentTurn: 1 }) as any} selectedCards={[]} stagedGroups={[]}
