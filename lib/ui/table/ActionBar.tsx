@@ -1,6 +1,6 @@
 // lib/ui/table/ActionBar.tsx
 'use client';
-import { Card as CardFace, rankLabel, suitGlyph } from './Card';
+import { Card as CardFace } from './Card';
 import { evaluateMeld, stagedPoints, OPEN_THRESHOLD, isMyTurn } from './legality';
 import type { Card } from '../../kalooki';
 import type { ClientView } from '../../server';
@@ -9,25 +9,18 @@ const btn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#
 
 export function ActionBar({
   view, selectedCards, stagedGroups, layDownEnabled, discardEnabled,
-  onDrawStock, onTakeDiscard, onStageMeld, onLayDown, onDiscard, onClearTray,
+  onStageMeld, onLayDown, onDiscard, onClearTray,
 }: {
   view: ClientView; selectedCards: Card[]; stagedGroups: { cards: Card[] }[];
   layDownEnabled: boolean; discardEnabled: boolean;
-  onDrawStock: () => void; onTakeDiscard: () => void; onStageMeld: () => void;
-  onLayDown: () => void; onDiscard: () => void; onClearTray: () => void;
+  onStageMeld: () => void; onLayDown: () => void; onDiscard: () => void; onClearTray: () => void;
 }) {
   if (!isMyTurn(view)) {
     return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for seat {view.currentTurn}…</div>;
   }
   if (view.phase === 'awaitingDraw') {
-    const top = view.discard[view.discard.length - 1];
     return (
-      <div className="flex justify-center gap-3">
-        <button type="button" className={btn} onClick={onDrawStock}>Draw stock</button>
-        <button type="button" className={btn} onClick={onTakeDiscard} disabled={!top}>
-          Take discard{top ? ` (${top.kind === 'joker' ? '★' : rankLabel(top.rank) + suitGlyph(top.suit)})` : ''}
-        </button>
-      </div>
+      <div className="text-center text-sm italic text-brass">Tap the stock or the discard pile to draw</div>
     );
   }
   const meldValid = !!evaluateMeld(selectedCards);

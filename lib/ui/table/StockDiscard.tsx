@@ -10,6 +10,7 @@ export function StockDiscard({
       <div className="text-center">
         <button
           type="button"
+          aria-label="Draw from stock"
           onClick={onDrawStock}
           disabled={!onDrawStock || stockCount === 0}
           className={`${onDrawStock && stockCount > 0 ? 'cursor-pointer' : 'cursor-default'} disabled:opacity-60`}
@@ -23,6 +24,7 @@ export function StockDiscard({
       <div className="text-center">
         <div
           role="button"
+          aria-label="Take discard"
           tabIndex={onTakeDiscard && discardTop ? 0 : -1}
           aria-disabled={!onTakeDiscard || !discardTop}
           onClick={onTakeDiscard && discardTop ? onTakeDiscard : undefined}
