@@ -1,13 +1,17 @@
+import type { RefObject } from 'react';
 import { Card as CardFace } from './Card';
 import { CardBack } from './CardBack';
 import type { Card } from '../../kalooki';
 
 export function StockDiscard({
-  stockCount, discardTop, onDrawStock, onTakeDiscard,
-}: { stockCount: number; discardTop?: Card; onDrawStock?: () => void; onTakeDiscard?: () => void }) {
+  stockCount, discardTop, onDrawStock, onTakeDiscard, stockRef, discardRef,
+}: {
+  stockCount: number; discardTop?: Card; onDrawStock?: () => void; onTakeDiscard?: () => void;
+  stockRef?: RefObject<HTMLDivElement | null>; discardRef?: RefObject<HTMLDivElement | null>;
+}) {
   return (
     <div className="flex items-end gap-6">
-      <div className="text-center">
+      <div className="text-center" ref={stockRef}>
         <button
           type="button"
           aria-label="Draw from stock"
@@ -20,7 +24,7 @@ export function StockDiscard({
             : <span className="inline-block h-32 w-24 rounded-md border-2 border-dashed border-[#cfc9b4]/40" />}
         </button>
       </div>
-      <div className="text-center">
+      <div className="text-center" ref={discardRef}>
         <div
           role="button"
           aria-label="Take discard"

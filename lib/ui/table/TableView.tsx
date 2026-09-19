@@ -1,13 +1,16 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMatchStream } from './useMatchStream';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
+import { Card as CardFace } from './Card';
+import { CardBack } from './CardBack';
 import { ActionBar } from './ActionBar';
+import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import type { Action } from '../../kalooki';
@@ -21,6 +24,29 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showScores, setShowScores] = useState(false);
+
+  // --- draw / discard fly animations ---
+  const rootRef = useRef<HTMLDivElement>(null);
+  const stockRef = useRef<HTMLDivElement>(null);
+  const discardRef = useRef<HTMLDivElement>(null);
+  const [flight, setFlight] = useState<import('./FlyingCard').Flight | null>(null);
+  const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
+  const flightKey = useRef(0);
+  const drawSource = useRef<'stock' | 'discard' | null>(null);
+
+  function rectIn(el: Element | null): { x: number; y: number } | null {
+    const root = rootRef.current;
+    if (!el || !root) return null;
+    const r = el.getBoundingClientRect();
+    const b = root.getBoundingClientRect();
+    return { x: r.left - b.left, y: r.top - b.top };
+  }
+
+  function startFlight(from: { x: number; y: number } | null, to: { x: number; y: number } | null, node: ReactNode) {
+    if (!from || !to) return;
+    flightKey.current += 1;
+    setFlight({ key: flightKey.current, from, to, node });
+  }
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3000);
@@ -36,10 +62,24 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     prevHandIds.current = new Set(current);
     if (added.length) {
       setNewIds(added);
+      // Fly the drawn card from its pile into the hand.
+      const src = drawSource.current;
+      drawSource.current = null;
+      const landedId = added[added.length - 1];
+      if (src) {
+        const from = rectIn(src === 'stock' ? stockRef.current : discardRef.current);
+        const to = rectIn(rootRef.current?.querySelector(`[data-card-id="${landedId}"]`) ?? null);
+        const card = view.you.hand.find((c) => c.id === landedId);
+        if (from && to) {
+          setFlyHiddenId(landedId);
+          startFlight(from, to, src === 'stock' ? <CardBack pack="A" /> : (card ? <CardFace card={card} /> : null));
+          setTimeout(() => setFlyHiddenId(null), 340);
+        }
+      }
       const t = setTimeout(() => setNewIds([]), 4000);
       return () => clearTimeout(t);
     }
-  }, [view.you.hand]);
+  }, [view.you.hand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
@@ -73,15 +113,18 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   }
 
   function handleDrawStock() {
+    drawSource.current = 'stock';
     submit({ type: 'draw', source: 'stock' });
   }
 
   async function handleTakeDiscard() {
     const top = view.discard[view.discard.length - 1];
+    drawSource.current = 'discard';
     const res = await playAction(matchId, { type: 'draw', source: 'discard' });
     if (res.ok) {
       if (top) setObligationId(top.id);
     } else {
+      drawSource.current = null;
       setObligationId(null);
       setToast(res.reason ?? 'illegal move');
     }
@@ -91,13 +134,14 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   async function handleReturnDiscard() {
     const res = await playAction(matchId, { type: 'returnDiscard' });
     if (!res.ok) { setToast(res.reason ?? 'illegal move'); return; }
+    drawSource.current = 'stock';
     setObligationId(null);
     setSelected([]);
     await playAction(matchId, { type: 'draw', source: 'stock' });
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
+    <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
       <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
         <span className="flex items-center gap-3 justify-self-start">
@@ -179,6 +223,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           <StockDiscard
             stockCount={view.stockCount}
             discardTop={view.discard[view.discard.length - 1]}
+            stockRef={stockRef}
+            discardRef={discardRef}
             onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
             onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
           />
@@ -222,7 +268,15 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             setObligationId(null);
           }}
           onDiscard={() => {
-            if (selected[0]) submit({ type: 'discard', cardId: selected[0] });
+            const id = selected[0];
+            if (id) {
+              // fly the card from its place in the hand to the discard pile
+              const card = handInPlay.find((c) => c.id === id);
+              const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${id}"]`) ?? null);
+              const to = rectIn(discardRef.current);
+              if (card) startFlight(from, to, <CardFace card={card} />);
+              submit({ type: 'discard', cardId: id });
+            }
             setSelected([]);
           }}
           onClearTray={() => setStaged([])}
@@ -238,9 +292,13 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             onReorder={setOrder}
             onSort={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
             highlightIds={newIds}
+            hiddenId={flyHiddenId}
           />
         </div>
       </div>
+
+      {/* draw / discard fly animation */}
+      {flight && <FlyingCard flight={flight} onDone={() => setFlight(null)} />}
 
       {/* toast */}
       {toast && (

@@ -18,10 +18,10 @@ export function sortHand(cards: Card[]): Card[] {
 }
 
 export function Hand({
-  cards, selectedIds, onToggle, onReorder, onSort, highlightIds = [],
+  cards, selectedIds, onToggle, onReorder, onSort, highlightIds = [], hiddenId = null,
 }: {
   cards: Card[]; selectedIds: string[]; onToggle: (id: string) => void;
-  onReorder: (ids: string[]) => void; onSort: () => void; highlightIds?: string[];
+  onReorder: (ids: string[]) => void; onSort: () => void; highlightIds?: string[]; hiddenId?: string | null;
 }) {
   const dragId = useRef<string | null>(null);
   function onDrop(targetId: string) {
@@ -36,7 +36,8 @@ export function Hand({
     <div className="relative flex items-center justify-center">
       <div className="flex justify-center overflow-x-auto pt-6 pb-2">
         {cards.map((c) => (
-          <div key={c.id} className="-ml-10 first:ml-0 shrink-0" draggable
+          <div key={c.id} data-card-id={c.id}
+            className={`-ml-10 shrink-0 first:ml-0 ${hiddenId === c.id ? 'opacity-0' : ''}`} draggable
             onDragStart={(e) => {
               dragId.current = c.id;
               // Snapshot only the card itself; the card element is the inner
