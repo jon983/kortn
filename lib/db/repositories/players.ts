@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { DB } from '../client';
-import { matchPlayers } from '../schema';
+import { matchPlayers, users } from '../schema';
 
 export type MatchPlayer = typeof matchPlayers.$inferSelect;
 
@@ -34,6 +34,19 @@ export interface UpdatePlayerFields {
 export async function reseatOne(db: DB, matchId: string, fromSeat: number, toSeat: number): Promise<void> {
   await db.update(matchPlayers).set({ seatIndex: toSeat })
     .where(and(eq(matchPlayers.matchId, matchId), eq(matchPlayers.seatIndex, fromSeat)));
+}
+
+export async function listPlayersWithNames(
+  db: DB,
+  matchId: string,
+): Promise<Array<MatchPlayer & { displayName: string }>> {
+  const rows = await db
+    .select({ p: matchPlayers, name: users.displayName })
+    .from(matchPlayers)
+    .innerJoin(users, eq(users.id, matchPlayers.userId))
+    .where(eq(matchPlayers.matchId, matchId))
+    .orderBy(asc(matchPlayers.seatIndex));
+  return rows.map((r) => ({ ...r.p, displayName: r.name }));
 }
 
 export async function updatePlayer(
