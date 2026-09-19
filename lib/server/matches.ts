@@ -17,6 +17,9 @@ export async function createLobby(
   deps: RuntimeDeps,
   input: { userId: string; displayName: string; seats: number },
 ): Promise<{ matchId: string; joinCode: string }> {
+  if (!Number.isInteger(input.seats) || input.seats < 2 || input.seats > 5) {
+    throw new Error('Seats must be between 2 and 5');
+  }
   await upsertUser(deps.db, { id: input.userId, displayName: input.displayName });
   const joinCode = makeJoinCode(deps.rng);
   const match = await createMatchRow(deps.db, { createdBy: input.userId, seats: input.seats, joinCode });
