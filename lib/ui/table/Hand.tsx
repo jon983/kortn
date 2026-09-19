@@ -37,7 +37,13 @@ export function Hand({
       <div className="flex justify-center overflow-x-auto pt-6 pb-2">
         {cards.map((c) => (
           <div key={c.id} className="-ml-10 first:ml-0 shrink-0" draggable
-            onDragStart={() => (dragId.current = c.id)}
+            onDragStart={(e) => {
+              dragId.current = c.id;
+              // Snapshot only the card itself; the card element is the inner
+              // node so the overlapping neighbour isn't captured in the ghost.
+              const card = e.currentTarget.firstElementChild as HTMLElement | null;
+              if (card) e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2);
+            }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => onDrop(c.id)}>
             <CardFace card={c} selected={selectedIds.includes(c.id)} highlight={highlightIds.includes(c.id)} onClick={() => onToggle(c.id)} />
