@@ -33,7 +33,7 @@ export function Hand({
     onReorder(ids);
   }
   return (
-    <div className="flex items-center justify-center gap-4">
+    <div className="relative flex items-center justify-center">
       <div className="flex justify-center overflow-x-auto pt-6 pb-2">
         {cards.map((c) => (
           <div key={c.id} className="-ml-10 first:ml-0 shrink-0" draggable
@@ -45,7 +45,7 @@ export function Hand({
         ))}
       </div>
       <button type="button" onClick={onSort}
-        className="shrink-0 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#8a6a3a,#5c4426)] px-3 py-1 text-sm font-bold text-bone">
+        className="absolute right-4 top-1/2 -translate-y-1/2 shrink-0 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#8a6a3a,#5c4426)] px-3 py-1 text-sm font-bold text-bone">
         ↕ Sort
       </button>
     </div>
