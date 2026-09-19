@@ -16,7 +16,7 @@ export function RoundSummary({ view, onContinue }: { view: ClientView; onContinu
   const fmtBits = (n: number) => (n > 0 ? `+${n}` : `${n}`);
   return <Scrim>
     <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Round over</h3>
-    <p className="mt-2">Seat {view.roundWinnerSeat} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
+    <p className="mt-2">{view.roundWinnerSeat !== null ? view.seatNames[view.roundWinnerSeat] : 'Someone'} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
     <table className="mt-4 w-full text-sm">
       <thead>
         <tr className="text-[#c9b48a]">
@@ -28,7 +28,7 @@ export function RoundSummary({ view, onContinue }: { view: ClientView; onContinu
       <tbody>
         {rows.map((r) => (
           <tr key={r.seat} className={r.seat === view.roundWinnerSeat ? 'text-brass' : ''}>
-            <td className="text-left">Seat {r.seat}{r.you ? ' (you)' : ''}</td>
+            <td className="text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
             <td className="text-right tabular-nums">{r.score}</td>
             <td className="text-right tabular-nums">{fmtBits(r.bits)}</td>
           </tr>
@@ -53,7 +53,7 @@ export function RebuyPrompt({ onRebuy, onDecline }: { onRebuy: () => void; onDec
 export function MatchSummary({ view }: { view: ClientView }) {
   return <Scrim>
     <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Winner!</h3>
-    <p className="mt-2">Seat {view.matchWinnerSeat} takes the pot of {view.pot} bits.</p>
+    <p className="mt-2">{view.matchWinnerSeat !== null ? view.seatNames[view.matchWinnerSeat] : 'The winner'} takes the pot of {view.pot} bits.</p>
     <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the front room</Link>
   </Scrim>;
 }

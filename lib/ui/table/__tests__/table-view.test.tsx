@@ -12,9 +12,9 @@ import type { Card } from '../../../kalooki';
 const nat = (r: number, s: string, p = 'A'): Card => ({ id: `${p}-${s}-${r}`, kind: 'natural', rank: r as any, suit: s as any, pack: p as any });
 
 const baseView: any = {
-  seat: 0, currentTurn: 0, phase: 'awaitingDraw',
-  you: { seat: 0, hand: [nat(4, 'clubs'), nat(5, 'hearts')], handCount: 2, score: 0, status: 'active', hasOpened: false },
-  opponents: [{ seat: 1, handCount: 13, score: 0, status: 'active', hasOpened: false }],
+  seat: 0, currentTurn: 0, phase: 'awaitingDraw', seatNames: ['Ruth', 'Sol'],
+  you: { seat: 0, hand: [nat(4, 'clubs'), nat(5, 'hearts')], handCount: 2, score: 0, bits: 0, status: 'active', hasOpened: false, drawObligationId: null },
+  opponents: [{ seat: 1, handCount: 13, score: 0, bits: 0, status: 'active', hasOpened: false }],
   stockCount: 40, discard: [nat(9, 'diamonds')], melds: [],
   pot: 8, roundNumber: 1, roundFinished: false, roundWinnerSeat: null, goOutType: null,
   matchFinished: false, matchWinnerSeat: null,

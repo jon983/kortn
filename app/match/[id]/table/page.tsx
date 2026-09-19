@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { db, getMatch } from '../../../../lib/db';
 import { resolveSeat, redactStateFor } from '../../../../lib/server';
-import { loadGameState } from '../../../../lib/db';
+import { loadGameState, listPlayersWithNames } from '../../../../lib/db';
 import { TableView } from '../../../../lib/ui/table/TableView';
 
 export default async function TablePage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,6 +16,9 @@ export default async function TablePage({ params }: { params: Promise<{ id: stri
   if (seat === null) redirect('/');
   const loaded = await loadGameState(db, id);
   if (!loaded) redirect('/');
-  const initial = redactStateFor(loaded.state, seat);
+  const players = await listPlayersWithNames(db, id);
+  const names: (string | null)[] = [];
+  for (const p of players) names[p.seatIndex] = p.displayName;
+  const initial = redactStateFor(loaded.state, seat, names);
   return <TableView matchId={id} initial={initial} />;
 }

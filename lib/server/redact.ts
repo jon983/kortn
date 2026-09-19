@@ -14,6 +14,8 @@ export interface OpponentView {
 }
 export interface ClientView {
   seat: number;
+  /** Display name per seat index (falls back to "Seat N" when unknown). */
+  seatNames: string[];
   you: SelfView;
   opponents: OpponentView[];
   stockCount: number;
@@ -30,8 +32,9 @@ export interface ClientView {
   matchWinnerSeat: number | null;
 }
 
-export function redactStateFor(state: MatchState, seat: number): ClientView {
+export function redactStateFor(state: MatchState, seat: number, names: (string | null)[] = []): ClientView {
   const round = state.round;
+  const seatNames = Array.from({ length: state.seats }, (_, i) => names[i] || `Seat ${i}`);
   const self = round.players[seat];
   const you: SelfView = {
     seat,
@@ -56,6 +59,7 @@ export function redactStateFor(state: MatchState, seat: number): ClientView {
   const melds: TableMeld[] = round.melds.map((m) => ({ ...m, cards: layoutMeld(m.cards, m.kind) }));
   return {
     seat,
+    seatNames,
     you,
     opponents,
     stockCount: round.stock.length,

@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { getProdDeps } from '../../../../../lib/server/prod-deps';
 import { resolveSeat, redactStateFor } from '../../../../../lib/server';
-import { loadGameState } from '../../../../../lib/db';
+import { loadGameState, listPlayersWithNames } from '../../../../../lib/db';
 import type { MatchState } from '../../../../../lib/kalooki';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,6 +12,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const seat = await resolveSeat(deps.db, id, userId);
   if (seat === null) return new Response('forbidden', { status: 403 });
 
+  // Seat→name map (fixed for the life of the match) so every pushed view carries names.
+  const players = await listPlayersWithNames(deps.db, id);
+  const names: (string | null)[] = [];
+  for (const p of players) names[p.seatIndex] = p.displayName;
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -20,12 +25,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
       // initial catch-up
       const cur = await loadGameState(deps.db, id);
-      if (cur) send(redactStateFor(cur.state, seat));
+      if (cur) send(redactStateFor(cur.state, seat, names));
 
       const off = await deps.pubsub.subscribe('match:' + id, (msg) => {
         if (msg != null && typeof msg === 'object' && 'round' in (msg as Record<string, unknown>)) {
           // full MatchState → always redact per this client's seat
-          send(redactStateFor(msg as MatchState, seat));
+          send(redactStateFor(msg as MatchState, seat, names));
         } else {
           // lobby ping / non-state message (carries no hands)
           send(msg);

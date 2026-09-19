@@ -113,7 +113,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               ● Your turn
             </span>
           ) : (
-            <span className="text-[#c9b48a]">Seat {view.currentTurn}&apos;s turn</span>
+            <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
           )}
         </span>
         <span className="justify-self-end text-[#c9a24b]">Pot {view.pot}</span>
@@ -132,7 +132,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                 .sort((a, b) => a.seat - b.seat)
                 .map((r) => (
                   <tr key={r.seat}>
-                    <td className="pr-6 text-left">Seat {r.seat}{r.you ? ' (you)' : ''}</td>
+                    <td className="pr-6 text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
                     <td className="text-right tabular-nums">{r.score}</td>
                   </tr>
                 ))}
@@ -146,7 +146,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         {view.opponents.map((o) => (
           <OpponentSeat
             key={o.seat}
-            name={`Seat ${o.seat}`}
+            name={view.seatNames[o.seat]}
             handCount={o.handCount}
             score={o.score}
             status={o.status}

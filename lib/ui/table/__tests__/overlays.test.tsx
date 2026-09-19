@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RoundSummary, RebuyPrompt, MatchSummary } from '../overlays';
 
-const view: any = { roundWinnerSeat: 0, goOutType: 'kalooki', pot: 18, seat: 1,
+const view: any = { roundWinnerSeat: 0, goOutType: 'kalooki', pot: 18, seat: 1, seatNames: ['Ruth', 'Sol'],
   you: { seat: 1, score: 12, bits: -2 }, opponents: [{ seat: 0, score: 0, bits: 2 }], matchWinnerSeat: 0 };
 
 describe('overlays', () => {
