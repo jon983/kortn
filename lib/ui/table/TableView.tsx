@@ -84,7 +84,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   }
 
   return (
-    <div className="relative min-h-screen bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
+    <div className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
       <div className="flex items-center justify-between bg-black/40 px-4 py-2 text-xs">
         <span>Round {view.roundNumber} · 40 to open</span>
@@ -116,30 +116,30 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         ))}
       </div>
 
-      {/* center: stock + discard */}
-      <div className="flex justify-center py-4">
+      {/* middle of the table: stock + discard centered, viewer melds beneath */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
         <StockDiscard
           stockCount={view.stockCount}
           discardTop={view.discard[view.discard.length - 1]}
           onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
           onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
         />
-      </div>
 
-      {/* viewer's melds */}
-      <div className="flex flex-wrap justify-center gap-3 px-4">
-        {view.melds
-          .filter((m) => m.ownerSeat === view.seat)
-          .map((m) => (
-            <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
-          ))}
+        {/* viewer's melds */}
+        <div className="flex flex-wrap justify-center gap-3">
+          {view.melds
+            .filter((m) => m.ownerSeat === view.seat)
+            .map((m) => (
+              <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
+            ))}
+        </div>
+        {layoffArmed && (
+          <div className="text-center text-xs italic text-brass">Tap a meld to lay off your selected card</div>
+        )}
       </div>
-      {layoffArmed && (
-        <div className="text-center text-xs italic text-brass">Tap a meld to lay off your selected card</div>
-      )}
 
       {/* viewer's area */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+      <div className="bg-gradient-to-t from-black/60 to-transparent p-3">
         <ActionBar
           view={view}
           selectedCards={selectedCards}
