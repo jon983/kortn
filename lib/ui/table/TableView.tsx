@@ -47,10 +47,15 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     submit({ type: 'draw', source: 'stock' });
   }
 
-  function handleTakeDiscard() {
+  async function handleTakeDiscard() {
     const top = view.discard[view.discard.length - 1];
-    if (top) setObligationId(top.id);
-    submit({ type: 'draw', source: 'discard' });
+    const res = await playAction(matchId, { type: 'draw', source: 'discard' });
+    if (res.ok) {
+      if (top) setObligationId(top.id);
+    } else {
+      setObligationId(null);
+      setToast(res.reason ?? 'illegal move');
+    }
   }
 
   return (
