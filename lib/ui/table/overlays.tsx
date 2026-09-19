@@ -9,10 +9,32 @@ function Scrim({ children }: { children: React.ReactNode }) {
 }
 
 export function RoundSummary({ view, onContinue }: { view: ClientView; onContinue: () => void }) {
+  const rows = [
+    { seat: view.you.seat, score: view.you.score, bits: view.you.bits, you: true },
+    ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, bits: o.bits, you: false })),
+  ].sort((a, b) => a.seat - b.seat);
+  const fmtBits = (n: number) => (n > 0 ? `+${n}` : `${n}`);
   return <Scrim>
     <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Round over</h3>
     <p className="mt-2">Seat {view.roundWinnerSeat} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
-    <p className="mt-1 text-sm text-[#c9b48a]">Pot: {view.pot} bits</p>
+    <table className="mt-4 w-full text-sm">
+      <thead>
+        <tr className="text-[#c9b48a]">
+          <th className="text-left font-normal">Player</th>
+          <th className="text-right font-normal">Points</th>
+          <th className="text-right font-normal">Bits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.seat} className={r.seat === view.roundWinnerSeat ? 'text-brass' : ''}>
+            <td className="text-left">Seat {r.seat}{r.you ? ' (you)' : ''}</td>
+            <td className="text-right tabular-nums">{r.score}</td>
+            <td className="text-right tabular-nums">{fmtBits(r.bits)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
     <button type="button" className="mt-4 rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold" onClick={onContinue}>Continue</button>
   </Scrim>;
 }

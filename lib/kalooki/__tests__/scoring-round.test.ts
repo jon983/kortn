@@ -24,23 +24,25 @@ describe('settleRound', () => {
       drawObligation: null, addedToOpponentThisTurn: false,
       finished: true, winnerSeat: 0, goOutType: 'normal',
     };
-    const m: MatchState = { seats: 2, pot: 8, treasureUsed: false, scores: [0, 0],
+    const m: MatchState = { seats: 2, pot: 8, treasureUsed: false, scores: [0, 0], bits: [0, 0],
       statuses: ['active', 'active'], rebought: [false, false], round, roundNumber: 1,
       finished: false, winnerSeat: null };
     const out = settleRound(m);
     expect(out.scores).toEqual([0, 19]);
-    expect(out.pot).toBe(9); // one loser pays 1
+    expect(out.pot).toBe(8); // pot unchanged — round bits go to the winner, not the pot
+    expect(out.bits).toEqual([1, -1]); // loser pays 1 bit to the winner
   });
 
   it('kalooki charges 2, treasure charges 4', () => {
     const mk = (type: string, pot: number): MatchState => ({
-      seats: 2, pot, treasureUsed: false, scores: [0, 0], statuses: ['active', 'active'],
+      seats: 2, pot, treasureUsed: false, scores: [0, 0], bits: [0, 0], statuses: ['active', 'active'],
       rebought: [false, false], roundNumber: 1, finished: false, winnerSeat: null,
       round: { players: [{ seat: 0, hand: [], hasOpened: true }, { seat: 1, hand: [nat(2, 'clubs')], hasOpened: true }],
         melds: [], stock: [], discard: [], turn: 0, dealerSeat: 1, phase: 'awaitingDraw',
         drawObligation: null, addedToOpponentThisTurn: false, finished: true, winnerSeat: 0, goOutType: type } as any,
     });
-    expect(settleRound(mk('kalooki', 8)).pot).toBe(10);
-    expect(settleRound(mk('treasure', 8)).pot).toBe(12);
+    // pot stays put; the winner (seat 0) collects the bits from the single loser
+    expect(settleRound(mk('kalooki', 8)).bits).toEqual([2, -2]);
+    expect(settleRound(mk('treasure', 8)).bits).toEqual([4, -4]);
   });
 });

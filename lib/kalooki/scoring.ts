@@ -28,14 +28,16 @@ export function settleRound(match: MatchState): MatchState {
   if (!round.finished || round.winnerSeat === null) throw new Error('Round not finished.');
   const cost = BIT_COST[round.goOutType ?? 'normal'];
   const scores = match.scores.slice();
-  let pot = match.pot;
+  const bits = (match.bits ?? new Array(match.seats).fill(0)).slice();
   for (const p of round.players) {
     if (p.seat === round.winnerSeat) continue;
     if (match.statuses[p.seat] !== 'active') continue;
     scores[p.seat] += handScore(p.hand);
-    pot += cost;
+    // Each active loser pays `cost` bits directly to the hand winner (not the pot).
+    bits[p.seat] -= cost;
+    bits[round.winnerSeat] += cost;
   }
-  return { ...match, scores, pot };
+  return { ...match, scores, bits };
 }
 
 export function applyBusts(match: MatchState): MatchState {

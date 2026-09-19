@@ -13,7 +13,7 @@ function fixture(hand: Card[]): MatchState {
     finished: false, winnerSeat: null, goOutType: null,
   };
   return {
-    seats: 2, pot: 8, treasureUsed: false, scores: [0, 0],
+    seats: 2, pot: 8, treasureUsed: false, scores: [0, 0], bits: [0, 0],
     statuses: ['active', 'active'], rebought: [false, false],
     round, roundNumber: 1, finished: false, winnerSeat: null,
   };

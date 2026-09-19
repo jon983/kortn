@@ -20,6 +20,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [order, setOrder] = useState<string[] | null>(null);
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showScores, setShowScores] = useState(false);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3000);
@@ -87,7 +88,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     <div className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
       <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
-        <span className="justify-self-start">Round {view.roundNumber} · 40 to open</span>
+        <span className="flex items-center gap-3 justify-self-start">
+          <span>Round {view.roundNumber} · 40 to open</span>
+          <button
+            type="button"
+            onClick={() => setShowScores((s) => !s)}
+            className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+          >
+            {showScores ? 'Hide scores' : 'Scores'}
+          </button>
+        </span>
         <span className="justify-self-center">
           {isMyTurn(view) ? (
             <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
@@ -99,6 +109,28 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </span>
         <span className="justify-self-end text-[#c9a24b]">Pot {view.pot}</span>
       </div>
+
+      {/* points scoreboard (toggle) */}
+      {showScores && (
+        <div className="absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded-lg border-2 border-brass bg-[#2a1c12] p-3 text-sm shadow-2xl">
+          <div className="mb-1 text-center text-[11px] uppercase tracking-widest text-[#c9b48a]">Points</div>
+          <table className="min-w-[10rem]">
+            <tbody>
+              {[
+                { seat: view.you.seat, score: view.you.score, you: true },
+                ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, you: false })),
+              ]
+                .sort((a, b) => a.seat - b.seat)
+                .map((r) => (
+                  <tr key={r.seat}>
+                    <td className="pr-6 text-left">Seat {r.seat}{r.you ? ' (you)' : ''}</td>
+                    <td className="text-right tabular-nums">{r.score}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* opponents */}
       <div className="flex flex-wrap justify-around p-3">

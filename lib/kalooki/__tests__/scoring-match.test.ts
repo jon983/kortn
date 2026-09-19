@@ -3,7 +3,7 @@ import { applyBusts, rebuy, matchWinner, awardPot } from '../scoring';
 import type { MatchState } from '../state';
 
 const base = (scores: number[], statuses: any[], pot = 12, rebought?: boolean[]): MatchState => ({
-  seats: scores.length, pot, treasureUsed: false, scores, statuses,
+  seats: scores.length, pot, treasureUsed: false, scores, statuses, bits: scores.map(() => 0),
   rebought: rebought ?? scores.map(() => false),
   round: {} as any, roundNumber: 1, finished: false, winnerSeat: null,
 });

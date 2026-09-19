@@ -5,10 +5,10 @@ import {
 } from '../kalooki';
 
 export interface SelfView {
-  seat: number; hand: Card[]; handCount: number; score: number; status: SeatStatus; hasOpened: boolean;
+  seat: number; hand: Card[]; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
 }
 export interface OpponentView {
-  seat: number; handCount: number; score: number; status: SeatStatus; hasOpened: boolean;
+  seat: number; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
 }
 export interface ClientView {
   seat: number;
@@ -36,6 +36,7 @@ export function redactStateFor(state: MatchState, seat: number): ClientView {
     hand: self.hand.slice(),
     handCount: self.hand.length,
     score: state.scores[seat],
+    bits: state.bits?.[seat] ?? 0,
     status: state.statuses[seat],
     hasOpened: self.hasOpened,
   };
@@ -45,6 +46,7 @@ export function redactStateFor(state: MatchState, seat: number): ClientView {
       seat: p.seat,
       handCount: p.hand.length,
       score: state.scores[p.seat],
+      bits: state.bits?.[p.seat] ?? 0,
       status: state.statuses[p.seat],
       hasOpened: p.hasOpened,
     }));
