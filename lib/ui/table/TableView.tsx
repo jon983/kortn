@@ -172,9 +172,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {/* spacer: keeps opponents pinned to the top and the hand to the bottom */}
       <div className="flex-1" />
 
-      {/* Stock/discard + viewer melds are centered in a fixed overlay so nothing
-          below (staged tray, lay-off hint, hand) can reflow or "jerk" them. */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center gap-6 px-4">
+      {/* Stock/discard pinned dead-centre in their own layer — nothing else can
+          reflow or "jerk" them. */}
+      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
         <div className="pointer-events-auto">
           <StockDiscard
             stockCount={view.stockCount}
@@ -183,8 +183,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
           />
         </div>
+      </div>
 
-        {/* viewer's melds */}
+      {/* Viewer's melds in a separate layer just below the piles, growing
+          downward so adding a meld never moves the piles. */}
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 mt-24 flex flex-col items-center gap-2 px-4">
         <div className="pointer-events-auto flex flex-wrap justify-center gap-3">
           {view.melds
             .filter((m) => m.ownerSeat === view.seat)
