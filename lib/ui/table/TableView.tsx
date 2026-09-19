@@ -81,6 +81,23 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     }
   }, [view.you.hand]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Animate an opponent's throw: when the discard pile grows on a turn an
+  // opponent held, fly the discarded card from their seat to the pile.
+  const prevDiscardLen = useRef(view.discard.length);
+  const prevTurn = useRef(view.currentTurn);
+  useEffect(() => {
+    const top = view.discard[view.discard.length - 1];
+    const grew = view.discard.length > prevDiscardLen.current;
+    const discarder = prevTurn.current;
+    if (grew && top && discarder !== view.seat) {
+      const from = rectIn(rootRef.current?.querySelector(`[data-seat="${discarder}"]`) ?? null);
+      const to = rectIn(discardRef.current);
+      startFlight(from, to, <CardFace card={top} />);
+    }
+    prevDiscardLen.current = view.discard.length;
+    prevTurn.current = view.currentTurn;
+  }, [view.discard, view.currentTurn, view.seat]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
     const base = order ? order.filter((id) => byId.has(id)) : sortHand(view.you.hand).map((c) => c.id);
@@ -198,18 +215,19 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {/* opponents */}
       <div className="flex flex-wrap justify-around gap-4 p-3">
         {view.opponents.map((o) => (
-          <OpponentSeat
-            key={o.seat}
-            name={view.seatNames[o.seat]}
-            handCount={o.handCount}
-            score={o.score}
-            status={o.status}
-            hasOpened={o.hasOpened}
-            isTurn={view.currentTurn === o.seat}
-            melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
-            meldsArmed={layoffArmed}
-            onMeldClick={handleLayoff}
-          />
+          <div key={o.seat} data-seat={o.seat}>
+            <OpponentSeat
+              name={view.seatNames[o.seat]}
+              handCount={o.handCount}
+              score={o.score}
+              status={o.status}
+              hasOpened={o.hasOpened}
+              isTurn={view.currentTurn === o.seat}
+              melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
+              meldsArmed={layoffArmed}
+              onMeldClick={handleLayoff}
+            />
+          </div>
         ))}
       </div>
 
