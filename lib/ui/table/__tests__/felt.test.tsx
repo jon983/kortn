@@ -13,13 +13,15 @@ describe('felt pieces', () => {
   it('MeldPile renders all cards of the meld', () => {
     const meld: TableMeld = { id: 'm1', kind: 'run', ownerSeat: 0, cards: [nat(4, 'hearts'), nat(5, 'hearts'), nat(6, 'hearts')] };
     render(<MeldPile meld={meld} />);
-    expect(screen.getByText('4')).toBeInTheDocument();
-    expect(screen.getByText('6')).toBeInTheDocument();
+    // rank appears in each card's corner index/indices
+    expect(screen.getAllByText('4').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('6').length).toBeGreaterThan(0);
   });
-  it('StockDiscard shows the stock count and discard top', () => {
+  it('StockDiscard shows a stock pile and the discard top', () => {
     render(<StockDiscard stockCount={40} discardTop={nat(9, 'diamonds')} />);
-    expect(screen.getByText('40')).toBeInTheDocument();
-    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(screen.getByText(/stock/i)).toBeInTheDocument();
+    expect(screen.getByText(/discard/i)).toBeInTheDocument();
+    expect(screen.getAllByText('9').length).toBeGreaterThan(0); // discard top card
   });
   it('OpponentSeat shows name, count, opened badge, and a mini-fan sized to the count', () => {
     const { container } = render(<OpponentSeat name="Ruth" handCount={5} score={12} status="active" hasOpened isTurn melds={[]} />);

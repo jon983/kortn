@@ -4,9 +4,10 @@ import type { TableMeld } from '../../kalooki';
 import type { ReactElement } from 'react';
 
 export function OpponentSeat({
-  name, handCount, score, status, hasOpened, isTurn, melds,
+  name, handCount, score, status, hasOpened, isTurn, melds, onMeldClick, meldsArmed,
 }: {
-  name: string; handCount: number; score: number; status: string; hasOpened: boolean; isTurn: boolean; melds: TableMeld[];
+  name: string; handCount: number; score: number; status: string; hasOpened: boolean; isTurn: boolean;
+  melds: TableMeld[]; onMeldClick?: (meldId: string) => void; meldsArmed?: boolean;
 }): ReactElement {
   return (
     <div className="w-40 text-center">
@@ -22,7 +23,9 @@ export function OpponentSeat({
       </div>
       <div className="text-[10px] text-[#c9b48a]">{handCount} cards · {score} pts</div>
       <div className="mt-1 flex flex-wrap justify-center gap-1">
-        {melds.map((m) => <MeldPile key={m.id} meld={m} />)}
+        {melds.map((m) => (
+          <MeldPile key={m.id} meld={m} armed={meldsArmed} onClick={onMeldClick ? () => onMeldClick(m.id) : undefined} />
+        ))}
       </div>
     </div>
   );

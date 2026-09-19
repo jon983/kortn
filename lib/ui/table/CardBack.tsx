@@ -1,6 +1,6 @@
 import type { Pack } from '../../kalooki';
 
-const SIZES = { sm: 'w-8 h-11', md: 'w-12 h-16' } as const;
+const SIZES = { sm: 'w-10 h-14', md: 'w-24 h-32' } as const;
 
 export function CardBack({ pack, size = 'md' }: { pack: Pack; size?: 'sm' | 'md' }) {
   const url = `/art/card-back-${pack === 'A' ? 'blue' : 'red'}.png`;

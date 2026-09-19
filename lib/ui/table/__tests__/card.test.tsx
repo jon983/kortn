@@ -14,8 +14,9 @@ describe('Card', () => {
     expect(rankLabel(13 as any)).toBe('K');
     expect(rankLabel(7 as any)).toBe('7');
     render(<Card card={c(14, 'hearts')} />);
-    expect(screen.getByText('A')).toBeInTheDocument();
-    expect(screen.getByText('♥')).toBeInTheDocument();
+    // rank + suit appear in the corner index/indices and the centre pip
+    expect(screen.getAllByText('A').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('♥').length).toBeGreaterThan(0);
   });
   it('marks a joker distinctly', () => {
     render(<Card card={{ id: 'A-joker', kind: 'joker', pack: 'A' } as any} />);

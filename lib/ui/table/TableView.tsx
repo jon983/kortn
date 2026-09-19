@@ -37,10 +37,21 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const trayIncludesObligation = !obligationId || staged.some((g) => g.cards.some((c) => c.id === obligationId));
   const layDownEnabled = staged.length > 0 && canOpen(view, staged) && trayIncludesObligation;
   const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation);
+  // Lay-off is armed once you've opened, it's your turn to act, exactly one card is picked,
+  // and it isn't the just-taken discard (which must start a new meld). Tap a table meld to add it.
+  const layoffArmed =
+    isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened &&
+    selected.length === 1 && !obligationId;
 
   async function submit(action: ServerAction) {
     const res = await playAction(matchId, action);
     if (!res.ok) setToast(res.reason ?? 'illegal move');
+  }
+
+  function handleLayoff(meldId: string) {
+    if (!layoffArmed) return;
+    submit({ type: 'layoff', cardId: selected[0], meldId });
+    setSelected([]);
   }
 
   function handleDrawStock() {
@@ -81,6 +92,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             hasOpened={o.hasOpened}
             isTurn={view.currentTurn === o.seat}
             melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
+            meldsArmed={layoffArmed}
+            onMeldClick={handleLayoff}
           />
         ))}
       </div>
@@ -100,9 +113,12 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         {view.melds
           .filter((m) => m.ownerSeat === view.seat)
           .map((m) => (
-            <MeldPile key={m.id} meld={m} />
+            <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
           ))}
       </div>
+      {layoffArmed && (
+        <div className="text-center text-xs italic text-brass">Tap a meld to lay off your selected card</div>
+      )}
 
       {/* viewer's area */}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3">

@@ -24,9 +24,7 @@ beforeEach(() => { playAction.mockClear(); (globalThis as any).EventSource = cla
 
 describe('TableView', () => {
   it('renders your hand, stock/discard, and submits a draw', async () => {
-    render(<TableView matchId="m1" initial={baseView} />);
-    expect(screen.getByText('40')).toBeInTheDocument();            // stock
-    fireEvent.click(screen.getByRole('button', { name: /draw stock/i }));
+    render(<TableView matchId="m1" initial={baseView} />);    fireEvent.click(screen.getByRole('button', { name: /draw stock/i }));
     expect(playAction).toHaveBeenCalledWith('m1', { type: 'draw', source: 'stock' });
   });
   it('is read-only when not your turn', () => {
