@@ -23,10 +23,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       if (cur) send(redactStateFor(cur.state, seat));
 
       const off = await deps.pubsub.subscribe('match:' + id, (msg) => {
-        // lobby updates are plain objects without a `round`; only redact full states
-        const m = msg as MatchState;
-        if (m && (m as MatchState).round) send(redactStateFor(m, seat));
-        else send(msg);
+        if (msg != null && typeof msg === 'object' && 'round' in (msg as Record<string, unknown>)) {
+          // full MatchState → always redact per this client's seat
+          send(redactStateFor(msg as MatchState, seat));
+        } else {
+          // lobby ping / non-state message (carries no hands)
+          send(msg);
+        }
       });
       // close handling
       _req.signal.addEventListener('abort', async () => {
