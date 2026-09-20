@@ -219,6 +219,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             <OpponentSeat
               name={view.seatNames[o.seat]}
               handCount={o.handCount}
+              handPacks={o.handPacks}
               score={o.score}
               status={o.status}
               hasOpened={o.hasOpened}

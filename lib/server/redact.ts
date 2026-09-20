@@ -1,7 +1,7 @@
 // lib/server/redact.ts
 import {
   layoutMeld,
-  type MatchState, type Card, type TableMeld, type Phase, type GoOutType, type SeatStatus,
+  type MatchState, type Card, type TableMeld, type Phase, type GoOutType, type SeatStatus, type Pack,
 } from '../kalooki';
 
 export interface SelfView {
@@ -13,6 +13,8 @@ export interface SelfView {
 }
 export interface OpponentView {
   seat: number; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
+  /** Pack (card back) of each card in hand order — backs are public, faces are not. */
+  handPacks: Pack[];
 }
 export interface ClientView {
   seat: number;
@@ -56,6 +58,7 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     .map((p) => ({
       seat: p.seat,
       handCount: p.hand.length,
+      handPacks: p.hand.map((c) => c.pack),
       score: state.scores[p.seat],
       bits: state.bits?.[p.seat] ?? 0,
       status: state.statuses[p.seat],
