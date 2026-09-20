@@ -10,3 +10,5 @@ AGENTS.md
 CLAUDE.md
 .next/
 tsconfig.tsbuildinfo
+
+.clerk-sk-live
