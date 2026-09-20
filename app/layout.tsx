@@ -3,7 +3,19 @@ import { ClerkProvider } from '@clerk/nextjs';
 import type { ReactNode } from 'react';
 import { displayFont, bodyFont } from '../lib/ui/fonts';
 
-export const metadata = { title: 'kortn — Kalooki', description: 'Online Kalooki in the front room' };
+export const metadata = {
+  title: 'kortn — Kalooki',
+  description: 'Online Kalooki in the front room',
+  icons: {
+    icon: '/art/favicon.svg',
+    apple: '/art/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'kortn — Kalooki',
+    description: 'Online Kalooki in the front room',
+    images: ['/art/vercel-avatar.png'],
+  },
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
