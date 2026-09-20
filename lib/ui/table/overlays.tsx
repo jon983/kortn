@@ -20,7 +20,12 @@ export function RoundSummary({ view, onReady }: { view: ClientView; onReady: () 
   const youReady = view.readyNext[view.seat];
   return <Scrim wide>
     <h3 className="font-[family-name:var(--font-display)] text-3xl text-brass">Hand over</h3>
-    <p className="mt-3 text-lg">{view.roundWinnerSeat !== null ? view.seatNames[view.roundWinnerSeat] : 'Someone'} went out{view.goOutType ? ` — ${view.goOutType}` : ''}.</p>
+    <p className="mt-3 text-lg">{(() => {
+      const who = view.roundWinnerSeat !== null ? view.seatNames[view.roundWinnerSeat] : 'Someone';
+      if (view.goOutType === 'treasure') return `${who} got Treasure!`;
+      if (view.goOutType === 'kalooki') return `${who} got Kalooki!`;
+      return `${who} went out!`;
+    })()}</p>
     <table className="mt-6 w-full text-base">
       <thead>
         <tr className="border-b border-brass/30 text-sm uppercase tracking-wide text-[#c9b48a]">
