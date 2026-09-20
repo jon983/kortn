@@ -7,7 +7,7 @@ import type { Card } from '../../../kalooki';
 
 const nat = (rank: number, suit: string): Card =>
   ({ id: `A-${suit}-${rank}`, kind: 'natural', rank: rank as any, suit: suit as any, pack: 'A' });
-const view = (over: any = {}) => ({ seat: 0, currentTurn: 0, phase: 'awaitingDiscard', you: { hasOpened: false }, discard: [nat(9, 'diamonds')], ...over });
+const view = (over: any = {}) => ({ seat: 0, currentTurn: 0, phase: 'awaitingDiscard', seatNames: ['Ruth', 'Sol'], you: { hasOpened: false }, discard: [nat(9, 'diamonds')], ...over });
 
 describe('ActionBar', () => {
   it('enables Meld only for a valid selection', () => {

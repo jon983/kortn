@@ -17,7 +17,7 @@ export function ActionBar({
   onReturnDiscard: () => void;
 }) {
   if (!isMyTurn(view)) {
-    return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for seat {view.currentTurn}…</div>;
+    return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for {view.seatNames[view.currentTurn]}…</div>;
   }
   if (view.phase === 'awaitingDraw') {
     return null;
