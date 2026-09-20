@@ -7,42 +7,35 @@ import type { Card } from '../../../kalooki';
 
 const nat = (rank: number, suit: string): Card =>
   ({ id: `A-${suit}-${rank}`, kind: 'natural', rank: rank as any, suit: suit as any, pack: 'A' });
-const view = (over: any = {}) => ({ seat: 0, currentTurn: 0, phase: 'awaitingDiscard', seatNames: ['Ruth', 'Sol'], you: { hasOpened: false }, discard: [nat(9, 'diamonds')], ...over });
+const view = (over: any = {}) => ({
+  seat: 0, currentTurn: 0, phase: 'awaitingDiscard', seatNames: ['Ruth', 'Sol'],
+  you: { hasOpened: false }, discard: [nat(9, 'diamonds')], ...over,
+});
 
-describe('ActionBar', () => {
-  it('enables Meld only for a valid selection', () => {
-    const onStage = vi.fn();
-    render(<ActionBar view={view() as any} selectedCards={[nat(7, 'clubs'), nat(7, 'hearts'), nat(7, 'spades')]}
-      stagedGroups={[]} layDownEnabled={false} discardEnabled={false}
-      onStageMeld={onStage} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
-    expect(screen.getByRole('button', { name: /^meld/i })).toBeEnabled();
-  });
-  it('disables Meld for an invalid selection and shows points-to-open', () => {
-    render(<ActionBar view={view() as any} selectedCards={[nat(3, 'clubs'), nat(3, 'hearts')]}
-      stagedGroups={[{ cards: [nat(3, 'clubs'), nat(3, 'hearts'), nat(3, 'spades')] }]} layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
-    expect(screen.getByRole('button', { name: /^meld/i })).toBeDisabled();
+describe('ActionBar (info strip)', () => {
+  it('shows the laying-down tray with points-to-open', () => {
+    render(<ActionBar view={view() as any}
+      stagedGroups={[{ cards: [nat(3, 'clubs'), nat(3, 'hearts'), nat(3, 'spades')] }]}
+      onClearTray={() => {}} onReturnDiscard={() => {}} />);
+    expect(screen.getByText(/laying down/i)).toBeInTheDocument();
     expect(screen.getByText(/to open/i)).toBeInTheDocument(); // 9 staged, 31 to open
   });
-  it('draw phase prompts tapping the piles', () => {
-    render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any} selectedCards={[]} stagedGroups={[]}
-      layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
-    expect(screen.queryByRole('button', { name: /meld/i })).toBeNull();
-  });
-  it('offers to return the taken discard when you hold an unusable draw obligation', () => {
+  it('offers to return the taken discard when holding an unusable draw obligation', () => {
     const onReturn = vi.fn();
     render(<ActionBar view={view({ you: { hasOpened: false, drawObligationId: 'A-diamonds-9' } }) as any}
-      selectedCards={[]} stagedGroups={[]} layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={onReturn} />);
+      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={onReturn} />);
     const btn = screen.getByRole('button', { name: /put it back/i });
     btn.click();
     expect(onReturn).toHaveBeenCalled();
   });
+  it('renders nothing actionable during the draw phase', () => {
+    const { container } = render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any}
+      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
+  });
   it('shows waiting message when not your turn', () => {
-    render(<ActionBar view={view({ currentTurn: 1 }) as any} selectedCards={[]} stagedGroups={[]}
-      layDownEnabled={false} discardEnabled={false}
-      onStageMeld={() => {}} onLayDown={() => {}} onDiscard={() => {}} onClearTray={() => {}} onReturnDiscard={() => {}} />);
-    expect(screen.getByText(/waiting/i)).toBeInTheDocument();
+    render(<ActionBar view={view({ currentTurn: 1 }) as any}
+      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={() => {}} />);
+    expect(screen.getByText(/waiting for sol/i)).toBeInTheDocument();
   });
 });

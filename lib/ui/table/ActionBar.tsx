@@ -1,20 +1,20 @@
 // lib/ui/table/ActionBar.tsx
 'use client';
 import { Card as CardFace } from './Card';
-import { evaluateMeld, stagedPoints, OPEN_THRESHOLD, isMyTurn } from './legality';
+import { stagedPoints, OPEN_THRESHOLD, isMyTurn } from './legality';
 import type { Card } from '../../kalooki';
 import type { ClientView } from '../../server';
 
-const btn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:opacity-40 disabled:cursor-not-allowed';
-
+/**
+ * Informational strip above the hand: whose turn it is, the lay-off/return
+ * prompt, and the "laying down" tray. The action buttons (Meld / Lay down /
+ * Discard) live in the control column beside the hand, not here.
+ */
 export function ActionBar({
-  view, selectedCards, stagedGroups, layDownEnabled, discardEnabled,
-  onStageMeld, onLayDown, onDiscard, onClearTray, onReturnDiscard,
+  view, stagedGroups, onClearTray, onReturnDiscard,
 }: {
-  view: ClientView; selectedCards: Card[]; stagedGroups: { cards: Card[] }[];
-  layDownEnabled: boolean; discardEnabled: boolean;
-  onStageMeld: () => void; onLayDown: () => void; onDiscard: () => void; onClearTray: () => void;
-  onReturnDiscard: () => void;
+  view: ClientView; stagedGroups: { cards: Card[] }[];
+  onClearTray: () => void; onReturnDiscard: () => void;
 }) {
   if (!isMyTurn(view)) {
     return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for {view.seatNames[view.currentTurn]}…</div>;
@@ -22,7 +22,6 @@ export function ActionBar({
   if (view.phase === 'awaitingDraw') {
     return null;
   }
-  const meldValid = !!evaluateMeld(selectedCards);
   const staged = stagedPoints(stagedGroups);
   const toOpen = Math.max(0, OPEN_THRESHOLD - staged);
   return (
@@ -45,11 +44,6 @@ export function ActionBar({
           <button type="button" className="text-xs underline text-[#c9b48a]" onClick={onClearTray}>clear</button>
         </div>
       )}
-      <div className="flex justify-center gap-3">
-        <button type="button" className={btn} onClick={onStageMeld} disabled={!meldValid}>Meld</button>
-        <button type="button" className={btn} onClick={onLayDown} disabled={!layDownEnabled}>Lay down</button>
-        <button type="button" className={btn} onClick={onDiscard} disabled={!discardEnabled}>Discard</button>
-      </div>
     </div>
   );
 }

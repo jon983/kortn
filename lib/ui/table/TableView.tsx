@@ -16,6 +16,8 @@ import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import type { Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
+const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
+
 export function TableView({ matchId, initial }: { matchId: string; initial: ClientView }) {
   const view = useMatchStream(matchId, initial);
   const [selected, setSelected] = useState<string[]>([]);
@@ -267,53 +269,75 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </div>
         <ActionBar
           view={view}
-          selectedCards={selectedCards}
           stagedGroups={staged}
-          layDownEnabled={layDownEnabled}
-          discardEnabled={discardEnabled}
-          onStageMeld={() => {
-            const e = evaluateMeld(selectedCards);
-            if (e) {
-              setStaged([...staged, { cards: selectedCards }]);
-              setSelected([]);
-            }
-          }}
-          onLayDown={() => {
-            const groups = staged.map((g) => ({
-              kind: evaluateMeld(g.cards)!.kind,
-              cardIds: g.cards.map((c) => c.id),
-            }));
-            submit({ type: 'meld', groups } as Action);
-            setStaged([]);
-            setObligationId(null);
-          }}
-          onDiscard={() => {
-            const id = selected[0];
-            if (id) {
-              // fly the card from its place in the hand to the discard pile
-              const card = handInPlay.find((c) => c.id === id);
-              const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${id}"]`) ?? null);
-              const to = rectIn(discardRef.current);
-              if (card) startFlight(from, to, <CardFace card={card} />);
-              submit({ type: 'discard', cardId: id });
-            }
-            setSelected([]);
-          }}
           onClearTray={() => setStaged([])}
           onReturnDiscard={handleReturnDiscard}
         />
-        <div className="mt-2">
-          <Hand
-            cards={handInPlay}
-            selectedIds={selected}
-            onToggle={(id) =>
-              setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
-            }
-            onReorder={setOrder}
-            onSort={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
-            highlightIds={newIds}
-            hiddenId={flyHiddenId}
-          />
+        <div className="mt-2 flex items-center justify-center gap-3">
+          <div className="min-w-0">
+            <Hand
+              cards={handInPlay}
+              selectedIds={selected}
+              onToggle={(id) =>
+                setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+              }
+              onReorder={setOrder}
+              onSort={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
+              highlightIds={newIds}
+              hiddenId={flyHiddenId}
+            />
+          </div>
+          {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
+            <div className="flex shrink-0 flex-col gap-2">
+              <button
+                type="button"
+                className={ctrlBtn}
+                disabled={!evaluateMeld(selectedCards)}
+                onClick={() => {
+                  if (evaluateMeld(selectedCards)) {
+                    setStaged([...staged, { cards: selectedCards }]);
+                    setSelected([]);
+                  }
+                }}
+              >
+                Meld
+              </button>
+              <button
+                type="button"
+                className={ctrlBtn}
+                disabled={!layDownEnabled}
+                onClick={() => {
+                  const groups = staged.map((g) => ({
+                    kind: evaluateMeld(g.cards)!.kind,
+                    cardIds: g.cards.map((c) => c.id),
+                  }));
+                  submit({ type: 'meld', groups } as Action);
+                  setStaged([]);
+                  setObligationId(null);
+                }}
+              >
+                Lay down
+              </button>
+              <button
+                type="button"
+                className={ctrlBtn}
+                disabled={!discardEnabled}
+                onClick={() => {
+                  const id = selected[0];
+                  if (id) {
+                    const card = handInPlay.find((c) => c.id === id);
+                    const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${id}"]`) ?? null);
+                    const to = rectIn(discardRef.current);
+                    if (card) startFlight(from, to, <CardFace card={card} />);
+                    submit({ type: 'discard', cardId: id });
+                  }
+                  setSelected([]);
+                }}
+              >
+                Discard
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
