@@ -16,12 +16,10 @@ describe('sortHand', () => {
 });
 
 describe('Hand', () => {
-  it('toggles selection on card click and fires onSort', () => {
-    const onToggle = vi.fn(); const onSort = vi.fn();
-    render(<Hand cards={[nat(5, 'hearts')]} selectedIds={[]} onToggle={onToggle} onReorder={() => {}} onSort={onSort} />);
+  it('toggles selection on card click', () => {
+    const onToggle = vi.fn();
+    render(<Hand cards={[nat(5, 'hearts')]} selectedIds={[]} onToggle={onToggle} onReorder={() => {}} />);
     fireEvent.click(screen.getAllByText('5')[0]);
     expect(onToggle).toHaveBeenCalledWith('A-hearts-5');
-    fireEvent.click(screen.getByRole('button', { name: /sort/i }));
-    expect(onSort).toHaveBeenCalled();
   });
 });

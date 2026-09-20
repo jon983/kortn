@@ -282,13 +282,20 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                 setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
               }
               onReorder={setOrder}
-              onSort={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
               highlightIds={newIds}
               hiddenId={flyHiddenId}
             />
           </div>
-          {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
-            <div className="flex shrink-0 flex-col gap-2">
+          <div className="flex shrink-0 flex-col gap-2">
+            <button
+              type="button"
+              className={ctrlBtn}
+              onClick={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
+            >
+              ↕ Sort
+            </button>
+            {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
+              <>
               <button
                 type="button"
                 className={ctrlBtn}
@@ -336,8 +343,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               >
                 Discard
               </button>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
