@@ -231,35 +231,30 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         ))}
       </div>
 
-      {/* spacer: keeps opponents pinned to the top and the hand to the bottom */}
-      <div className="flex-1" />
-
-      {/* Stock/discard pinned dead-centre in their own layer — nothing else can
-          reflow or "jerk" them. */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
-        <div className="pointer-events-auto">
-          <StockDiscard
-            stockCount={view.stockCount}
-            discardTop={view.discard[view.discard.length - 1]}
-            stockRef={stockRef}
-            discardRef={discardRef}
-            onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-            onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
-          />
-        </div>
+      {/* Stock + discard (in normal flow, horizontally centred) */}
+      <div className="mt-2 flex justify-center">
+        <StockDiscard
+          stockCount={view.stockCount}
+          discardTop={view.discard[view.discard.length - 1]}
+          stockRef={stockRef}
+          discardRef={discardRef}
+          onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+          onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+        />
       </div>
 
-      {/* Viewer's melds in a separate layer just below the piles, growing
-          downward so adding a meld never moves the piles. */}
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 z-0 mt-24 flex flex-col items-center gap-2 px-4">
-        <div className="pointer-events-auto flex flex-wrap justify-center gap-3">
-          {view.melds
-            .filter((m) => m.ownerSeat === view.seat)
-            .map((m) => (
-              <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
-            ))}
-        </div>
+      {/* Viewer's melds, below the piles */}
+      <div className="mt-4 flex flex-wrap justify-center gap-3 px-4">
+        {view.melds
+          .filter((m) => m.ownerSeat === view.seat)
+          .map((m) => (
+            <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
+          ))}
       </div>
+
+      {/* spacer: absorbs slack so the hand stays at the bottom and changes in the
+          action area below never push the piles/melds above it (no reflow/jerk) */}
+      <div className="min-h-4 flex-1" />
 
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3">
