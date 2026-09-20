@@ -258,6 +258,12 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
 
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3">
+        <div className="mb-1 text-center">
+          <div className={`text-sm font-bold ${isMyTurn(view) ? 'text-brass' : 'text-bone'}`}>
+            {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
+          </div>
+          <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
+        </div>
         <ActionBar
           view={view}
           selectedCards={selectedCards}
