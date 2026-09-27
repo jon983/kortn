@@ -39,6 +39,10 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   // When laying a joker onto a run that could take it at either end, hold the
   // pending lay-off until the player picks an end.
   const [pendingLayoff, setPendingLayoff] = useState<{ meldId: string } | null>(null);
+  // Deal animation: card-backs fly from the stock out to each seat on a new hand.
+  const [dealing, setDealing] = useState(false);
+  const prevRound = useRef(view.roundNumber);
+  const dealTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
@@ -167,6 +171,73 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     if (flyHiddenId && !view.you.hand.some((c) => c.id === flyHiddenId)) setFlyHiddenId(null);
   }, [view.you.hand, flyHiddenId]);
 
+  // Deal animation: when a new hand is dealt, fly card-backs from the stock to
+  // each seat, round-robin, pacing ~13 cards over ~4s, then reveal the hands.
+  useEffect(() => {
+    if (view.roundNumber === prevRound.current) return;
+    prevRound.current = view.roundNumber;
+    if (view.phase !== 'awaitingDraw') return; // only a fresh deal
+    const root = rootRef.current;
+    const source = centerIn(stockRef.current);
+    if (!root || !source) return;
+
+    const seatCount = view.seatNames.length;
+    const targets: ({ x: number; y: number } | null)[] = [];
+    for (let s = 0; s < seatCount; s++) {
+      const el = s === view.seat
+        ? root.querySelector('[data-hand]')
+        : root.querySelector(`[data-seat="${s}"]`);
+      targets[s] = centerIn(el);
+    }
+
+    dealTimers.current.forEach(clearTimeout);
+    dealTimers.current = [];
+    setDealing(true);
+    const STEP = Math.max(55, Math.round(4000 / (13 * seatCount)));
+    const DUR = 420;
+    let i = 0;
+    for (let round = 0; round < 13; round++) {
+      for (let s = 0; s < seatCount; s++) {
+        const t = targets[s];
+        if (!t) continue;
+        const pack = (round + s) % 2 === 0 ? 'A' : 'B';
+        dealTimers.current.push(setTimeout(() => startFlight(source, t, <CardBack pack={pack} />), i * STEP));
+        i++;
+      }
+    }
+    dealTimers.current.push(setTimeout(() => setDealing(false), i * STEP + DUR));
+    return () => { dealTimers.current.forEach(clearTimeout); dealTimers.current = []; };
+  }, [view.roundNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animate an opponent's draw: when a seat's hand grows by one, fly a back from
+  // the stock (or the taken card's face from the discard) to their seat.
+  const prevOppCounts = useRef<Map<number, number>>(new Map(view.opponents.map((o) => [o.seat, o.handCount])));
+  const prevStockCount = useRef(view.stockCount);
+  const prevDrawDiscardTop = useRef(view.discard[view.discard.length - 1]);
+  const prevRoundForDraw = useRef(view.roundNumber);
+  useEffect(() => {
+    const root = rootRef.current;
+    const freshDeal = view.roundNumber !== prevRoundForDraw.current;
+    if (!freshDeal && root && !dealing) {
+      for (const o of view.opponents) {
+        const prev = prevOppCounts.current.get(o.seat);
+        if (prev != null && o.handCount === prev + 1) {
+          const to = rectIn(root.querySelector(`[data-seat="${o.seat}"]`));
+          if (prevStockCount.current > view.stockCount) {
+            const pack = o.handPacks?.[o.handPacks.length - 1] ?? 'A';
+            startFlight(rectIn(stockRef.current), to, <CardBack pack={pack} />);
+          } else if (prevDrawDiscardTop.current) {
+            startFlight(rectIn(discardRef.current), to, <CardFace card={prevDrawDiscardTop.current} />);
+          }
+        }
+      }
+    }
+    prevOppCounts.current = new Map(view.opponents.map((o) => [o.seat, o.handCount]));
+    prevStockCount.current = view.stockCount;
+    prevDrawDiscardTop.current = view.discard[view.discard.length - 1];
+    prevRoundForDraw.current = view.roundNumber;
+  }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
     const base = order ? order.filter((id) => byId.has(id)) : sortHand(view.you.hand).map((c) => c.id);
@@ -271,6 +342,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         flashMeldIds={flashMelds}
         onMeldClick={onMeldTap}
         meldOrientation={orientation}
+        hideCards={dealing}
       />
     </div>
   );
@@ -376,8 +448,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               discardTop={discardHold ?? view.discard[view.discard.length - 1]}
               stockRef={stockRef}
               discardRef={discardRef}
-              onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-              onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+              onDrawStock={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+              onTakeDiscard={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
             />
             <div className="flex flex-wrap justify-center gap-3 px-4">
               {view.melds
@@ -411,7 +483,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           </div>
         )}
         <div className="mt-2 flex items-stretch justify-center gap-3">
-          <div className="min-w-0" data-hand>
+          <div className={`min-w-0 transition-opacity ${dealing ? 'opacity-0' : ''}`} data-hand>
             <Hand
               cards={handInPlay}
               selectedIds={selected}
