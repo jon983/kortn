@@ -1,6 +1,6 @@
 // lib/db/schema.ts
 import {
-  pgTable, pgEnum, text, integer, boolean, timestamp, uuid, jsonb, primaryKey, uniqueIndex,
+  pgTable, pgEnum, text, integer, boolean, timestamp, uuid, jsonb, primaryKey, uniqueIndex, index,
 } from 'drizzle-orm/pg-core';
 import type { MatchState, Action } from '../kalooki';
 
@@ -78,4 +78,15 @@ export const moves = pgTable('moves', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
   uqSeq: uniqueIndex('moves_match_sequence_uq').on(t.matchId, t.sequence),
+}));
+
+export const chatMessages = pgTable('chat_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  matchId: uuid('match_id').notNull().references(() => matches.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id),
+  seatIndex: integer('seat_index').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  byMatch: index('chat_messages_match_created_idx').on(t.matchId, t.createdAt),
 }));

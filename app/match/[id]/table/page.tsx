@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { db, getMatch } from '../../../../lib/db';
 import { resolveSeat, redactStateFor } from '../../../../lib/server';
-import { loadGameState, listPlayersWithNames } from '../../../../lib/db';
+import { loadGameState, listPlayersWithNames, listRecentChatMessages } from '../../../../lib/db';
 import { TableView } from '../../../../lib/ui/table/TableView';
 
 export default async function TablePage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,5 +20,12 @@ export default async function TablePage({ params }: { params: Promise<{ id: stri
   const names: (string | null)[] = [];
   for (const p of players) names[p.seatIndex] = p.displayName;
   const initial = redactStateFor(loaded.state, seat, names);
-  return <TableView matchId={id} initial={initial} />;
+  const chatRows = await listRecentChatMessages(db, id);
+  const initialChat = chatRows.map((m) => ({
+    id: m.id,
+    seat: m.seatIndex,
+    body: m.body,
+    at: (m.createdAt instanceof Date ? m.createdAt : new Date(m.createdAt)).toISOString(),
+  }));
+  return <TableView matchId={id} initial={initial} initialChat={initialChat} />;
 }

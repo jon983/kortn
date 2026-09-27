@@ -2,7 +2,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useMatchStream } from './useMatchStream';
+import { useMatchStream, type ChatLine } from './useMatchStream';
+import { ChatPanel } from './ChatPanel';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
@@ -19,8 +20,8 @@ import type { ClientView, ServerAction } from '../../server';
 
 const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
 
-export function TableView({ matchId, initial }: { matchId: string; initial: ClientView }) {
-  const view = useMatchStream(matchId, initial);
+export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
+  const { view, chat } = useMatchStream(matchId, initial, initialChat);
   const [selected, setSelected] = useState<string[]>([]);
   const [staged, setStaged] = useState<{ cards: import('../../kalooki').Card[] }[]>([]);
   const [order, setOrder] = useState<string[] | null>(null);
@@ -592,6 +593,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           }}
         />
       ))}
+
+      {/* in-game chat */}
+      <ChatPanel matchId={matchId} chat={chat} seatNames={view.seatNames} mySeat={view.seat} />
 
       {/* toast */}
       {toast && (
