@@ -1,6 +1,7 @@
 // lib/ui/table/TableView.tsx
 'use client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useMatchStream } from './useMatchStream';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
@@ -9,7 +10,7 @@ import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
 import { CardBack } from './CardBack';
-import { ActionBar } from './ActionBar';
+import { ActionBar, LayingDownTray } from './ActionBar';
 import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
@@ -26,12 +27,21 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showScores, setShowScores] = useState(false);
+  // While a discard is in flight/settling, keep showing the thrown card on the pile
+  // so the previous top never flashes back before the server state catches up.
+  const [discardHold, setDiscardHold] = useState<import('../../kalooki').Card | null>(null);
+  const pendingDiscard = useRef<import('../../kalooki').Card | null>(null);
+  // Melds that just appeared/grew — pulse them so everyone sees what was laid down.
+  const [flashMelds, setFlashMelds] = useState<string[]>([]);
+  // Melds the local player just changed — their fly animation is launched
+  // explicitly (from the actual card), so the meld-diff effect skips flying them.
+  const suppressMeldFly = useRef<Set<string>>(new Set());
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
   const stockRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDivElement>(null);
-  const [flight, setFlight] = useState<import('./FlyingCard').Flight | null>(null);
+  const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
   const drawSource = useRef<'stock' | 'discard' | null>(null);
@@ -43,11 +53,21 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     const b = root.getBoundingClientRect();
     return { x: r.left - b.left, y: r.top - b.top };
   }
+  // Centre of an element (relative to the table). Used as the origin for
+  // seat-sourced flights so cards fly from the middle of a player's area (their
+  // hand) rather than its top-left corner.
+  function centerIn(el: Element | null): { x: number; y: number } | null {
+    const root = rootRef.current;
+    if (!el || !root) return null;
+    const r = el.getBoundingClientRect();
+    const b = root.getBoundingClientRect();
+    return { x: r.left - b.left + r.width / 2 - 48, y: r.top - b.top + r.height / 2 - 64 };
+  }
 
   function startFlight(from: { x: number; y: number } | null, to: { x: number; y: number } | null, node: ReactNode) {
     if (!from || !to) return;
     flightKey.current += 1;
-    setFlight({ key: flightKey.current, from, to, node });
+    setFlights((f) => [...f, { key: flightKey.current, from, to, node }]);
   }
   useEffect(() => {
     if (!toast) return;
@@ -74,7 +94,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         const card = view.you.hand.find((c) => c.id === landedId);
         if (from && to) {
           setFlyHiddenId(landedId);
-          startFlight(from, to, src === 'stock' ? <CardBack pack="A" /> : (card ? <CardFace card={card} /> : null));
+          startFlight(from, to, src === 'stock' ? <CardBack pack={card?.pack ?? 'A'} /> : (card ? <CardFace card={card} /> : null));
           setTimeout(() => setFlyHiddenId(null), 340);
         }
       }
@@ -100,6 +120,50 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     prevTurn.current = view.currentTurn;
   }, [view.discard, view.currentTurn, view.seat]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Animate melds being laid down / added to, for every seat. When a meld first
+  // appears (or grows), fly a card from its owner's seat to the meld and pulse it.
+  const prevMelds = useRef<Map<string, number>>(
+    new Map(view.melds.map((m) => [m.id, m.cards.length])),
+  );
+  useEffect(() => {
+    const changed = view.melds.filter((m) => (prevMelds.current.get(m.id) ?? 0) < m.cards.length);
+    prevMelds.current = new Map(view.melds.map((m) => [m.id, m.cards.length]));
+    if (!changed.length) return;
+    // pulse the changed melds briefly
+    setFlashMelds(changed.map((m) => m.id));
+    const clear = setTimeout(() => setFlashMelds([]), 1500);
+    // Fly a representative card from the acting player's seat to the meld. The
+    // card comes from whoever is taking the turn (the actor), not the meld's
+    // owner — a lay-off onto someone else's meld still flies from your hand.
+    const actorSeat = view.currentTurn;
+    for (const m of changed) {
+      // Local changes animate from the real card in handleLayoff/lay-down; skip.
+      if (suppressMeldFly.current.has(m.id)) { suppressMeldFly.current.delete(m.id); continue; }
+      const fromEl =
+        actorSeat === view.seat
+          ? rootRef.current?.querySelector('[data-hand]')
+          : rootRef.current?.querySelector(`[data-seat="${actorSeat}"]`);
+      const from = centerIn(fromEl ?? null);
+      const to = rectIn(rootRef.current?.querySelector(`[data-meld="${m.id}"]`) ?? null);
+      const face = m.cards[m.cards.length - 1] ?? m.cards[0];
+      if (from && to && face) startFlight(from, to, <CardFace card={face} />);
+    }
+    return () => clearTimeout(clear);
+  }, [view.melds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Release the discard hold once the real pile top is the card we threw.
+  useEffect(() => {
+    if (!discardHold) return;
+    if (view.discard[view.discard.length - 1]?.id === discardHold.id) setDiscardHold(null);
+  }, [view.discard, discardHold]);
+
+  // A discarded card is hidden in the hand while it flies; once the server has
+  // removed it from the hand for real, drop the hide. (Draw hides a card that
+  // stays in hand, so this only fires for the discard case.)
+  useEffect(() => {
+    if (flyHiddenId && !view.you.hand.some((c) => c.id === flyHiddenId)) setFlyHiddenId(null);
+  }, [view.you.hand, flyHiddenId]);
+
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
     const base = order ? order.filter((id) => byId.has(id)) : sortHand(view.you.hand).map((c) => c.id);
@@ -113,23 +177,71 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const selectedCards = handInPlay.filter((c) => selected.includes(c.id));
   const trayIncludesObligation = !obligationId || staged.some((g) => g.cards.some((c) => c.id === obligationId));
   const layDownEnabled = staged.length > 0 && canOpen(view, staged) && trayIncludesObligation;
-  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation);
-  // Lay-off is armed once you've opened, it's your turn to act, exactly one card is picked,
-  // and it isn't the just-taken discard (which must start a new meld). Tap a table meld to add it.
+  // A joker reclaimed this turn still in hand must be re-placed before discarding.
+  const jokerOwed = (view.you.jokerObligationIds ?? []).some((id) => handInPlay.some((c) => c.id === id));
+  // While melds are staged in the tray you must lay them down (or clear) first —
+  // it's lay down or discard, never both in one turn.
+  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation) && !jokerOwed && staged.length === 0;
+
+  // Seat the opponents around the table. 2p → top; 3p → left/right; 4p → left/top/right.
+  // Side seats stack their melds vertically so they read as a column down each edge.
+  const seating = useMemo(() => {
+    const o = [...view.opponents].sort((a, b) => a.seat - b.seat);
+    const n = o.length;
+    if (n <= 1) return { left: [], top: o, right: [] };
+    if (n === 2) return { left: [o[0]], top: [], right: [o[1]] };
+    if (n === 3) return { left: [o[0]], top: [o[1]], right: [o[2]] };
+    const k = Math.floor(n / 2);
+    return { left: o.slice(0, k), top: o.slice(k, n - k), right: o.slice(n - k) };
+  }, [view.opponents]);
+  // Lay-off is armed once you've opened, it's your turn to act, one or more cards
+  // are picked, and none is the just-taken discard (which must start a new meld).
+  // Tap a table meld to add them; if the meld holds a joker and the cards complete
+  // it, the joker is reclaimed automatically (engine decides). Tap a table meld to add.
   const layoffArmed =
     isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened &&
-    selected.length === 1 && !obligationId;
+    selected.length >= 1 && !obligationId;
 
   async function submit(action: ServerAction) {
     const res = await playAction(matchId, action);
     if (!res.ok) setToast(res.reason ?? 'illegal move');
   }
 
-  function handleLayoff(meldId: string) {
+  const armedMeldIds = layoffArmed ? view.melds.map((m) => m.id) : [];
+
+  function onMeldTap(meldId: string) {
     if (!layoffArmed) return;
-    submit({ type: 'layoff', cardId: selected[0], meldId });
+    const ids = [...selected];
+    // Fly each laid-off card from its spot in the hand to the meld it's joining.
+    const to = rectIn(rootRef.current?.querySelector(`[data-meld="${meldId}"]`) ?? null);
+    for (const cardId of ids) {
+      const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${cardId}"]`) ?? null);
+      const card = handInPlay.find((c) => c.id === cardId);
+      if (from && to && card) startFlight(from, to, <CardFace card={card} />);
+    }
+    suppressMeldFly.current.add(meldId);
+    submit({ type: 'layoff', cardIds: ids, meldId });
     setSelected([]);
   }
+
+  const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column') => (
+    <div key={o.seat} data-seat={o.seat}>
+      <OpponentSeat
+        name={view.seatNames[o.seat]}
+        handCount={o.handCount}
+        handPacks={o.handPacks}
+        score={o.score}
+        status={o.status}
+        hasOpened={o.hasOpened}
+        isTurn={view.currentTurn === o.seat}
+        melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
+        armedMeldIds={armedMeldIds}
+        flashMeldIds={flashMelds}
+        onMeldClick={onMeldTap}
+        meldOrientation={orientation}
+      />
+    </div>
+  );
 
   function handleDrawStock() {
     drawSource.current = 'stock';
@@ -162,8 +274,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   return (
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
-      <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
+      <div className="sticky top-0 z-30 grid grid-cols-3 items-center bg-black/60 px-4 py-2 text-xs backdrop-blur">
         <span className="flex items-center gap-3 justify-self-start">
+          <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
+            ⌂ Lobby
+          </Link>
           <span>Round {view.roundNumber}</span>
           <button
             type="button"
@@ -214,67 +329,65 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </div>
       )}
 
-      {/* opponents */}
-      <div className="flex flex-wrap justify-around gap-4 p-3">
-        {view.opponents.map((o) => (
-          <div key={o.seat} data-seat={o.seat}>
-            <OpponentSeat
-              name={view.seatNames[o.seat]}
-              handCount={o.handCount}
-              handPacks={o.handPacks}
-              score={o.score}
-              status={o.status}
-              hasOpened={o.hasOpened}
-              isTurn={view.currentTurn === o.seat}
-              melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
-              meldsArmed={layoffArmed}
-              onMeldClick={handleLayoff}
-            />
+      {/* Main table area: side seats flank a centre column (top seats + piles). */}
+      <div className="flex min-h-0 flex-1">
+        {seating.left.length > 0 && (
+          <div className="flex flex-col justify-center gap-6 p-2">
+            {seating.left.map((o) => renderOpp(o, 'column'))}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Stock + discard (in normal flow, horizontally centred) */}
-      <div className="mt-2 flex justify-center">
-        <StockDiscard
-          stockCount={view.stockCount}
-          discardTop={view.discard[view.discard.length - 1]}
-          stockRef={stockRef}
-          discardRef={discardRef}
-          onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-          onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
-        />
-      </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {seating.top.length > 0 && (
+            <div className="flex flex-wrap justify-around gap-4 p-3">
+              {seating.top.map((o) => renderOpp(o, 'row'))}
+            </div>
+          )}
 
-      {/* Viewer's melds, below the piles */}
-      <div className="mt-4 flex flex-wrap justify-center gap-3 px-4">
-        {view.melds
-          .filter((m) => m.ownerSeat === view.seat)
-          .map((m) => (
-            <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
-          ))}
-      </div>
+          {/* stock + discard sit vertically centred; the viewer's melds just below */}
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
+            <StockDiscard
+              stockCount={view.stockCount}
+              stockPack={view.stockTopPack}
+              discardTop={discardHold ?? view.discard[view.discard.length - 1]}
+              stockRef={stockRef}
+              discardRef={discardRef}
+              onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+              onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+            />
+            <div className="flex flex-wrap justify-center gap-3 px-4">
+              {view.melds
+                .filter((m) => m.ownerSeat === view.seat)
+                .map((m) => (
+                  <MeldPile key={m.id} meld={m} armed={armedMeldIds.includes(m.id)} flash={flashMelds.includes(m.id)} onClick={() => onMeldTap(m.id)} />
+                ))}
+            </div>
+          </div>
+        </div>
 
-      {/* spacer: absorbs slack so the hand stays at the bottom and changes in the
-          action area below never push the piles/melds above it (no reflow/jerk) */}
-      <div className="min-h-4 flex-1" />
+        {seating.right.length > 0 && (
+          <div className="flex flex-col justify-center gap-6 p-2">
+            {seating.right.map((o) => renderOpp(o, 'column'))}
+          </div>
+        )}
+      </div>
 
       {/* viewer's area */}
-      <div className="bg-gradient-to-t from-black/60 to-transparent p-3">
+      <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 text-center">
           <div className={`text-sm font-bold ${isMyTurn(view) ? 'text-brass' : 'text-bone'}`}>
             {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
           </div>
           <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
-        <ActionBar
-          view={view}
-          stagedGroups={staged}
-          onClearTray={() => setStaged([])}
-          onReturnDiscard={handleReturnDiscard}
-        />
+        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} />
+        {jokerOwed && (
+          <div className="mt-1 text-center text-[11px] text-amber-300">
+            The reclaimed joker must go into a new meld before you discard.
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-center gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0" data-hand>
             <Hand
               cards={handInPlay}
               selectedIds={selected}
@@ -335,7 +448,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                     const card = handInPlay.find((c) => c.id === id);
                     const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${id}"]`) ?? null);
                     const to = rectIn(discardRef.current);
-                    if (card) startFlight(from, to, <CardFace card={card} />);
+                    if (card) {
+                      pendingDiscard.current = card;
+                      setFlyHiddenId(id); // hide it in the hand while it flies
+                      startFlight(from, to, <CardFace card={card} />);
+                    }
                     submit({ type: 'discard', cardId: id });
                   }
                   setSelected([]);
@@ -349,8 +466,30 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </div>
       </div>
 
-      {/* draw / discard fly animation */}
-      {flight && <FlyingCard flight={flight} onDone={() => setFlight(null)} />}
+      {/* Laying-down tray: floats over the upper-centre of the table so staging
+          melds never pushes the hand below the fold. */}
+      {staged.length > 0 && (
+        <div className="pointer-events-none absolute left-1/2 top-[32%] z-30 flex w-full max-w-[90vw] -translate-x-1/2 justify-center">
+          <div className="pointer-events-auto">
+            <LayingDownTray view={view} stagedGroups={staged} onClearTray={() => setStaged([])} />
+          </div>
+        </div>
+      )}
+
+      {/* draw / discard / lay-off fly animations */}
+      {flights.map((fl) => (
+        <FlyingCard
+          key={fl.key}
+          flight={fl}
+          onDone={() => {
+            setFlights((f) => f.filter((x) => x.key !== fl.key));
+            if (pendingDiscard.current) {
+              setDiscardHold(pendingDiscard.current);
+              pendingDiscard.current = null;
+            }
+          }}
+        />
+      ))}
 
       {/* toast */}
       {toast && (
@@ -363,6 +502,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {view.matchFinished && <MatchSummary view={view} />}
       {!view.matchFinished && view.roundFinished && view.you.status === 'busted' && !view.you.rebought ? (
         <RebuyPrompt
+          canRebuy={
+            [view.you.score, ...view.opponents.map((o) => o.score)].filter((s) => s <= 150).length >= 2
+          }
           onRebuy={() => submit({ type: 'rebuy' })}
           onDecline={() => submit({ type: 'decline' })}
         />

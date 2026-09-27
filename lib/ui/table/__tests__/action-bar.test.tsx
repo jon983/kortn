@@ -2,7 +2,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ActionBar } from '../ActionBar';
+import { ActionBar, LayingDownTray } from '../ActionBar';
 import type { Card } from '../../../kalooki';
 
 const nat = (rank: number, suit: string): Card =>
@@ -14,28 +14,27 @@ const view = (over: any = {}) => ({
 
 describe('ActionBar (info strip)', () => {
   it('shows the laying-down tray with points-to-open', () => {
-    render(<ActionBar view={view() as any}
+    render(<LayingDownTray view={view() as any}
       stagedGroups={[{ cards: [nat(3, 'clubs'), nat(3, 'hearts'), nat(3, 'spades')] }]}
-      onClearTray={() => {}} onReturnDiscard={() => {}} />);
+      onClearTray={() => {}} />);
     expect(screen.getByText(/laying down/i)).toBeInTheDocument();
     expect(screen.getByText(/to open/i)).toBeInTheDocument(); // 9 staged, 31 to open
   });
   it('offers to return the taken discard when holding an unusable draw obligation', () => {
     const onReturn = vi.fn();
     render(<ActionBar view={view({ you: { hasOpened: false, drawObligationId: 'A-diamonds-9' } }) as any}
-      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={onReturn} />);
+      onReturnDiscard={onReturn} />);
     const btn = screen.getByRole('button', { name: /put it back/i });
     btn.click();
     expect(onReturn).toHaveBeenCalled();
   });
   it('renders nothing actionable during the draw phase', () => {
     const { container } = render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any}
-      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={() => {}} />);
+      onReturnDiscard={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
-  it('shows waiting message when not your turn', () => {
-    render(<ActionBar view={view({ currentTurn: 1 }) as any}
-      stagedGroups={[]} onClearTray={() => {}} onReturnDiscard={() => {}} />);
-    expect(screen.getByText(/waiting for sol/i)).toBeInTheDocument();
+  it('renders nothing when not your turn (turn shown in the top bar)', () => {
+    const { container } = render(<ActionBar view={view({ currentTurn: 1 }) as any} onReturnDiscard={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
