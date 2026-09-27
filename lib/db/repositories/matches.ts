@@ -48,6 +48,11 @@ export async function updateMatchStatus(db: DB, id: string, status: Match['statu
   await db.update(matches).set({ status }).where(eq(matches.id, id));
 }
 
+export async function deleteMatch(db: DB, id: string): Promise<void> {
+  // matchPlayers / gameStates / rounds / moves all cascade on match delete.
+  await db.delete(matches).where(eq(matches.id, id));
+}
+
 export async function setMatchWinner(db: DB, id: string, winnerUserId: string): Promise<void> {
   await db
     .update(matches)

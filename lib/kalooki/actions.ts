@@ -10,7 +10,7 @@ export type Action =
   | { type: 'returnDiscard' }
   | { type: 'drawJokerDecline' }
   | { type: 'meld'; groups: { kind: MeldKind; cardIds: string[] }[] }
-  | { type: 'layoff'; cardIds: string[]; meldId: string }
+  | { type: 'layoff'; cardIds: string[]; meldId: string; end?: 'low' | 'high' }
   | { type: 'replaceJoker'; meldId: string; jokerId: string; naturalCardId: string; newMeld: { kind: MeldKind; cardIds: string[] } }
   | { type: 'discard'; cardId: string };
 
@@ -166,7 +166,7 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (!meld) return { ok: false, reason: 'Meld not found.' };
 
       const arrange = (cs: Card[]): Card[] | null =>
-        meld.kind === 'set' ? (validateSet(cs).valid ? cs : null) : arrangeRun(cs);
+        meld.kind === 'set' ? (validateSet(cs).valid ? cs : null) : arrangeRun(cs, action.end);
 
       // 1) Prefer joker retrieval: drop one joker and see if the naturals complete
       //    the meld (run needs exactly the one missing card; a set must reach four).

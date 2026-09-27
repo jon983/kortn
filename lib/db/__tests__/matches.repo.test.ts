@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { makeTestDb } from './helpers';
 import { upsertUser } from '../repositories/users';
 import {
-  createMatch, getMatch, getMatchByJoinCode, listMatchesForUser, updateMatchStatus, setMatchWinner,
+  createMatch, getMatch, getMatchByJoinCode, listMatchesForUser, updateMatchStatus, setMatchWinner, deleteMatch,
 } from '../repositories/matches';
 import { matchPlayers } from '../schema';
 
@@ -36,6 +37,19 @@ describe('matches repository', () => {
     expect(forU2.map((x) => x.id)).toContain(m.id);
     const forU1 = await listMatchesForUser(db as any, 'u1');
     expect(forU1).toHaveLength(0); // u1 created it but holds no seat
+  });
+
+  it('deletes a match and cascades its players', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    await upsertUser(db as any, { id: 'u1', displayName: 'A' });
+    const m = await createMatch(db as any, { createdBy: 'u1', seats: 2, joinCode: 'CODE4' });
+    await db.insert(matchPlayers).values({ matchId: m.id, userId: 'u1', seatIndex: 0 });
+
+    await deleteMatch(db as any, m.id);
+    expect(await getMatch(db as any, m.id)).toBeNull();
+    const seats = await db.select().from(matchPlayers).where(eq(matchPlayers.matchId, m.id));
+    expect(seats).toHaveLength(0);
   });
 
   it('updates status and sets the winner', async () => {

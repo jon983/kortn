@@ -39,9 +39,10 @@ export function ActionBar({
  * table (not in the hand's flow) so staging melds never pushes the hand off-screen.
  */
 export function LayingDownTray({
-  view, stagedGroups, onClearTray,
+  view, stagedGroups, onClearTray, onLayDown, canLayDown = false,
 }: {
   view: ClientView; stagedGroups: { cards: Card[] }[]; onClearTray: () => void;
+  onLayDown?: () => void; canLayDown?: boolean;
 }) {
   if (stagedGroups.length === 0) return null;
   const staged = stagedPoints(stagedGroups);
@@ -54,6 +55,14 @@ export function LayingDownTray({
       ))}
       <span className="text-xs text-brass">{staged} pts{!view.you.hasOpened && toOpen > 0 ? ` · ${toOpen} to open` : ''}</span>
       <button type="button" className="text-xs underline text-[#c9b48a]" onClick={onClearTray}>clear</button>
+      <button
+        type="button"
+        className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-1.5 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={!canLayDown}
+        onClick={onLayDown}
+      >
+        Lay down ▸
+      </button>
     </div>
   );
 }
