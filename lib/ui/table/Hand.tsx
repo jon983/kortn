@@ -1,5 +1,5 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Card as CardFace } from './Card';
 import type { Card } from '../../kalooki';
 
@@ -17,48 +17,75 @@ export function sortHand(cards: Card[]): Card[] {
   });
 }
 
+const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag (vs a tap)
+
 export function Hand({
   cards, selectedIds, onToggle, onReorder, highlightIds = [], hiddenId = null,
 }: {
   cards: Card[]; selectedIds: string[]; onToggle: (id: string) => void;
   onReorder: (ids: string[]) => void; highlightIds?: string[]; hiddenId?: string | null;
 }) {
-  const dragId = useRef<string | null>(null);
-  function onDrop(targetId: string) {
-    const from = dragId.current; dragId.current = null;
-    if (!from || from === targetId) return;
-    const ids = cards.map((c) => c.id);
-    const fromIdx = ids.indexOf(from), toIdx = ids.indexOf(targetId);
-    ids.splice(toIdx, 0, ids.splice(fromIdx, 1)[0]);
-    onReorder(ids);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Pointer-based drag so it works with touch (iPad) as well as mouse; HTML5
+  // drag-and-drop doesn't fire for touch on iOS Safari.
+  const drag = useRef<{ id: string; startX: number; active: boolean; pointerId: number } | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // New order with the dragged card inserted where the pointer sits.
+  function orderForPointer(clientX: number): string[] {
+    const el = containerRef.current;
+    const d = drag.current;
+    if (!el || !d) return cards.map((c) => c.id);
+    const others = Array.from(el.querySelectorAll<HTMLElement>('[data-card-id]'))
+      .filter((n) => n.dataset.cardId !== d.id);
+    let insert = others.length;
+    for (let i = 0; i < others.length; i++) {
+      const r = others[i].getBoundingClientRect();
+      if (clientX < r.left + r.width / 2) { insert = i; break; }
+    }
+    const rest = cards.map((c) => c.id).filter((x) => x !== d.id);
+    rest.splice(insert, 0, d.id);
+    return rest;
   }
+
+  function onPointerDown(e: React.PointerEvent, id: string) {
+    drag.current = { id, startX: e.clientX, active: false, pointerId: e.pointerId };
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    if (!d.active) {
+      if (Math.abs(e.clientX - d.startX) < DRAG_THRESHOLD) return;
+      d.active = true;
+      setActiveId(d.id);
+      (e.currentTarget as HTMLElement).setPointerCapture?.(d.pointerId);
+    }
+    e.preventDefault();
+    onReorder(orderForPointer(e.clientX));
+  }
+
+  function endDrag(id: string) {
+    const d = drag.current;
+    drag.current = null;
+    setActiveId(null);
+    if (d && !d.active) onToggle(id); // no meaningful movement → treat as a tap
+  }
+
   return (
-    <div className="flex justify-center overflow-x-auto pt-6 pb-2">
+    <div ref={containerRef} className="flex justify-center overflow-x-auto pt-6 pb-2">
       {cards.map((c) => (
-        <div key={c.id} data-card-id={c.id}
-          className={`-ml-10 shrink-0 first:ml-0 ${hiddenId === c.id ? 'opacity-0' : ''}`} draggable
-          onDragStart={(e) => {
-            dragId.current = c.id;
-            // The cards overlap (negative margin), so the live node's drag image
-            // still rasterises the neighbour painted on top of its right edge.
-            // Snapshot an off-screen clone instead — isolated, so the ghost is a
-            // single clean card with nothing tagging along.
-            const card = e.currentTarget.firstElementChild as HTMLElement | null;
-            if (card) {
-              const clone = card.cloneNode(true) as HTMLElement;
-              clone.style.margin = '0';
-              clone.style.position = 'fixed';
-              clone.style.top = '-9999px';
-              clone.style.left = '-9999px';
-              clone.style.pointerEvents = 'none';
-              document.body.appendChild(clone);
-              e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, clone.offsetHeight / 2);
-              setTimeout(() => clone.remove(), 0);
-            }
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={() => onDrop(c.id)}>
-          <CardFace card={c} selected={selectedIds.includes(c.id)} highlight={highlightIds.includes(c.id)} onClick={() => onToggle(c.id)} />
+        <div
+          key={c.id}
+          data-card-id={c.id}
+          style={{ touchAction: 'none' }}
+          className={`-ml-10 shrink-0 first:ml-0 ${hiddenId === c.id ? 'opacity-0' : ''} ${activeId === c.id ? 'z-20 scale-105' : ''}`}
+          onPointerDown={(e) => onPointerDown(e, c.id)}
+          onPointerMove={onPointerMove}
+          onPointerUp={() => endDrag(c.id)}
+          onPointerCancel={() => endDrag(c.id)}
+        >
+          <CardFace card={c} selected={selectedIds.includes(c.id)} highlight={highlightIds.includes(c.id)} />
         </div>
       ))}
     </div>
