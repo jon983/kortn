@@ -312,13 +312,6 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             ⌂ Kitchen
           </Link>
           <span>Round {view.roundNumber}</span>
-          <button
-            type="button"
-            onClick={() => setShowScores((s) => !s)}
-            className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
-          >
-            {showScores ? 'Hide scores' : 'Scores'}
-          </button>
         </span>
         <span className="justify-self-center">
           {isMyTurn(view) ? (
@@ -329,7 +322,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
           )}
         </span>
-        <span className="justify-self-end text-[#c9a24b]">Pot {view.pot}</span>
+        <span className="flex items-center gap-3 justify-self-end">
+          <button
+            type="button"
+            onClick={() => setShowScores((s) => !s)}
+            className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+          >
+            {showScores ? 'Hide scores' : 'Scores'}
+          </button>
+          <span className="text-[#c9a24b]">Pot {view.pot}</span>
+        </span>
       </div>
 
       {/* scoreboard (toggle) */}
