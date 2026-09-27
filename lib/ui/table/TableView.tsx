@@ -51,7 +51,6 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
-  const drawSource = useRef<'stock' | 'discard' | null>(null);
 
   function rectIn(el: Element | null): { x: number; y: number } | null {
     const root = rootRef.current;
@@ -90,25 +89,19 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     const added = current.filter((id) => !prevHandIds.current.has(id));
     prevHandIds.current = new Set(current);
     if (added.length) {
+      // The draw flight is launched immediately on click (see handleDraw*), so
+      // here we only flag the newly-arrived card(s) so they're easy to spot.
       setNewIds(added);
-      // Fly the drawn card from its pile into the hand.
-      const src = drawSource.current;
-      drawSource.current = null;
-      const landedId = added[added.length - 1];
-      if (src) {
-        const from = rectIn(src === 'stock' ? stockRef.current : discardRef.current);
-        const to = rectIn(rootRef.current?.querySelector(`[data-card-id="${landedId}"]`) ?? null);
-        const card = view.you.hand.find((c) => c.id === landedId);
-        if (from && to) {
-          setFlyHiddenId(landedId);
-          startFlight(from, to, src === 'stock' ? <CardBack pack={card?.pack ?? 'A'} /> : (card ? <CardFace card={card} /> : null));
-          setTimeout(() => setFlyHiddenId(null), 340);
-        }
-      }
       const t = setTimeout(() => setNewIds([]), 4000);
       return () => clearTimeout(t);
     }
   }, [view.you.hand]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fly a drawn card from a pile straight into the hand area, immediately on
+  // click — no waiting for the server round-trip.
+  function flyDrawToHand(from: { x: number; y: number } | null, node: ReactNode) {
+    startFlight(from, centerIn(rootRef.current?.querySelector('[data-hand]') ?? null), node);
+  }
 
   // Animate an opponent's throw: when the discard pile grows on a turn an
   // opponent held, fly the discarded card from their seat to the pile.
@@ -348,18 +341,17 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   );
 
   function handleDrawStock() {
-    drawSource.current = 'stock';
+    flyDrawToHand(rectIn(stockRef.current), <CardBack pack={view.stockTopPack ?? 'A'} />);
     submit({ type: 'draw', source: 'stock' });
   }
 
   async function handleTakeDiscard() {
     const top = view.discard[view.discard.length - 1];
-    drawSource.current = 'discard';
+    if (top) flyDrawToHand(rectIn(discardRef.current), <CardFace card={top} />);
     const res = await playAction(matchId, { type: 'draw', source: 'discard' });
     if (res.ok) {
       if (top) setObligationId(top.id);
     } else {
-      drawSource.current = null;
       setObligationId(null);
       setToast(res.reason ?? 'illegal move');
     }
@@ -369,9 +361,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   async function handleReturnDiscard() {
     const res = await playAction(matchId, { type: 'returnDiscard' });
     if (!res.ok) { setToast(res.reason ?? 'illegal move'); return; }
-    drawSource.current = 'stock';
     setObligationId(null);
     setSelected([]);
+    flyDrawToHand(rectIn(stockRef.current), <CardBack pack={view.stockTopPack ?? 'A'} />);
     await playAction(matchId, { type: 'draw', source: 'stock' });
   }
 
