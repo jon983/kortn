@@ -420,7 +420,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             The reclaimed joker must go into a new meld before you discard.
           </div>
         )}
-        <div className="mt-2 flex items-center justify-center gap-3">
+        <div className="mt-2 flex items-stretch justify-center gap-3">
           <div className="min-w-0" data-hand>
             <Hand
               cards={handInPlay}
@@ -433,8 +433,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               hiddenId={flyHiddenId}
             />
           </div>
-          {/* Fixed to the card height so the three buttons fit alongside a card. */}
-          <div className="flex h-32 shrink-0 flex-col justify-between">
+          {/* Match the hand's height/padding (pt-6 pb-2) so the three buttons span
+              exactly the card zone and align top-and-bottom with the cards. */}
+          <div className="flex shrink-0 flex-col justify-between pt-6 pb-2">
             <button
               type="button"
               className={ctrlBtn}
