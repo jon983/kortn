@@ -29,7 +29,8 @@ describe('TableView', () => {
   });
   it('is read-only when not your turn', () => {
     render(<TableView matchId="m1" initial={{ ...baseView, currentTurn: 1 }} />);
-    expect(screen.getByText(/waiting/i)).toBeInTheDocument();
+    // Whose turn it is shows in the top bar; the draw affordance is not offered.
+    expect(screen.getByText(/sol.*turn/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /draw stock/i })).toBeNull();
   });
 });

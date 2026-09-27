@@ -33,8 +33,8 @@ describe('ActionBar (info strip)', () => {
       onReturnDiscard={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
-  it('shows waiting message when not your turn', () => {
-    render(<ActionBar view={view({ currentTurn: 1 }) as any} onReturnDiscard={() => {}} />);
-    expect(screen.getByText(/waiting for sol/i)).toBeInTheDocument();
+  it('renders nothing when not your turn (turn shown in the top bar)', () => {
+    const { container } = render(<ActionBar view={view({ currentTurn: 1 }) as any} onReturnDiscard={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

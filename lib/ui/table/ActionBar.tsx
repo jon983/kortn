@@ -15,10 +15,9 @@ export function ActionBar({
 }: {
   view: ClientView; onReturnDiscard: () => void;
 }) {
-  if (!isMyTurn(view)) {
-    return <div className="text-center text-sm italic text-[#c9b48a]">Waiting for {view.seatNames[view.currentTurn]}…</div>;
-  }
-  if (view.phase === 'awaitingDraw') {
+  // Whose turn it is already shows in the top bar; render nothing here when it's
+  // not your turn (or before you've drawn) so the hand never shifts.
+  if (!isMyTurn(view) || view.phase === 'awaitingDraw') {
     return null;
   }
   return (

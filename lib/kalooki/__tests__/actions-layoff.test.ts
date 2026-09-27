@@ -22,7 +22,7 @@ function fixtureWithMeld(): MatchState {
 describe('layoff', () => {
   it('extends a run with a valid card', () => {
     const m = fixtureWithMeld();
-    const r = applyAction(m, 0, { type: 'layoff', cardId: 'A-hearts-7', meldId: 'm1-0' }, () => 0.5);
+    const r = applyAction(m, 0, { type: 'layoff', cardIds: ['A-hearts-7'], meldId: 'm1-0' }, () => 0.5);
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.match.round.melds[0].cards).toHaveLength(4);
@@ -33,7 +33,7 @@ describe('layoff', () => {
   it('rejects layoff before opening', () => {
     const m = fixtureWithMeld();
     m.round.players[0].hasOpened = false;
-    const r = applyAction(m, 0, { type: 'layoff', cardId: 'A-hearts-7', meldId: 'm1-0' }, () => 0.5);
+    const r = applyAction(m, 0, { type: 'layoff', cardIds: ['A-hearts-7'], meldId: 'm1-0' }, () => 0.5);
     expect(r.ok).toBe(false);
   });
 });

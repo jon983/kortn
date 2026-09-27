@@ -36,15 +36,12 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   // Melds the local player just changed — their fly animation is launched
   // explicitly (from the actual card), so the meld-diff effect skips flying them.
   const suppressMeldFly = useRef<Set<string>>(new Set());
-  // "Take joker" mode: tapping a joker-bearing meld reclaims its joker using the
-  // selected natural card(s), instead of laying off.
-  const [jokerMode, setJokerMode] = useState(false);
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
   const stockRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDivElement>(null);
-  const [flight, setFlight] = useState<import('./FlyingCard').Flight | null>(null);
+  const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
   const drawSource = useRef<'stock' | 'discard' | null>(null);
@@ -56,11 +53,21 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     const b = root.getBoundingClientRect();
     return { x: r.left - b.left, y: r.top - b.top };
   }
+  // Centre of an element (relative to the table). Used as the origin for
+  // seat-sourced flights so cards fly from the middle of a player's area (their
+  // hand) rather than its top-left corner.
+  function centerIn(el: Element | null): { x: number; y: number } | null {
+    const root = rootRef.current;
+    if (!el || !root) return null;
+    const r = el.getBoundingClientRect();
+    const b = root.getBoundingClientRect();
+    return { x: r.left - b.left + r.width / 2 - 48, y: r.top - b.top + r.height / 2 - 64 };
+  }
 
   function startFlight(from: { x: number; y: number } | null, to: { x: number; y: number } | null, node: ReactNode) {
     if (!from || !to) return;
     flightKey.current += 1;
-    setFlight({ key: flightKey.current, from, to, node });
+    setFlights((f) => [...f, { key: flightKey.current, from, to, node }]);
   }
   useEffect(() => {
     if (!toast) return;
@@ -134,9 +141,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       if (suppressMeldFly.current.has(m.id)) { suppressMeldFly.current.delete(m.id); continue; }
       const fromEl =
         actorSeat === view.seat
-          ? rootRef.current?.querySelector('[data-you-seat]')
+          ? rootRef.current?.querySelector('[data-hand]')
           : rootRef.current?.querySelector(`[data-seat="${actorSeat}"]`);
-      const from = rectIn(fromEl ?? null);
+      const from = centerIn(fromEl ?? null);
       const to = rectIn(rootRef.current?.querySelector(`[data-meld="${m.id}"]`) ?? null);
       const face = m.cards[m.cards.length - 1] ?? m.cards[0];
       if (from && to && face) startFlight(from, to, <CardFace card={face} />);
@@ -149,6 +156,13 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     if (!discardHold) return;
     if (view.discard[view.discard.length - 1]?.id === discardHold.id) setDiscardHold(null);
   }, [view.discard, discardHold]);
+
+  // A discarded card is hidden in the hand while it flies; once the server has
+  // removed it from the hand for real, drop the hide. (Draw hides a card that
+  // stays in hand, so this only fires for the discard case.)
+  useEffect(() => {
+    if (flyHiddenId && !view.you.hand.some((c) => c.id === flyHiddenId)) setFlyHiddenId(null);
+  }, [view.you.hand, flyHiddenId]);
 
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
@@ -165,15 +179,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const layDownEnabled = staged.length > 0 && canOpen(view, staged) && trayIncludesObligation;
   // A joker reclaimed this turn still in hand must be re-placed before discarding.
   const jokerOwed = (view.you.jokerObligationIds ?? []).some((id) => handInPlay.some((c) => c.id === id));
-  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation) && !jokerOwed;
-
-  // Melds on the table that hold a joker (candidates for retrieval).
-  const meldsWithJoker = useMemo(
-    () => new Set(view.melds.filter((m) => m.cards.some((c) => c.kind === 'joker')).map((m) => m.id)),
-    [view.melds],
-  );
-  const canRetrieveJoker =
-    isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened && meldsWithJoker.size > 0;
+  // While melds are staged in the tray you must lay them down (or clear) first —
+  // it's lay down or discard, never both in one turn.
+  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation) && !jokerOwed && staged.length === 0;
 
   // Seat the opponents around the table. 2p → top; 3p → left/right; 4p → left/top/right.
   // Side seats stack their melds vertically so they read as a column down each edge.
@@ -186,52 +194,34 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     const k = Math.floor(n / 2);
     return { left: o.slice(0, k), top: o.slice(k, n - k), right: o.slice(n - k) };
   }, [view.opponents]);
-  // Lay-off is armed once you've opened, it's your turn to act, exactly one card is picked,
-  // and it isn't the just-taken discard (which must start a new meld). Tap a table meld to add it.
+  // Lay-off is armed once you've opened, it's your turn to act, one or more cards
+  // are picked, and none is the just-taken discard (which must start a new meld).
+  // Tap a table meld to add them; if the meld holds a joker and the cards complete
+  // it, the joker is reclaimed automatically (engine decides). Tap a table meld to add.
   const layoffArmed =
     isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened &&
-    selected.length === 1 && !obligationId;
+    selected.length >= 1 && !obligationId;
 
   async function submit(action: ServerAction) {
     const res = await playAction(matchId, action);
     if (!res.ok) setToast(res.reason ?? 'illegal move');
   }
 
-  const jokerActive = jokerMode && canRetrieveJoker;
-  const armedMeldIds = jokerActive
-    ? [...meldsWithJoker]
-    : layoffArmed
-      ? view.melds.map((m) => m.id)
-      : [];
-
-  function handleLayoff(meldId: string) {
-    if (!layoffArmed) return;
-    const cardId = selected[0];
-    // Fly the actual card from its spot in the hand to the meld it's joining.
-    const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${cardId}"]`) ?? null);
-    const to = rectIn(rootRef.current?.querySelector(`[data-meld="${meldId}"]`) ?? null);
-    const card = handInPlay.find((c) => c.id === cardId);
-    if (from && to && card) {
-      suppressMeldFly.current.add(meldId);
-      startFlight(from, to, <CardFace card={card} />);
-    }
-    submit({ type: 'layoff', cardId, meldId });
-    setSelected([]);
-  }
-
-  function handleRetrieveJoker(meldId: string) {
-    const meld = view.melds.find((m) => m.id === meldId);
-    const jk = meld?.cards.find((c) => c.kind === 'joker');
-    if (!meld || !jk) { setToast('No joker in that meld.'); return; }
-    if (selected.length === 0) { setToast('Pick the card(s) that replace the joker first.'); return; }
-    submit({ type: 'retrieveJoker', meldId, jokerId: jk.id, naturalCardIds: selected });
-    setSelected([]);
-    setJokerMode(false);
-  }
+  const armedMeldIds = layoffArmed ? view.melds.map((m) => m.id) : [];
 
   function onMeldTap(meldId: string) {
-    if (jokerActive) handleRetrieveJoker(meldId);
-    else handleLayoff(meldId);
+    if (!layoffArmed) return;
+    const ids = [...selected];
+    // Fly each laid-off card from its spot in the hand to the meld it's joining.
+    const to = rectIn(rootRef.current?.querySelector(`[data-meld="${meldId}"]`) ?? null);
+    for (const cardId of ids) {
+      const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${cardId}"]`) ?? null);
+      const card = handInPlay.find((c) => c.id === cardId);
+      if (from && to && card) startFlight(from, to, <CardFace card={card} />);
+    }
+    suppressMeldFly.current.add(meldId);
+    submit({ type: 'layoff', cardIds: ids, meldId });
+    setSelected([]);
   }
 
   const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column') => (
@@ -391,18 +381,13 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} />
-        {jokerActive && (
-          <div className="mt-1 text-center text-[11px] text-brass">
-            Select the natural {'–'} one for a run, two (missing suits) for a set {'–'} then tap the meld with the joker.
-          </div>
-        )}
-        {jokerOwed && !jokerActive && (
+        {jokerOwed && (
           <div className="mt-1 text-center text-[11px] text-amber-300">
             The reclaimed joker must go into a new meld before you discard.
           </div>
         )}
         <div className="mt-2 flex items-center justify-center gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0" data-hand>
             <Hand
               cards={handInPlay}
               selectedIds={selected}
@@ -424,15 +409,6 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             </button>
             {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
               <>
-              {canRetrieveJoker && (
-                <button
-                  type="button"
-                  className={`${ctrlBtn} ${jokerActive ? '!border-brass !bg-[linear-gradient(180deg,#8a6a2f,#5a4320)] ring-2 ring-brass' : ''}`}
-                  onClick={() => setJokerMode((v) => !v)}
-                >
-                  {jokerActive ? '★ Tap the meld…' : '★ Take joker'}
-                </button>
-              )}
               <button
                 type="button"
                 className={ctrlBtn}
@@ -474,6 +450,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                     const to = rectIn(discardRef.current);
                     if (card) {
                       pendingDiscard.current = card;
+                      setFlyHiddenId(id); // hide it in the hand while it flies
                       startFlight(from, to, <CardFace card={card} />);
                     }
                     submit({ type: 'discard', cardId: id });
@@ -499,19 +476,20 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </div>
       )}
 
-      {/* draw / discard fly animation */}
-      {flight && (
+      {/* draw / discard / lay-off fly animations */}
+      {flights.map((fl) => (
         <FlyingCard
-          flight={flight}
+          key={fl.key}
+          flight={fl}
           onDone={() => {
-            setFlight(null);
+            setFlights((f) => f.filter((x) => x.key !== fl.key));
             if (pendingDiscard.current) {
               setDiscardHold(pendingDiscard.current);
               pendingDiscard.current = null;
             }
           }}
         />
-      )}
+      ))}
 
       {/* toast */}
       {toast && (
