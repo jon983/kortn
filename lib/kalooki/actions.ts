@@ -146,6 +146,8 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (!player.hasOpened) return { ok: false, reason: 'You must open before laying off.' };
       if (round.drawObligation && round.drawObligation.id === action.cardId)
         return { ok: false, reason: 'A card taken from the discard must go into a new meld.' };
+      if (round.jokerObligation?.includes(action.cardId))
+        return { ok: false, reason: 'A reclaimed joker must be used in a new meld, not laid off.' };
       const card = player.hand.find((c) => c.id === action.cardId);
       if (!card) return { ok: false, reason: 'Card not in hand.' };
       const meld = round.melds.find((m) => m.id === action.meldId);
@@ -265,7 +267,7 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (!card) return { ok: false, reason: 'Card not in hand.' };
       // A joker reclaimed this turn must be re-placed (melded or laid off) first.
       if (round.jokerObligation?.some((id) => player.hand.some((c) => c.id === id))) {
-        return { ok: false, reason: 'A reclaimed joker must be melded or laid off this turn.' };
+        return { ok: false, reason: 'A reclaimed joker must be used in a new meld this turn.' };
       }
 
       const next = cloneRound(round);

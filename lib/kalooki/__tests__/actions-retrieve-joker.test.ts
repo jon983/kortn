@@ -69,6 +69,16 @@ describe('retrieveJoker (run)', () => {
     const r2 = applyAction(r1.match, 0, { type: 'discard', cardId: 'A-spades-8' }, () => 0.5);
     expect(r2.ok).toBe(false);
   });
+
+  it('forbids laying the reclaimed joker off onto an existing meld', () => {
+    const m = runFixture([nat(5, 'hearts'), nat(8, 'spades')]);
+    const r1 = applyAction(m, 0, { type: 'retrieveJoker', meldId: 'm1-0', jokerId: 'A-joker', naturalCardIds: ['A-hearts-5'] }, () => 0.5);
+    expect(r1.ok).toBe(true);
+    if (!r1.ok) return;
+    // m1-0 is now 4h-5h-6h; a joker would otherwise extend it, but it must go in a new meld.
+    const r2 = applyAction(r1.match, 0, { type: 'layoff', cardId: 'A-joker', meldId: 'm1-0' }, () => 0.5);
+    expect(r2.ok).toBe(false);
+  });
 });
 
 describe('retrieveJoker (set)', () => {

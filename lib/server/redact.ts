@@ -9,7 +9,7 @@ export interface SelfView {
   seat: number; hand: Card[]; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
   /** If you took the discard this turn and haven't melded it yet, its card id — else null. */
   drawObligationId: string | null;
-  /** Jokers you reclaimed this turn that still sit in your hand and must be re-placed before you discard. */
+  /** Jokers you reclaimed this turn that still sit in your hand and must go into a new meld before you discard. */
   jokerObligationIds: string[];
   /** Whether you've resolved a bust (rebought or declined). */
   rebought: boolean;

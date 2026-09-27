@@ -359,7 +359,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         )}
         {jokerOwed && !jokerActive && (
           <div className="mt-1 text-center text-[11px] text-amber-300">
-            Place the reclaimed joker (meld or lay it off) before you discard.
+            The reclaimed joker must go into a new meld before you discard.
           </div>
         )}
         <div className="mt-2 flex items-center justify-center gap-3">
