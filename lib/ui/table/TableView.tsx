@@ -33,6 +33,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const pendingDiscard = useRef<import('../../kalooki').Card | null>(null);
   // Melds that just appeared/grew — pulse them so everyone sees what was laid down.
   const [flashMelds, setFlashMelds] = useState<string[]>([]);
+  // Melds the local player just changed — their fly animation is launched
+  // explicitly (from the actual card), so the meld-diff effect skips flying them.
+  const suppressMeldFly = useRef<Set<string>>(new Set());
   // "Take joker" mode: tapping a joker-bearing meld reclaims its joker using the
   // selected natural card(s), instead of laying off.
   const [jokerMode, setJokerMode] = useState(false);
@@ -122,12 +125,17 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     // pulse the changed melds briefly
     setFlashMelds(changed.map((m) => m.id));
     const clear = setTimeout(() => setFlashMelds([]), 1500);
-    // fly a representative card from each owner's seat to the meld pile
+    // Fly a representative card from the acting player's seat to the meld. The
+    // card comes from whoever is taking the turn (the actor), not the meld's
+    // owner — a lay-off onto someone else's meld still flies from your hand.
+    const actorSeat = view.currentTurn;
     for (const m of changed) {
+      // Local changes animate from the real card in handleLayoff/lay-down; skip.
+      if (suppressMeldFly.current.has(m.id)) { suppressMeldFly.current.delete(m.id); continue; }
       const fromEl =
-        m.ownerSeat === view.seat
+        actorSeat === view.seat
           ? rootRef.current?.querySelector('[data-you-seat]')
-          : rootRef.current?.querySelector(`[data-seat="${m.ownerSeat}"]`);
+          : rootRef.current?.querySelector(`[data-seat="${actorSeat}"]`);
       const from = rectIn(fromEl ?? null);
       const to = rectIn(rootRef.current?.querySelector(`[data-meld="${m.id}"]`) ?? null);
       const face = m.cards[m.cards.length - 1] ?? m.cards[0];
@@ -198,7 +206,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
 
   function handleLayoff(meldId: string) {
     if (!layoffArmed) return;
-    submit({ type: 'layoff', cardId: selected[0], meldId });
+    const cardId = selected[0];
+    // Fly the actual card from its spot in the hand to the meld it's joining.
+    const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${cardId}"]`) ?? null);
+    const to = rectIn(rootRef.current?.querySelector(`[data-meld="${meldId}"]`) ?? null);
+    const card = handInPlay.find((c) => c.id === cardId);
+    if (from && to && card) {
+      suppressMeldFly.current.add(meldId);
+      startFlight(from, to, <CardFace card={card} />);
+    }
+    submit({ type: 'layoff', cardId, meldId });
     setSelected([]);
   }
 

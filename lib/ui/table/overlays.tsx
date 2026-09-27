@@ -30,7 +30,7 @@ export function ScorePad({ view }: { view: ClientView }) {
           <tr className="text-[#c9b48a]">
             <th className="px-2 py-1 text-left font-normal" rowSpan={2}>Hand</th>
             {seats.map((s) => (
-              <th key={s.seat} colSpan={4} className="border-l border-brass/20 px-2 py-1 text-center font-bold text-bone">{s.name}</th>
+              <th key={s.seat} colSpan={3} className="border-l border-brass/20 px-2 py-1 text-center font-bold text-bone">{s.name}</th>
             ))}
           </tr>
           <tr className="text-[10px] uppercase tracking-wide text-[#c9b48a]">
@@ -39,14 +39,13 @@ export function ScorePad({ view }: { view: ClientView }) {
                 <th className="border-l border-brass/20 px-1.5 py-0.5 font-normal">Pts</th>
                 <th className="px-1.5 py-0.5 font-normal">Tot</th>
                 <th className="px-1.5 py-0.5 font-normal">Bits</th>
-                <th className="px-1.5 py-0.5 font-normal">Tot</th>
               </Fragment>
             ))}
           </tr>
         </thead>
         <tbody>
           {history.length === 0 && (
-            <tr><td colSpan={1 + seats.length * 4} className="px-2 py-3 text-center text-[#c9b48a]">First hand — no history yet.</td></tr>
+            <tr><td colSpan={1 + seats.length * 3} className="px-2 py-3 text-center text-[#c9b48a]">First hand — no history yet.</td></tr>
           )}
           {history.map((h) => (
             <tr key={h.roundNumber} className="border-t border-white/5">
@@ -59,7 +58,6 @@ export function ScorePad({ view }: { view: ClientView }) {
                   <td className={`border-l border-brass/20 px-1.5 py-1 ${seat === h.winnerSeat ? 'font-bold text-brass' : ''}`}>{h.handPoints[seat]}</td>
                   <td className="px-1.5 py-1">{h.scores[seat]}</td>
                   <td className="px-1.5 py-1">{fmt(h.handBits[seat])}</td>
-                  <td className="px-1.5 py-1">{fmt(h.bits[seat])}</td>
                 </Fragment>
               ))}
             </tr>
@@ -70,7 +68,6 @@ export function ScorePad({ view }: { view: ClientView }) {
               <Fragment key={s.seat}>
                 <td className="border-l border-brass/20 px-1.5 py-1 text-[#c9b48a]">·</td>
                 <td className="px-1.5 py-1">{s.score}</td>
-                <td className="px-1.5 py-1 text-[#c9b48a]">·</td>
                 <td className="px-1.5 py-1">{fmt(s.bits)}</td>
               </Fragment>
             ))}
