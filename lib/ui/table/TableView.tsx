@@ -12,7 +12,7 @@ import { Card as CardFace } from './Card';
 import { CardBack } from './CardBack';
 import { ActionBar, LayingDownTray } from './ActionBar';
 import { FlyingCard } from './FlyingCard';
-import { RoundSummary, RebuyPrompt, MatchSummary } from './overlays';
+import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
@@ -334,32 +334,22 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </span>
       </div>
 
-      {/* scoreboard (toggle) */}
+      {/* full scorecard (toggle) */}
       {showScores && (
-        <div className="absolute left-1/2 top-12 z-20 -translate-x-1/2 rounded-lg border-2 border-brass bg-[#2a1c12] p-4 text-sm shadow-2xl">
-          <table className="min-w-[14rem]">
-            <thead>
-              <tr className="border-b border-brass/30 text-[11px] uppercase tracking-widest text-[#c9b48a]">
-                <th className="pb-1 text-left font-normal">Player</th>
-                <th className="pb-1 pl-6 text-right font-normal">Points</th>
-                <th className="pb-1 pl-4 text-right font-normal">Bits</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { seat: view.you.seat, score: view.you.score, bits: view.you.bits, you: true },
-                ...view.opponents.map((o) => ({ seat: o.seat, score: o.score, bits: o.bits, you: false })),
-              ]
-                .sort((a, b) => a.seat - b.seat)
-                .map((r) => (
-                  <tr key={r.seat}>
-                    <td className="py-0.5 text-left">{view.seatNames[r.seat]}{r.you ? ' (you)' : ''}</td>
-                    <td className="py-0.5 pl-6 text-right tabular-nums">{r.score}</td>
-                    <td className="py-0.5 pl-4 text-right tabular-nums">{r.bits > 0 ? `+${r.bits}` : r.bits}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-6" onClick={() => setShowScores(false)}>
+          <div className="w-full max-w-3xl rounded-xl border-2 border-brass bg-[#2a1c12] p-6 text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Scorecard</h3>
+              <button
+                type="button"
+                onClick={() => setShowScores(false)}
+                className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+              >
+                Close
+              </button>
+            </div>
+            <ScorePad view={view} />
+          </div>
         </div>
       )}
 
@@ -420,7 +410,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             The reclaimed joker must go into a new meld before you discard.
           </div>
         )}
-        <div className="mt-2 flex items-center justify-center gap-3">
+        <div className="mt-2 flex items-stretch justify-center gap-3">
           <div className="min-w-0" data-hand>
             <Hand
               cards={handInPlay}
@@ -433,8 +423,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               hiddenId={flyHiddenId}
             />
           </div>
-          {/* Fixed to the card height so the three buttons fit alongside a card. */}
-          <div className="flex h-32 shrink-0 flex-col justify-between">
+          {/* Match the hand's height/padding (pt-6 pb-2) so the three buttons span
+              exactly the card zone and align top-and-bottom with the cards. */}
+          <div className="flex shrink-0 flex-col justify-between pt-6 pb-2">
             <button
               type="button"
               className={ctrlBtn}
