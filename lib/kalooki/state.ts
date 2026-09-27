@@ -19,6 +19,8 @@ export interface RoundState {
   dealerSeat: number;
   phase: Phase;
   drawObligation: Card | null;
+  /** Jokers reclaimed from a table meld this turn that must be re-placed before discarding. */
+  jokerObligation?: string[];
   addedToOpponentThisTurn: boolean;
   finished: boolean;
   winnerSeat: number | null;

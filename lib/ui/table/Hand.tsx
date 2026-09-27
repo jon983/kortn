@@ -39,10 +39,22 @@ export function Hand({
           className={`-ml-10 shrink-0 first:ml-0 ${hiddenId === c.id ? 'opacity-0' : ''}`} draggable
           onDragStart={(e) => {
             dragId.current = c.id;
-            // Snapshot only the card itself; the card element is the inner
-            // node so the overlapping neighbour isn't captured in the ghost.
+            // The cards overlap (negative margin), so the live node's drag image
+            // still rasterises the neighbour painted on top of its right edge.
+            // Snapshot an off-screen clone instead — isolated, so the ghost is a
+            // single clean card with nothing tagging along.
             const card = e.currentTarget.firstElementChild as HTMLElement | null;
-            if (card) e.dataTransfer.setDragImage(card, card.offsetWidth / 2, card.offsetHeight / 2);
+            if (card) {
+              const clone = card.cloneNode(true) as HTMLElement;
+              clone.style.margin = '0';
+              clone.style.position = 'fixed';
+              clone.style.top = '-9999px';
+              clone.style.left = '-9999px';
+              clone.style.pointerEvents = 'none';
+              document.body.appendChild(clone);
+              e.dataTransfer.setDragImage(clone, clone.offsetWidth / 2, clone.offsetHeight / 2);
+              setTimeout(() => clone.remove(), 0);
+            }
           }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={() => onDrop(c.id)}>

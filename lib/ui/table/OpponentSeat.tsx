@@ -4,10 +4,10 @@ import type { TableMeld, Pack } from '../../kalooki';
 import type { ReactElement } from 'react';
 
 export function OpponentSeat({
-  name, handCount, handPacks, score, status, isTurn, melds, onMeldClick, meldsArmed, flashMeldIds,
+  name, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
 }: {
   name: string; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
-  melds: TableMeld[]; onMeldClick?: (meldId: string) => void; meldsArmed?: boolean; flashMeldIds?: string[];
+  melds: TableMeld[]; onMeldClick?: (meldId: string) => void; armedMeldIds?: string[]; flashMeldIds?: string[];
 }): ReactElement {
   // Prefer the real per-card packs; fall back to alternating if not provided.
   const packs: Pack[] = handPacks && handPacks.length
@@ -30,7 +30,7 @@ export function OpponentSeat({
       </div>
       <div className="mt-1 flex max-w-[90vw] flex-nowrap justify-center gap-3 overflow-x-auto">
         {melds.map((m) => (
-          <MeldPile key={m.id} meld={m} armed={meldsArmed} flash={flashMeldIds?.includes(m.id)} onClick={onMeldClick ? () => onMeldClick(m.id) : undefined} />
+          <MeldPile key={m.id} meld={m} armed={armedMeldIds?.includes(m.id)} flash={flashMeldIds?.includes(m.id)} onClick={onMeldClick ? () => onMeldClick(m.id) : undefined} />
         ))}
       </div>
     </div>

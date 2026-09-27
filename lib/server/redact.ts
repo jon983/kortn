@@ -9,6 +9,8 @@ export interface SelfView {
   seat: number; hand: Card[]; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
   /** If you took the discard this turn and haven't melded it yet, its card id — else null. */
   drawObligationId: string | null;
+  /** Jokers you reclaimed this turn that still sit in your hand and must be re-placed before you discard. */
+  jokerObligationIds: string[];
   /** Whether you've resolved a bust (rebought or declined). */
   rebought: boolean;
 }
@@ -56,6 +58,7 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     status: state.statuses[seat],
     hasOpened: self.hasOpened,
     drawObligationId: round.turn === seat ? (round.drawObligation?.id ?? null) : null,
+    jokerObligationIds: round.turn === seat ? (round.jokerObligation ?? []).slice() : [],
     rebought: state.rebought[seat] ?? false,
   };
   const opponents: OpponentView[] = round.players

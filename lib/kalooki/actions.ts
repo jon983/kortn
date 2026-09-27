@@ -12,6 +12,7 @@ export type Action =
   | { type: 'meld'; groups: { kind: MeldKind; cardIds: string[] }[] }
   | { type: 'layoff'; cardId: string; meldId: string }
   | { type: 'replaceJoker'; meldId: string; jokerId: string; naturalCardId: string; newMeld: { kind: MeldKind; cardIds: string[] } }
+  | { type: 'retrieveJoker'; meldId: string; jokerId: string; naturalCardIds: string[] }
   | { type: 'discard'; cardId: string };
 
 export interface Ok { ok: true; match: MatchState }
@@ -207,16 +208,70 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       next.melds.push({ id: `m${match.roundNumber}-${next.melds.length}`, kind: action.newMeld.kind, ownerSeat: seat, cards: newCards });
       return { ok: true, match: withRound(match, next) };
     }
+    case 'retrieveJoker': {
+      // Reclaim a joker sitting in a table meld by supplying the natural card(s)
+      // that make the meld valid without it. A run needs the single card the
+      // joker stands for; a set must be completed to four of a kind (so a 3-card
+      // set with a joker needs the two missing suits). The freed joker goes to
+      // your hand but must be melded or laid off again before you discard.
+      if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'Draw before retrieving a joker.' };
+      const player = round.players[seat];
+      if (!player.hasOpened) return { ok: false, reason: 'You must open before retrieving jokers.' };
+      const meld = round.melds.find((m) => m.id === action.meldId);
+      if (!meld) return { ok: false, reason: 'Meld not found.' };
+      const jokerCard = meld.cards.find((c) => c.id === action.jokerId && c.kind === 'joker');
+      if (!jokerCard) return { ok: false, reason: 'Joker not in that meld.' };
+
+      const naturals: Card[] = [];
+      const usedIds = new Set<string>();
+      for (const id of action.naturalCardIds) {
+        if (usedIds.has(id)) return { ok: false, reason: 'A card was listed twice.' };
+        const c = player.hand.find((h) => h.id === id);
+        if (!c || c.kind !== 'natural') return { ok: false, reason: 'Natural card not in hand.' };
+        usedIds.add(id);
+        naturals.push(c);
+      }
+      if (naturals.length === 0) return { ok: false, reason: 'Choose the card(s) that replace the joker.' };
+      if (meld.kind === 'run' && naturals.length !== 1) {
+        return { ok: false, reason: 'Replacing a joker in a run takes exactly one card.' };
+      }
+
+      // Rebuild the meld without this joker. A run keeps its order (natural drops
+      // into the joker's slot); a set is order-free but must reach four of a kind.
+      const rebuilt = meld.kind === 'run'
+        ? meld.cards.map((c) => (c.id === action.jokerId ? naturals[0] : c))
+        : [...meld.cards.filter((c) => c.id !== action.jokerId), ...naturals];
+      const v = validateMeld(rebuilt, meld.kind);
+      if (!v.valid) return { ok: false, reason: 'Those cards don’t complete the meld without the joker.' };
+      if (meld.kind === 'set' && rebuilt.length !== 4) {
+        return { ok: false, reason: 'Freeing a joker from a set means completing it to four of a kind.' };
+      }
+
+      const next = cloneRound(round);
+      const nMeld = next.melds.find((m) => m.id === action.meldId)!;
+      nMeld.cards = rebuilt;
+      const p = next.players[seat];
+      p.hand = p.hand.filter((c) => !usedIds.has(c.id));
+      p.hand.push(jokerCard);
+      next.jokerObligation = [...(next.jokerObligation ?? []), jokerCard.id];
+      if (nMeld.ownerSeat !== seat) next.addedToOpponentThisTurn = true;
+      return { ok: true, match: withRound(match, next) };
+    }
     case 'discard': {
       if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'You must draw first.' };
       if (round.drawObligation) return { ok: false, reason: 'The card taken from the discard must be melded this turn.' };
       const player = round.players[seat];
       const card = player.hand.find((c) => c.id === action.cardId);
       if (!card) return { ok: false, reason: 'Card not in hand.' };
+      // A joker reclaimed this turn must be re-placed (melded or laid off) first.
+      if (round.jokerObligation?.some((id) => player.hand.some((c) => c.id === id))) {
+        return { ok: false, reason: 'A reclaimed joker must be melded or laid off this turn.' };
+      }
 
       const next = cloneRound(round);
       next.players[seat].hand = next.players[seat].hand.filter((c) => c.id !== action.cardId);
       next.discard.push(card);
+      next.jokerObligation = [];
 
       if (next.players[seat].hand.length === 0) {
         next.finished = true;

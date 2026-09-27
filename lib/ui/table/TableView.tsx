@@ -33,6 +33,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const pendingDiscard = useRef<import('../../kalooki').Card | null>(null);
   // Melds that just appeared/grew — pulse them so everyone sees what was laid down.
   const [flashMelds, setFlashMelds] = useState<string[]>([]);
+  // "Take joker" mode: tapping a joker-bearing meld reclaims its joker using the
+  // selected natural card(s), instead of laying off.
+  const [jokerMode, setJokerMode] = useState(false);
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
@@ -152,7 +155,17 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const selectedCards = handInPlay.filter((c) => selected.includes(c.id));
   const trayIncludesObligation = !obligationId || staged.some((g) => g.cards.some((c) => c.id === obligationId));
   const layDownEnabled = staged.length > 0 && canOpen(view, staged) && trayIncludesObligation;
-  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation);
+  // A joker reclaimed this turn still in hand must be re-placed before discarding.
+  const jokerOwed = (view.you.jokerObligationIds ?? []).some((id) => handInPlay.some((c) => c.id === id));
+  const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation) && !jokerOwed;
+
+  // Melds on the table that hold a joker (candidates for retrieval).
+  const meldsWithJoker = useMemo(
+    () => new Set(view.melds.filter((m) => m.cards.some((c) => c.kind === 'joker')).map((m) => m.id)),
+    [view.melds],
+  );
+  const canRetrieveJoker =
+    isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened && meldsWithJoker.size > 0;
   // Lay-off is armed once you've opened, it's your turn to act, exactly one card is picked,
   // and it isn't the just-taken discard (which must start a new meld). Tap a table meld to add it.
   const layoffArmed =
@@ -164,10 +177,32 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     if (!res.ok) setToast(res.reason ?? 'illegal move');
   }
 
+  const jokerActive = jokerMode && canRetrieveJoker;
+  const armedMeldIds = jokerActive
+    ? [...meldsWithJoker]
+    : layoffArmed
+      ? view.melds.map((m) => m.id)
+      : [];
+
   function handleLayoff(meldId: string) {
     if (!layoffArmed) return;
     submit({ type: 'layoff', cardId: selected[0], meldId });
     setSelected([]);
+  }
+
+  function handleRetrieveJoker(meldId: string) {
+    const meld = view.melds.find((m) => m.id === meldId);
+    const jk = meld?.cards.find((c) => c.kind === 'joker');
+    if (!meld || !jk) { setToast('No joker in that meld.'); return; }
+    if (selected.length === 0) { setToast('Pick the card(s) that replace the joker first.'); return; }
+    submit({ type: 'retrieveJoker', meldId, jokerId: jk.id, naturalCardIds: selected });
+    setSelected([]);
+    setJokerMode(false);
+  }
+
+  function onMeldTap(meldId: string) {
+    if (jokerActive) handleRetrieveJoker(meldId);
+    else handleLayoff(meldId);
   }
 
   function handleDrawStock() {
@@ -269,9 +304,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               hasOpened={o.hasOpened}
               isTurn={view.currentTurn === o.seat}
               melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
-              meldsArmed={layoffArmed}
+              armedMeldIds={armedMeldIds}
               flashMeldIds={flashMelds}
-              onMeldClick={handleLayoff}
+              onMeldClick={onMeldTap}
             />
           </div>
         ))}
@@ -295,7 +330,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         {view.melds
           .filter((m) => m.ownerSeat === view.seat)
           .map((m) => (
-            <MeldPile key={m.id} meld={m} armed={layoffArmed} flash={flashMelds.includes(m.id)} onClick={() => handleLayoff(m.id)} />
+            <MeldPile key={m.id} meld={m} armed={armedMeldIds.includes(m.id)} flash={flashMelds.includes(m.id)} onClick={() => onMeldTap(m.id)} />
           ))}
       </div>
 
@@ -317,6 +352,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           onClearTray={() => setStaged([])}
           onReturnDiscard={handleReturnDiscard}
         />
+        {jokerActive && (
+          <div className="mt-1 text-center text-[11px] text-brass">
+            Select the natural {'–'} one for a run, two (missing suits) for a set {'–'} then tap the meld with the joker.
+          </div>
+        )}
+        {jokerOwed && !jokerActive && (
+          <div className="mt-1 text-center text-[11px] text-amber-300">
+            Place the reclaimed joker (meld or lay it off) before you discard.
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-center gap-3">
           <div className="min-w-0">
             <Hand
@@ -340,6 +385,15 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             </button>
             {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
               <>
+              {canRetrieveJoker && (
+                <button
+                  type="button"
+                  className={`${ctrlBtn} ${jokerActive ? '!border-brass !bg-[linear-gradient(180deg,#8a6a2f,#5a4320)] ring-2 ring-brass' : ''}`}
+                  onClick={() => setJokerMode((v) => !v)}
+                >
+                  {jokerActive ? '★ Tap the meld…' : '★ Take joker'}
+                </button>
+              )}
               <button
                 type="button"
                 className={ctrlBtn}
