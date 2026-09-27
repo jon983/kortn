@@ -56,7 +56,7 @@ export default async function Home() {
               <Link key={m.id} href={`/match/${m.id}/${m.status === 'lobby' ? 'lobby' : 'table'}`}
                 className="block p-2 text-sm border-b border-dotted border-[#b0a98f] hover:bg-black/5">
                 <div className="flex justify-between">
-                  <span>{m.status === 'lobby' ? 'Lobby' : 'Game'} · {players.length}/{m.seats} seats</span>
+                  <span>{m.status === 'lobby' ? 'Kitchen' : 'Game'} · {players.length}/{m.seats} seats</span>
                   <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink/70">

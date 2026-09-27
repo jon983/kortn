@@ -209,6 +209,17 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
 
   const armedMeldIds = layoffArmed ? view.melds.map((m) => m.id) : [];
 
+  function handleLayDown() {
+    if (!layDownEnabled) return;
+    const groups = staged.map((g) => ({
+      kind: evaluateMeld(g.cards)!.kind,
+      cardIds: g.cards.map((c) => c.id),
+    }));
+    submit({ type: 'meld', groups } as Action);
+    setStaged([]);
+    setObligationId(null);
+  }
+
   function onMeldTap(meldId: string) {
     if (!layoffArmed) return;
     const ids = [...selected];
@@ -277,7 +288,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       <div className="sticky top-0 z-30 grid grid-cols-3 items-center bg-black/60 px-4 py-2 text-xs backdrop-blur">
         <span className="flex items-center gap-3 justify-self-start">
           <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
-            ⌂ Lobby
+            ⌂ Kitchen
           </Link>
           <span>Round {view.roundNumber}</span>
           <button
@@ -407,12 +418,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
             >
               ↕ Sort
             </button>
-            {isMyTurn(view) && view.phase === 'awaitingDiscard' && (
+            {/* Always rendered (disabled when you can't act) so the column keeps a
+                fixed height and the screen never shifts between turns. */}
+            {(() => {
+              const canAct = isMyTurn(view) && view.phase === 'awaitingDiscard';
+              return (
               <>
               <button
                 type="button"
                 className={ctrlBtn}
-                disabled={!evaluateMeld(selectedCards)}
+                disabled={!canAct || !evaluateMeld(selectedCards)}
                 onClick={() => {
                   if (evaluateMeld(selectedCards)) {
                     setStaged([...staged, { cards: selectedCards }]);
@@ -425,23 +440,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               <button
                 type="button"
                 className={ctrlBtn}
-                disabled={!layDownEnabled}
-                onClick={() => {
-                  const groups = staged.map((g) => ({
-                    kind: evaluateMeld(g.cards)!.kind,
-                    cardIds: g.cards.map((c) => c.id),
-                  }));
-                  submit({ type: 'meld', groups } as Action);
-                  setStaged([]);
-                  setObligationId(null);
-                }}
-              >
-                Lay down
-              </button>
-              <button
-                type="button"
-                className={ctrlBtn}
-                disabled={!discardEnabled}
+                disabled={!canAct || !discardEnabled}
                 onClick={() => {
                   const id = selected[0];
                   if (id) {
@@ -461,7 +460,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                 Discard
               </button>
               </>
-            )}
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -471,7 +471,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {staged.length > 0 && (
         <div className="pointer-events-none absolute left-1/2 top-[32%] z-30 flex w-full max-w-[90vw] -translate-x-1/2 justify-center">
           <div className="pointer-events-auto">
-            <LayingDownTray view={view} stagedGroups={staged} onClearTray={() => setStaged([])} />
+            <LayingDownTray view={view} stagedGroups={staged} onClearTray={() => setStaged([])} onLayDown={handleLayDown} canLayDown={layDownEnabled} />
           </div>
         </div>
       )}
