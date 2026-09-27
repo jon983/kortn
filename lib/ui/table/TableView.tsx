@@ -41,6 +41,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [pendingLayoff, setPendingLayoff] = useState<{ meldId: string } | null>(null);
   // Deal animation: card-backs fly from the stock out to each seat on a new hand.
   const [dealing, setDealing] = useState(false);
+  // How many cards have "landed" per seat during the deal — the hand/backs build
+  // up in step with the flights instead of appearing all at once.
+  const [dealCounts, setDealCounts] = useState<Record<number, number>>({});
   const prevRound = useRef(view.roundNumber);
   const dealTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -186,6 +189,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     dealTimers.current.forEach(clearTimeout);
     dealTimers.current = [];
     setDealing(true);
+    setDealCounts({});
     const STEP = Math.max(55, Math.round(4000 / (13 * seatCount)));
     const DUR = 420;
     let i = 0;
@@ -195,6 +199,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         if (!t) continue;
         const pack = (round + s) % 2 === 0 ? 'A' : 'B';
         dealTimers.current.push(setTimeout(() => startFlight(source, t, <CardBack pack={pack} />), i * STEP));
+        // Reveal that seat's next card when this one lands (the hand builds up).
+        dealTimers.current.push(setTimeout(
+          () => setDealCounts((m) => ({ ...m, [s]: (m[s] ?? 0) + 1 })),
+          i * STEP + DUR,
+        ));
         i++;
       }
     }
@@ -215,7 +224,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       for (const o of view.opponents) {
         const prev = prevOppCounts.current.get(o.seat);
         if (prev != null && o.handCount === prev + 1) {
-          const to = rectIn(root.querySelector(`[data-seat="${o.seat}"]`));
+          const to = centerIn(root.querySelector(`[data-seat="${o.seat}"]`));
           if (prevStockCount.current > view.stockCount) {
             const pack = o.handPacks?.[o.handPacks.length - 1] ?? 'A';
             startFlight(rectIn(stockRef.current), to, <CardBack pack={pack} />);
@@ -335,7 +344,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         flashMeldIds={flashMelds}
         onMeldClick={onMeldTap}
         meldOrientation={orientation}
-        hideCards={dealing}
+        visibleCount={dealing ? (dealCounts[o.seat] ?? 0) : undefined}
       />
     </div>
   );
@@ -475,9 +484,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           </div>
         )}
         <div className="mt-2 flex items-stretch justify-center gap-3">
-          <div className={`min-w-0 transition-opacity ${dealing ? 'opacity-0' : ''}`} data-hand>
+          <div className="min-w-0" data-hand>
             <Hand
-              cards={handInPlay}
+              cards={dealing ? handInPlay.slice(0, dealCounts[view.seat] ?? 0) : handInPlay}
               selectedIds={selected}
               onToggle={(id) =>
                 setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
