@@ -14,7 +14,7 @@ import { ActionBar, LayingDownTray } from './ActionBar';
 import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
-import type { Action } from '../../kalooki';
+import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
 const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
@@ -36,6 +36,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   // Melds the local player just changed — their fly animation is launched
   // explicitly (from the actual card), so the meld-diff effect skips flying them.
   const suppressMeldFly = useRef<Set<string>>(new Set());
+  // When laying a joker onto a run that could take it at either end, hold the
+  // pending lay-off until the player picks an end.
+  const [pendingLayoff, setPendingLayoff] = useState<{ meldId: string } | null>(null);
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
@@ -220,8 +223,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     setObligationId(null);
   }
 
-  function onMeldTap(meldId: string) {
-    if (!layoffArmed) return;
+  function doLayoff(meldId: string, end?: 'low' | 'high') {
     const ids = [...selected];
     // Fly each laid-off card from its spot in the hand to the meld it's joining.
     const to = rectIn(rootRef.current?.querySelector(`[data-meld="${meldId}"]`) ?? null);
@@ -231,8 +233,27 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       if (from && to && card) startFlight(from, to, <CardFace card={card} />);
     }
     suppressMeldFly.current.add(meldId);
-    submit({ type: 'layoff', cardIds: ids, meldId });
+    submit({ type: 'layoff', cardIds: ids, meldId, ...(end ? { end } : {}) });
     setSelected([]);
+    setPendingLayoff(null);
+  }
+
+  function onMeldTap(meldId: string) {
+    if (!layoffArmed) return;
+    const meld = view.melds.find((m) => m.id === meldId);
+    const adds = handInPlay.filter((c) => selected.includes(c.id));
+    // Placing a joker on a run can go on either end — if both are legal and
+    // distinct, let the player choose which end rather than picking for them.
+    if (meld?.kind === 'run' && adds.some((c) => c.kind === 'joker')) {
+      const low = arrangeRun([...meld.cards, ...adds], 'low');
+      const high = arrangeRun([...meld.cards, ...adds], 'high');
+      const key = (cs: typeof low) => (cs ? cs.map((c) => c.id).join(',') : '');
+      if (low && high && key(low) !== key(high)) {
+        setPendingLayoff({ meldId });
+        return;
+      }
+    }
+    doLayoff(meldId);
   }
 
   const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column') => (
@@ -472,6 +493,20 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         <div className="pointer-events-none absolute left-1/2 top-[32%] z-30 flex w-full max-w-[90vw] -translate-x-1/2 justify-center">
           <div className="pointer-events-auto">
             <LayingDownTray view={view} stagedGroups={staged} onClearTray={() => setStaged([])} onLayDown={handleLayDown} canLayDown={layDownEnabled} />
+          </div>
+        </div>
+      )}
+
+      {/* which-end chooser for laying a joker onto a run */}
+      {pendingLayoff && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50" onClick={() => setPendingLayoff(null)}>
+          <div className="rounded-xl border-2 border-brass bg-[#2a1c12] p-5 text-center text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 text-sm text-[#c9b48a]">Which end of the run?</div>
+            <div className="flex gap-3">
+              <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'low')}>◀ Low end</button>
+              <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'high')}>High end ▶</button>
+            </div>
+            <button type="button" className="mt-3 text-xs text-[#c9b48a] underline" onClick={() => setPendingLayoff(null)}>cancel</button>
           </div>
         </div>
       )}

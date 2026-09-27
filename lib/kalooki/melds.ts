@@ -60,7 +60,7 @@ export function validateMeld(cards: Card[], kind: MeldKind): MeldResult {
  * off multiple cards or reclaiming a joker, where the caller doesn't know the
  * final order in advance.
  */
-export function arrangeRun(cards: Card[]): Card[] | null {
+export function arrangeRun(cards: Card[], endPref: 'low' | 'high' = 'low'): Card[] | null {
   const nats = naturals(cards);
   const jokerCards = cards.filter((c) => c.kind === 'joker');
   if (nats.length === 0) return null;
@@ -76,8 +76,14 @@ export function arrangeRun(cards: Card[]): Card[] | null {
   if (extra < 0) return null; // not enough jokers to bridge the interior gaps
   let start = minR;
   let end = maxR;
-  while (extra > 0 && start > 2) { start--; extra--; }
-  while (extra > 0 && end < 14) { end++; extra--; }
+  // Spare jokers extend the ends; endPref decides which end fills first.
+  if (endPref === 'high') {
+    while (extra > 0 && end < 14) { end++; extra--; }
+    while (extra > 0 && start > 2) { start--; extra--; }
+  } else {
+    while (extra > 0 && start > 2) { start--; extra--; }
+    while (extra > 0 && end < 14) { end++; extra--; }
+  }
   if (extra > 0) return null; // spare jokers can't fit within 2..Ace
   const byRank = new Map(nats.map((c) => [c.rank, c] as const));
   const jq = jokerCards.slice();

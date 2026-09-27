@@ -63,6 +63,37 @@ describe('layoff → joker retrieval', () => {
     expect(r.match.round.melds[0].cards.some((c) => c.kind === 'joker')).toBe(true);
   });
 
+  it('lays a plain joker (dealt / drawn from stock) off onto a run', () => {
+    const m = fixture({ kind: 'run', cards: [nat(4, 'hearts', 'B'), nat(5, 'hearts', 'B'), nat(6, 'hearts', 'B')] }, [joker()]);
+    const r = applyAction(m, 0, { type: 'layoff', cardIds: ['A-joker'], meldId: 'm1-0' }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.match.round.melds[0].cards.some((c) => c.kind === 'joker')).toBe(true);
+    expect(r.match.round.players[0].hand).toHaveLength(0);
+    expect(r.match.round.jokerObligation ?? []).toEqual([]); // a plain lay-off, no obligation
+  });
+
+  it('lays a joker onto a run at the chosen end', () => {
+    const cards = [nat(4, 'hearts', 'B'), nat(5, 'hearts', 'B'), nat(6, 'hearts', 'B')];
+    const low = applyAction(fixture({ kind: 'run', cards }, [joker()]), 0,
+      { type: 'layoff', cardIds: ['A-joker'], meldId: 'm1-0', end: 'low' }, () => 0.5);
+    const high = applyAction(fixture({ kind: 'run', cards }, [joker()]), 0,
+      { type: 'layoff', cardIds: ['A-joker'], meldId: 'm1-0', end: 'high' }, () => 0.5);
+    expect(low.ok && high.ok).toBe(true);
+    if (!low.ok || !high.ok) return;
+    // low end → joker leads (as 3h); high end → joker trails (as 7h)
+    expect(low.match.round.melds[0].cards[0].kind).toBe('joker');
+    expect(high.match.round.melds[0].cards[3].kind).toBe('joker');
+  });
+
+  it('lays a plain joker off onto a three-card set (becomes four)', () => {
+    const m = fixture({ kind: 'set', cards: [nat(9, 'clubs', 'B'), nat(9, 'hearts', 'B'), nat(9, 'diamonds', 'B')] }, [joker()]);
+    const r = applyAction(m, 0, { type: 'layoff', cardIds: ['A-joker'], meldId: 'm1-0' }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.match.round.melds[0].cards).toHaveLength(4);
+  });
+
   it('blocks discarding a reclaimed joker (must go into a new meld)', () => {
     const m = fixture({ kind: 'run', cards: [nat(4, 'hearts', 'B'), joker(), nat(6, 'hearts', 'B')] }, [nat(5, 'hearts'), nat(8, 'spades')]);
     const r1 = applyAction(m, 0, { type: 'layoff', cardIds: ['A-hearts-5'], meldId: 'm1-0' }, () => 0.5);

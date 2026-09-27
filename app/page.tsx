@@ -6,6 +6,7 @@ import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { Framed } from '../lib/ui/Framed';
 import { LampButton } from '../lib/ui/LampButton';
 import { JoinBox } from './JoinBox';
+import { DeleteGameButton } from './DeleteGameButton';
 
 export default async function Home() {
   const { userId } = await auth();
@@ -53,24 +54,31 @@ export default async function Home() {
           <Framed title="At the table">
             {summaries.length === 0 && <p className="text-sm text-ink/70 p-2">No games yet — set the table.</p>}
             {summaries.map(({ match: m, players }) => (
-              <Link key={m.id} href={`/match/${m.id}/${m.status === 'lobby' ? 'lobby' : 'table'}`}
-                className="block p-2 text-sm border-b border-dotted border-[#b0a98f] hover:bg-black/5">
-                <div className="flex justify-between">
-                  <span>{m.status === 'lobby' ? 'Kitchen' : 'Game'} · {players.length}/{m.seats} seats</span>
-                  <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink/70">
-                  {players.length === 0 ? (
-                    <span>No players yet</span>
-                  ) : (
-                    players.map((p, i) => (
-                      <span key={i}>
-                        {p.name}{p.score !== null ? <b className="text-walnut"> {p.score}</b> : ''}
-                      </span>
-                    ))
-                  )}
-                </div>
-              </Link>
+              <div key={m.id} className="relative border-b border-dotted border-[#b0a98f]">
+                <Link href={`/match/${m.id}/${m.status === 'lobby' ? 'lobby' : 'table'}`}
+                  className="block p-2 pr-8 text-sm hover:bg-black/5">
+                  <div className="flex justify-between">
+                    <span>{m.status === 'lobby' ? 'Kitchen' : 'Game'} · {players.length}/{m.seats} seats</span>
+                    <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink/70">
+                    {players.length === 0 ? (
+                      <span>No players yet</span>
+                    ) : (
+                      players.map((p, i) => (
+                        <span key={i}>
+                          {p.name}{p.score !== null ? <b className="text-walnut"> {p.score}</b> : ''}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </Link>
+                {m.createdBy === userId && (
+                  <div className="absolute right-1 top-1.5">
+                    <DeleteGameButton matchId={m.id} />
+                  </div>
+                )}
+              </div>
             ))}
           </Framed>
           <Framed title="Your record">
