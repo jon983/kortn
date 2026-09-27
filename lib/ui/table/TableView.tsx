@@ -10,7 +10,7 @@ import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
 import { CardBack } from './CardBack';
-import { ActionBar } from './ActionBar';
+import { ActionBar, LayingDownTray } from './ActionBar';
 import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
@@ -166,6 +166,18 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   );
   const canRetrieveJoker =
     isMyTurn(view) && view.phase === 'awaitingDiscard' && view.you.hasOpened && meldsWithJoker.size > 0;
+
+  // Seat the opponents around the table. 2p → top; 3p → left/right; 4p → left/top/right.
+  // Side seats stack their melds vertically so they read as a column down each edge.
+  const seating = useMemo(() => {
+    const o = [...view.opponents].sort((a, b) => a.seat - b.seat);
+    const n = o.length;
+    if (n <= 1) return { left: [], top: o, right: [] };
+    if (n === 2) return { left: [o[0]], top: [], right: [o[1]] };
+    if (n === 3) return { left: [o[0]], top: [o[1]], right: [o[2]] };
+    const k = Math.floor(n / 2);
+    return { left: o.slice(0, k), top: o.slice(k, n - k), right: o.slice(n - k) };
+  }, [view.opponents]);
   // Lay-off is armed once you've opened, it's your turn to act, exactly one card is picked,
   // and it isn't the just-taken discard (which must start a new meld). Tap a table meld to add it.
   const layoffArmed =
@@ -204,6 +216,25 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     if (jokerActive) handleRetrieveJoker(meldId);
     else handleLayoff(meldId);
   }
+
+  const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column') => (
+    <div key={o.seat} data-seat={o.seat}>
+      <OpponentSeat
+        name={view.seatNames[o.seat]}
+        handCount={o.handCount}
+        handPacks={o.handPacks}
+        score={o.score}
+        status={o.status}
+        hasOpened={o.hasOpened}
+        isTurn={view.currentTurn === o.seat}
+        melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
+        armedMeldIds={armedMeldIds}
+        flashMeldIds={flashMelds}
+        onMeldClick={onMeldTap}
+        meldOrientation={orientation}
+      />
+    </div>
+  );
 
   function handleDrawStock() {
     drawSource.current = 'stock';
@@ -291,52 +322,48 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         </div>
       )}
 
-      {/* opponents */}
-      <div className="flex flex-wrap justify-around gap-4 p-3">
-        {view.opponents.map((o) => (
-          <div key={o.seat} data-seat={o.seat}>
-            <OpponentSeat
-              name={view.seatNames[o.seat]}
-              handCount={o.handCount}
-              handPacks={o.handPacks}
-              score={o.score}
-              status={o.status}
-              hasOpened={o.hasOpened}
-              isTurn={view.currentTurn === o.seat}
-              melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
-              armedMeldIds={armedMeldIds}
-              flashMeldIds={flashMelds}
-              onMeldClick={onMeldTap}
-            />
+      {/* Main table area: side seats flank a centre column (top seats + piles). */}
+      <div className="flex min-h-0 flex-1">
+        {seating.left.length > 0 && (
+          <div className="flex flex-col justify-center gap-6 p-2">
+            {seating.left.map((o) => renderOpp(o, 'column'))}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Stock + discard (in normal flow, horizontally centred) */}
-      <div className="mt-2 flex justify-center">
-        <StockDiscard
-          stockCount={view.stockCount}
-          stockPack={view.stockTopPack}
-          discardTop={discardHold ?? view.discard[view.discard.length - 1]}
-          stockRef={stockRef}
-          discardRef={discardRef}
-          onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-          onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
-        />
-      </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {seating.top.length > 0 && (
+            <div className="flex flex-wrap justify-around gap-4 p-3">
+              {seating.top.map((o) => renderOpp(o, 'row'))}
+            </div>
+          )}
 
-      {/* Viewer's melds, below the piles */}
-      <div className="mt-4 flex flex-wrap justify-center gap-3 px-4">
-        {view.melds
-          .filter((m) => m.ownerSeat === view.seat)
-          .map((m) => (
-            <MeldPile key={m.id} meld={m} armed={armedMeldIds.includes(m.id)} flash={flashMelds.includes(m.id)} onClick={() => onMeldTap(m.id)} />
-          ))}
-      </div>
+          {/* stock + discard sit vertically centred; the viewer's melds just below */}
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
+            <StockDiscard
+              stockCount={view.stockCount}
+              stockPack={view.stockTopPack}
+              discardTop={discardHold ?? view.discard[view.discard.length - 1]}
+              stockRef={stockRef}
+              discardRef={discardRef}
+              onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+              onTakeDiscard={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+            />
+            <div className="flex flex-wrap justify-center gap-3 px-4">
+              {view.melds
+                .filter((m) => m.ownerSeat === view.seat)
+                .map((m) => (
+                  <MeldPile key={m.id} meld={m} armed={armedMeldIds.includes(m.id)} flash={flashMelds.includes(m.id)} onClick={() => onMeldTap(m.id)} />
+                ))}
+            </div>
+          </div>
+        </div>
 
-      {/* spacer: absorbs slack so the hand stays at the bottom and changes in the
-          action area below never push the piles/melds above it (no reflow/jerk) */}
-      <div className="min-h-4 flex-1" />
+        {seating.right.length > 0 && (
+          <div className="flex flex-col justify-center gap-6 p-2">
+            {seating.right.map((o) => renderOpp(o, 'column'))}
+          </div>
+        )}
+      </div>
 
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
@@ -346,12 +373,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           </div>
           <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
-        <ActionBar
-          view={view}
-          stagedGroups={staged}
-          onClearTray={() => setStaged([])}
-          onReturnDiscard={handleReturnDiscard}
-        />
+        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} />
         {jokerActive && (
           <div className="mt-1 text-center text-[11px] text-brass">
             Select the natural {'–'} one for a run, two (missing suits) for a set {'–'} then tap the meld with the joker.
@@ -449,6 +471,16 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
           </div>
         </div>
       </div>
+
+      {/* Laying-down tray: floats over the upper-centre of the table so staging
+          melds never pushes the hand below the fold. */}
+      {staged.length > 0 && (
+        <div className="pointer-events-none absolute left-1/2 top-[32%] z-30 flex w-full max-w-[90vw] -translate-x-1/2 justify-center">
+          <div className="pointer-events-auto">
+            <LayingDownTray view={view} stagedGroups={staged} onClearTray={() => setStaged([])} />
+          </div>
+        </div>
+      )}
 
       {/* draw / discard fly animation */}
       {flight && (
