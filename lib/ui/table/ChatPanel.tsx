@@ -35,9 +35,19 @@ export function ChatPanel({
   }
 
   return (
-    <div className="absolute bottom-3 right-3 z-40 flex flex-col items-end">
+    <div className="absolute right-3 top-14 z-40 flex flex-col items-end">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="relative rounded-full border-2 border-brass bg-[#2a1c12] px-4 py-2 text-sm font-bold text-brass shadow-lg hover:bg-brass/10"
+      >
+        💬 Chat
+        {!open && unread > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-maroon px-1 text-[10px] font-bold text-bone">{unread}</span>
+        )}
+      </button>
       {open && (
-        <div className="mb-2 flex h-80 w-72 max-w-[85vw] flex-col rounded-lg border-2 border-brass bg-[#2a1c12] shadow-2xl">
+        <div className="mt-2 flex h-80 w-72 max-w-[85vw] flex-col rounded-lg border-2 border-brass bg-[#2a1c12] shadow-2xl">
           <div className="flex items-center justify-between border-b border-brass/30 px-3 py-1.5">
             <span className="text-sm font-bold text-brass">Table talk</span>
             <button type="button" onClick={() => setOpen(false)} className="text-xs text-[#c9b48a] hover:text-bone">✕</button>
@@ -71,16 +81,6 @@ export function ChatPanel({
           </form>
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="relative self-end rounded-full border-2 border-brass bg-[#2a1c12] px-4 py-2 text-sm font-bold text-brass shadow-lg hover:bg-brass/10"
-      >
-        💬 Chat
-        {!open && unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-maroon px-1 text-[10px] font-bold text-bone">{unread}</span>
-        )}
-      </button>
     </div>
   );
 }
