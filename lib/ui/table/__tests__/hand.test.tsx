@@ -16,10 +16,26 @@ describe('sortHand', () => {
 });
 
 describe('Hand', () => {
-  it('toggles selection on card click', () => {
+  it('toggles selection on a tap (pointer down/up without movement)', () => {
     const onToggle = vi.fn();
-    render(<Hand cards={[nat(5, 'hearts')]} selectedIds={[]} onToggle={onToggle} onReorder={() => {}} />);
-    fireEvent.click(screen.getAllByText('5')[0]);
+    const onReorder = vi.fn();
+    render(<Hand cards={[nat(5, 'hearts')]} selectedIds={[]} onToggle={onToggle} onReorder={onReorder} />);
+    const el = screen.getAllByText('5')[0];
+    fireEvent.pointerDown(el, { clientX: 10, pointerId: 1 });
+    fireEvent.pointerUp(el, { clientX: 10, pointerId: 1 });
     expect(onToggle).toHaveBeenCalledWith('A-hearts-5');
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('reorders (not selects) when the pointer moves past the threshold', () => {
+    const onToggle = vi.fn();
+    const onReorder = vi.fn();
+    render(<Hand cards={[nat(5, 'hearts'), nat(9, 'clubs')]} selectedIds={[]} onToggle={onToggle} onReorder={onReorder} />);
+    const el = screen.getAllByText('5')[0];
+    fireEvent.pointerDown(el, { clientX: 0, pointerId: 1 });
+    fireEvent.pointerMove(el, { clientX: 40, pointerId: 1 });
+    fireEvent.pointerUp(el, { clientX: 40, pointerId: 1 });
+    expect(onReorder).toHaveBeenCalled();
+    expect(onToggle).not.toHaveBeenCalled();
   });
 });
