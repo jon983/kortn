@@ -1,6 +1,7 @@
 // lib/ui/table/TableView.tsx
 'use client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useMatchStream } from './useMatchStream';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
@@ -26,6 +27,12 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showScores, setShowScores] = useState(false);
+  // While a discard is in flight/settling, keep showing the thrown card on the pile
+  // so the previous top never flashes back before the server state catches up.
+  const [discardHold, setDiscardHold] = useState<import('../../kalooki').Card | null>(null);
+  const pendingDiscard = useRef<import('../../kalooki').Card | null>(null);
+  // Melds that just appeared/grew — pulse them so everyone sees what was laid down.
+  const [flashMelds, setFlashMelds] = useState<string[]>([]);
 
   // --- draw / discard fly animations ---
   const rootRef = useRef<HTMLDivElement>(null);
@@ -74,7 +81,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         const card = view.you.hand.find((c) => c.id === landedId);
         if (from && to) {
           setFlyHiddenId(landedId);
-          startFlight(from, to, src === 'stock' ? <CardBack pack="A" /> : (card ? <CardFace card={card} /> : null));
+          startFlight(from, to, src === 'stock' ? <CardBack pack={card?.pack ?? 'A'} /> : (card ? <CardFace card={card} /> : null));
           setTimeout(() => setFlyHiddenId(null), 340);
         }
       }
@@ -99,6 +106,38 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
     prevDiscardLen.current = view.discard.length;
     prevTurn.current = view.currentTurn;
   }, [view.discard, view.currentTurn, view.seat]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animate melds being laid down / added to, for every seat. When a meld first
+  // appears (or grows), fly a card from its owner's seat to the meld and pulse it.
+  const prevMelds = useRef<Map<string, number>>(
+    new Map(view.melds.map((m) => [m.id, m.cards.length])),
+  );
+  useEffect(() => {
+    const changed = view.melds.filter((m) => (prevMelds.current.get(m.id) ?? 0) < m.cards.length);
+    prevMelds.current = new Map(view.melds.map((m) => [m.id, m.cards.length]));
+    if (!changed.length) return;
+    // pulse the changed melds briefly
+    setFlashMelds(changed.map((m) => m.id));
+    const clear = setTimeout(() => setFlashMelds([]), 1500);
+    // fly a representative card from each owner's seat to the meld pile
+    for (const m of changed) {
+      const fromEl =
+        m.ownerSeat === view.seat
+          ? rootRef.current?.querySelector('[data-you-seat]')
+          : rootRef.current?.querySelector(`[data-seat="${m.ownerSeat}"]`);
+      const from = rectIn(fromEl ?? null);
+      const to = rectIn(rootRef.current?.querySelector(`[data-meld="${m.id}"]`) ?? null);
+      const face = m.cards[m.cards.length - 1] ?? m.cards[0];
+      if (from && to && face) startFlight(from, to, <CardFace card={face} />);
+    }
+    return () => clearTimeout(clear);
+  }, [view.melds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Release the discard hold once the real pile top is the card we threw.
+  useEffect(() => {
+    if (!discardHold) return;
+    if (view.discard[view.discard.length - 1]?.id === discardHold.id) setDiscardHold(null);
+  }, [view.discard, discardHold]);
 
   const hand = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
@@ -162,8 +201,11 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
   return (
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
-      <div className="grid grid-cols-3 items-center bg-black/40 px-4 py-2 text-xs">
+      <div className="sticky top-0 z-30 grid grid-cols-3 items-center bg-black/60 px-4 py-2 text-xs backdrop-blur">
         <span className="flex items-center gap-3 justify-self-start">
+          <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
+            ⌂ Lobby
+          </Link>
           <span>Round {view.roundNumber}</span>
           <button
             type="button"
@@ -228,6 +270,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               isTurn={view.currentTurn === o.seat}
               melds={view.melds.filter((m) => m.ownerSeat === o.seat)}
               meldsArmed={layoffArmed}
+              flashMeldIds={flashMelds}
               onMeldClick={handleLayoff}
             />
           </div>
@@ -238,7 +281,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       <div className="mt-2 flex justify-center">
         <StockDiscard
           stockCount={view.stockCount}
-          discardTop={view.discard[view.discard.length - 1]}
+          stockPack={view.stockTopPack}
+          discardTop={discardHold ?? view.discard[view.discard.length - 1]}
           stockRef={stockRef}
           discardRef={discardRef}
           onDrawStock={isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
@@ -251,7 +295,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
         {view.melds
           .filter((m) => m.ownerSeat === view.seat)
           .map((m) => (
-            <MeldPile key={m.id} meld={m} armed={layoffArmed} onClick={() => handleLayoff(m.id)} />
+            <MeldPile key={m.id} meld={m} armed={layoffArmed} flash={flashMelds.includes(m.id)} onClick={() => handleLayoff(m.id)} />
           ))}
       </div>
 
@@ -260,7 +304,7 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       <div className="min-h-4 flex-1" />
 
       {/* viewer's area */}
-      <div className="bg-gradient-to-t from-black/60 to-transparent p-3">
+      <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 text-center">
           <div className={`text-sm font-bold ${isMyTurn(view) ? 'text-brass' : 'text-bone'}`}>
             {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
@@ -335,7 +379,10 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
                     const card = handInPlay.find((c) => c.id === id);
                     const from = rectIn(rootRef.current?.querySelector(`[data-card-id="${id}"]`) ?? null);
                     const to = rectIn(discardRef.current);
-                    if (card) startFlight(from, to, <CardFace card={card} />);
+                    if (card) {
+                      pendingDiscard.current = card;
+                      startFlight(from, to, <CardFace card={card} />);
+                    }
                     submit({ type: 'discard', cardId: id });
                   }
                   setSelected([]);
@@ -350,7 +397,18 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       </div>
 
       {/* draw / discard fly animation */}
-      {flight && <FlyingCard flight={flight} onDone={() => setFlight(null)} />}
+      {flight && (
+        <FlyingCard
+          flight={flight}
+          onDone={() => {
+            setFlight(null);
+            if (pendingDiscard.current) {
+              setDiscardHold(pendingDiscard.current);
+              pendingDiscard.current = null;
+            }
+          }}
+        />
+      )}
 
       {/* toast */}
       {toast && (
@@ -363,6 +421,9 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
       {view.matchFinished && <MatchSummary view={view} />}
       {!view.matchFinished && view.roundFinished && view.you.status === 'busted' && !view.you.rebought ? (
         <RebuyPrompt
+          canRebuy={
+            [view.you.score, ...view.opponents.map((o) => o.score)].filter((s) => s <= 150).length >= 2
+          }
           onRebuy={() => submit({ type: 'rebuy' })}
           onDecline={() => submit({ type: 'decline' })}
         />

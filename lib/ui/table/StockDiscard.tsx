@@ -1,12 +1,12 @@
 import type { RefObject } from 'react';
 import { Card as CardFace } from './Card';
 import { CardBack } from './CardBack';
-import type { Card } from '../../kalooki';
+import type { Card, Pack } from '../../kalooki';
 
 export function StockDiscard({
-  stockCount, discardTop, onDrawStock, onTakeDiscard, stockRef, discardRef,
+  stockCount, stockPack, discardTop, onDrawStock, onTakeDiscard, stockRef, discardRef,
 }: {
-  stockCount: number; discardTop?: Card; onDrawStock?: () => void; onTakeDiscard?: () => void;
+  stockCount: number; stockPack?: Pack | null; discardTop?: Card; onDrawStock?: () => void; onTakeDiscard?: () => void;
   stockRef?: RefObject<HTMLDivElement | null>; discardRef?: RefObject<HTMLDivElement | null>;
 }) {
   return (
@@ -20,7 +20,7 @@ export function StockDiscard({
           className={`block border-0 bg-transparent p-0 leading-none ${onDrawStock && stockCount > 0 ? 'cursor-pointer' : 'cursor-default'} disabled:opacity-60`}
         >
           {stockCount > 0
-            ? <CardBack pack="A" />
+            ? <CardBack pack={stockPack ?? 'A'} />
             : <span className="inline-block h-32 w-24 rounded-md border-2 border-dashed border-[#cfc9b4]/40" />}
         </button>
       </div>

@@ -2,6 +2,7 @@
 import {
   layoutMeld,
   type MatchState, type Card, type TableMeld, type Phase, type GoOutType, type SeatStatus, type Pack,
+  type RoundHistoryEntry,
 } from '../kalooki';
 
 export interface SelfView {
@@ -23,6 +24,8 @@ export interface ClientView {
   you: SelfView;
   opponents: OpponentView[];
   stockCount: number;
+  /** Pack (card back colour) of the next card that would be drawn from stock, or null if empty. */
+  stockTopPack: Pack | null;
   discard: Card[];
   melds: TableMeld[];
   currentTurn: number;
@@ -36,6 +39,8 @@ export interface ClientView {
   matchWinnerSeat: number | null;
   /** Between hands: which seats have clicked "Next hand" (seat-indexed). */
   readyNext: boolean[];
+  /** Completed hands, oldest first — the scorepad. */
+  history: RoundHistoryEntry[];
 }
 
 export function redactStateFor(state: MatchState, seat: number, names: (string | null)[] = []): ClientView {
@@ -71,6 +76,7 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     you,
     opponents,
     stockCount: round.stock.length,
+    stockTopPack: round.stock[0]?.pack ?? null,
     discard: round.discard.slice(),
     melds,
     currentTurn: round.turn,
@@ -83,5 +89,6 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     matchFinished: state.finished,
     matchWinnerSeat: state.winnerSeat,
     readyNext: Array.from({ length: state.seats }, (_, i) => state.readyNext?.[i] ?? false),
+    history: state.history ?? [],
   };
 }

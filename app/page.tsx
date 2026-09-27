@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { db, listMatchesForUser, getUserStats } from '../lib/db';
+import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats } from '../lib/db';
 import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { Framed } from '../lib/ui/Framed';
 import { LampButton } from '../lib/ui/LampButton';
@@ -17,6 +17,26 @@ export default async function Home() {
   ]);
   const active = matches.filter((m) => m.status === 'lobby' || m.status === 'active');
 
+  // Pull player names + live scores for each active game so the list is informative.
+  const summaries = await Promise.all(
+    active.map(async (m) => {
+      const [players, game] = await Promise.all([
+        listPlayersWithNames(db, m.id),
+        m.status === 'active' ? loadGameState(db, m.id) : Promise.resolve(null),
+      ]);
+      const scores = game?.state.scores ?? null;
+      return {
+        match: m,
+        players: players
+          .sort((a, b) => a.seatIndex - b.seatIndex)
+          .map((p) => ({
+            name: p.userId === userId ? 'You' : p.displayName,
+            score: scores?.[p.seatIndex] ?? null,
+          })),
+      };
+    }),
+  );
+
   return (
     <RoomBackdrop plate="room-home">
       <main className="mx-auto max-w-3xl px-5 py-10">
@@ -31,12 +51,25 @@ export default async function Home() {
 
         <div className="mt-10 grid gap-4 md:grid-cols-[1.4fr_1fr]">
           <Framed title="At the table">
-            {active.length === 0 && <p className="text-sm text-ink/70 p-2">No games yet — set the table.</p>}
-            {active.map((m) => (
+            {summaries.length === 0 && <p className="text-sm text-ink/70 p-2">No games yet — set the table.</p>}
+            {summaries.map(({ match: m, players }) => (
               <Link key={m.id} href={`/match/${m.id}/${m.status === 'lobby' ? 'lobby' : 'table'}`}
-                className="flex justify-between p-2 text-sm border-b border-dotted border-[#b0a98f] hover:bg-black/5">
-                <span>{m.status === 'lobby' ? 'Lobby' : 'Game'} · {m.seats} seats</span>
-                <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
+                className="block p-2 text-sm border-b border-dotted border-[#b0a98f] hover:bg-black/5">
+                <div className="flex justify-between">
+                  <span>{m.status === 'lobby' ? 'Lobby' : 'Game'} · {players.length}/{m.seats} seats</span>
+                  <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink/70">
+                  {players.length === 0 ? (
+                    <span>No players yet</span>
+                  ) : (
+                    players.map((p, i) => (
+                      <span key={i}>
+                        {p.name}{p.score !== null ? <b className="text-walnut"> {p.score}</b> : ''}
+                      </span>
+                    ))
+                  )}
+                </div>
               </Link>
             ))}
           </Framed>

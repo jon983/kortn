@@ -29,6 +29,8 @@ export function settleRound(match: MatchState): MatchState {
   const cost = BIT_COST[round.goOutType ?? 'normal'];
   const scores = match.scores.slice();
   const bits = (match.bits ?? new Array(match.seats).fill(0)).slice();
+  const prevScores = match.scores.slice();
+  const prevBits = (match.bits ?? new Array(match.seats).fill(0)).slice();
   for (const p of round.players) {
     if (p.seat === round.winnerSeat) continue;
     if (match.statuses[p.seat] !== 'active') continue;
@@ -37,7 +39,17 @@ export function settleRound(match: MatchState): MatchState {
     bits[p.seat] -= cost;
     bits[round.winnerSeat] += cost;
   }
-  return { ...match, scores, bits };
+  const entry: import('./state').RoundHistoryEntry = {
+    roundNumber: match.roundNumber,
+    dealerSeat: round.dealerSeat,
+    winnerSeat: round.winnerSeat,
+    goOutType: round.goOutType ?? 'normal',
+    handPoints: scores.map((s, i) => s - prevScores[i]),
+    scores: scores.slice(),
+    handBits: bits.map((b, i) => b - prevBits[i]),
+    bits: bits.slice(),
+  };
+  return { ...match, scores, bits, history: [...(match.history ?? []), entry] };
 }
 
 export function applyBusts(match: MatchState): MatchState {

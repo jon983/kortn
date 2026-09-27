@@ -26,6 +26,22 @@ export interface RoundState {
   turnStartHandSize?: number;
   openedAtTurnStart?: boolean;
 }
+/** One row of the scorepad: what happened in a single completed hand. */
+export interface RoundHistoryEntry {
+  roundNumber: number;
+  dealerSeat: number;
+  winnerSeat: number;
+  goOutType: GoOutType;
+  /** Points scored this hand, per seat (0 for the winner / inactive seats). */
+  handPoints: number[];
+  /** Cumulative point totals after this hand, per seat. */
+  scores: number[];
+  /** Bit change this hand, per seat (winner positive, losers negative). */
+  handBits: number[];
+  /** Cumulative bit balances after this hand, per seat. */
+  bits: number[];
+}
+
 export interface MatchState {
   seats: number;
   pot: number;
@@ -41,6 +57,8 @@ export interface MatchState {
   roundNumber: number;
   finished: boolean;
   winnerSeat: number | null;
+  /** Completed hands, oldest first — one entry per settled round (the scorepad). */
+  history?: RoundHistoryEntry[];
 }
 
 export function dealRound(opts: { seats: number; dealerSeat: number; rng: () => number }): RoundState {
