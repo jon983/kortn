@@ -433,7 +433,8 @@ export function TableView({ matchId, initial }: { matchId: string; initial: Clie
               hiddenId={flyHiddenId}
             />
           </div>
-          <div className="flex shrink-0 flex-col gap-2">
+          {/* Fixed to the card height so the three buttons fit alongside a card. */}
+          <div className="flex h-32 shrink-0 flex-col justify-between">
             <button
               type="button"
               className={ctrlBtn}
