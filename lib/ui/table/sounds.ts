@@ -24,7 +24,7 @@ export function primeAudio(): void {
   getCtx();
 }
 
-function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 0.6, type: OscillatorType = 'triangle') {
+function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 1.0, type: OscillatorType = 'triangle') {
   const peak = gain * masterVolume;
   if (peak <= 0) return;
   const osc = c.createOscillator();
