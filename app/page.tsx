@@ -15,7 +15,7 @@ export default async function Home() {
   const [matches, stats, leaderboard] = await Promise.all([
     listMatchesForUser(db, userId),
     getUserStats(db, userId),
-    getVsParLeaderboard(db, { limit: 10 }),
+    getVsParLeaderboard(db, { minRounds: 10, limit: 10 }),
   ]);
   const active = matches.filter((m) => m.status === 'lobby' || m.status === 'active');
 
@@ -114,7 +114,7 @@ type Leaders = Awaited<ReturnType<typeof getVsParLeaderboard>>;
 
 function Leaderboard({ entries, meId }: { entries: Leaders; meId: string }) {
   if (entries.length === 0) {
-    return <p className="p-2 text-sm text-ink/70">No hands played yet — the leaderboard fills in as games are played.</p>;
+    return <p className="p-2 text-sm text-ink/70">Nobody qualifies yet — players appear here once they&apos;ve played at least 10 hands.</p>;
   }
   return (
     <ol className="text-sm">
