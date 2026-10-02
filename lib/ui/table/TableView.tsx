@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
-import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio } from './sounds';
+import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
@@ -46,10 +46,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const [chatOpen, setChatOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const seenChat = useRef(0);
-  // Mute toggle (persisted); a ref mirrors it so the sound effects read the latest value.
-  const [muted, setMuted] = useState(false);
-  const mutedRef = useRef(muted);
-  mutedRef.current = muted;
+  // Sound volume 0..1 (persisted); a ref mirrors it so the trigger effects read
+  // the latest value. 0 = muted. The slider lives in a popover off the top bar.
+  const [volume, setVolume] = useState(1);
+  const [volOpen, setVolOpen] = useState(false);
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   // While a discard is in flight/settling, keep showing the thrown card on the pile
   // so the previous top never flashes back before the server state catches up.
   const [discardHold, setDiscardHold] = useState<import('../../kalooki').Card | null>(null);
@@ -107,19 +109,22 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Prime audio on first gesture; load the persisted mute preference.
+  // Prime audio on first gesture; load the persisted volume preference.
   useEffect(() => {
     unlockAudioOnce();
-    try { setMuted(localStorage.getItem('kortn-muted') === '1'); } catch { /* ignore */ }
+    try {
+      const saved = parseFloat(localStorage.getItem('kortn-volume') ?? '');
+      if (!Number.isNaN(saved)) setVolume(Math.max(0, Math.min(1, saved)));
+    } catch { /* ignore */ }
   }, []);
-  function toggleMuted() {
-    primeAudio(); // this click is a user gesture — unlock audio now
-    setMuted((m) => {
-      const next = !m;
-      try { localStorage.setItem('kortn-muted', next ? '1' : '0'); } catch { /* ignore */ }
-      if (!next) playYourTurn(); // turning sound on → play a confirmation chime
-      return next;
-    });
+  // Push volume into the sound engine and persist it whenever it changes.
+  useEffect(() => {
+    setSoundVolume(volume);
+    try { localStorage.setItem('kortn-volume', String(volume)); } catch { /* ignore */ }
+  }, [volume]);
+  function onVolumeInput(v: number) {
+    primeAudio(); // this interaction is a user gesture — unlock audio
+    setVolume(v);
   }
 
   // Unread chat: reset when open, otherwise count messages since last opened.
@@ -133,12 +138,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const prevMyTurn = useRef(isMyTurn(view));
   useEffect(() => {
     const now = isMyTurn(view);
-    if (now && !prevMyTurn.current && !mutedRef.current) playYourTurn();
+    if (now && !prevMyTurn.current && volumeRef.current > 0) playYourTurn();
     prevMyTurn.current = now;
   }, [view.currentTurn, view.seat]); // eslint-disable-line react-hooks/exhaustive-deps
   const prevRoundFinished = useRef(view.roundFinished);
   useEffect(() => {
-    if (view.roundFinished && !prevRoundFinished.current && !mutedRef.current) playHandEnd();
+    if (view.roundFinished && !prevRoundFinished.current && volumeRef.current > 0) playHandEnd();
     prevRoundFinished.current = view.roundFinished;
   }, [view.roundFinished]);
 
@@ -474,14 +479,32 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-maroon px-1 text-[9px] font-bold text-bone">{unread}</span>
             )}
           </button>
-          <button
-            type="button"
-            aria-label={muted ? 'Unmute' : 'Mute'}
-            onClick={toggleMuted}
-            className="rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
-          >
-            {muted ? '🔇' : '🔊'}
-          </button>
+          <span className="relative">
+            <button
+              type="button"
+              aria-label="Volume"
+              onClick={() => setVolOpen((o) => !o)}
+              className="rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+            >
+              {volume === 0 ? '🔇' : volume < 0.5 ? '🔈' : '🔊'}
+            </button>
+            {volOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 flex items-center gap-2 rounded-md border border-brass/60 bg-[#2a1c12] px-3 py-2 shadow-xl">
+                <span className="text-[11px] text-[#c9b48a]">Vol</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(volume * 100)}
+                  aria-label="Sound volume"
+                  className="h-1 w-28 accent-brass"
+                  onChange={(e) => onVolumeInput(Number(e.target.value) / 100)}
+                  onPointerUp={() => { if (volumeRef.current > 0) playYourTurn(); }}
+                />
+                <span className="w-7 text-right text-[11px] tabular-nums text-brass">{Math.round(volume * 100)}</span>
+              </div>
+            )}
+          </span>
           <button
             type="button"
             onClick={() => setShowScores((s) => !s)}

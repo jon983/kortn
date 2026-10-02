@@ -3,6 +3,12 @@
 // audio until a user gesture, so call unlockAudioOnce() to resume on first input.
 
 let ctx: AudioContext | null = null;
+let masterVolume = 1; // 0..1, set from the volume control
+
+/** Set the master output level (0 = silent, 1 = full). */
+export function setVolume(v: number): void {
+  masterVolume = Math.max(0, Math.min(1, v));
+}
 
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -19,13 +25,15 @@ export function primeAudio(): void {
 }
 
 function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 0.6, type: OscillatorType = 'triangle') {
+  const peak = gain * masterVolume;
+  if (peak <= 0) return;
   const osc = c.createOscillator();
   const g = c.createGain();
   osc.type = type;
   osc.frequency.value = freq;
   const t0 = c.currentTime + start;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(gain, t0 + 0.012);
+  g.gain.linearRampToValueAtTime(peak, t0 + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   osc.connect(g).connect(c.destination);
   osc.start(t0);
