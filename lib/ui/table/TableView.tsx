@@ -330,7 +330,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     doLayoff(meldId);
   }
 
-  const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column') => (
+  const renderOpp = (o: ClientView['opponents'][number], orientation: 'row' | 'column', side?: 'left' | 'right') => (
     <div key={o.seat} data-seat={o.seat}>
       <OpponentSeat
         name={view.seatNames[o.seat]}
@@ -346,6 +346,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         onMeldClick={onMeldTap}
         meldOrientation={orientation}
         visibleCount={dealing ? (dealCounts[o.seat] ?? 0) : undefined}
+        side={side}
       />
     </div>
   );
@@ -431,7 +432,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <div className="flex min-h-0 flex-1">
         {seating.left.length > 0 && (
           <div className="flex flex-col justify-center gap-6 p-2">
-            {seating.left.map((o) => renderOpp(o, 'column'))}
+            {seating.left.map((o) => renderOpp(o, 'column', 'left'))}
           </div>
         )}
 
@@ -465,7 +466,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
         {seating.right.length > 0 && (
           <div className="flex flex-col justify-center gap-6 p-2">
-            {seating.right.map((o) => renderOpp(o, 'column'))}
+            {seating.right.map((o) => renderOpp(o, 'column', 'right'))}
           </div>
         )}
       </div>
