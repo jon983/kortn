@@ -13,7 +13,12 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
-function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 0.14, type: OscillatorType = 'sine') {
+/** Create/resume the audio context — safe to call from a user gesture to unlock. */
+export function primeAudio(): void {
+  getCtx();
+}
+
+function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 0.28, type: OscillatorType = 'triangle') {
   const osc = c.createOscillator();
   const g = c.createGain();
   osc.type = type;
