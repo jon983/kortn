@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
-import { playYourTurn, playHandEnd, unlockAudioOnce } from './sounds';
+import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio } from './sounds';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
@@ -113,9 +113,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     try { setMuted(localStorage.getItem('kortn-muted') === '1'); } catch { /* ignore */ }
   }, []);
   function toggleMuted() {
+    primeAudio(); // this click is a user gesture — unlock audio now
     setMuted((m) => {
       const next = !m;
       try { localStorage.setItem('kortn-muted', next ? '1' : '0'); } catch { /* ignore */ }
+      if (!next) playYourTurn(); // turning sound on → play a confirmation chime
       return next;
     });
   }
