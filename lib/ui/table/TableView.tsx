@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
+import { playYourTurn, playHandEnd, unlockAudioOnce } from './sounds';
 import { playAction } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
@@ -41,6 +42,14 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showScores, setShowScores] = useState(false);
+  // Chat open state (toggled from the top bar) + unread count while closed.
+  const [chatOpen, setChatOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const seenChat = useRef(0);
+  // Mute toggle (persisted); a ref mirrors it so the sound effects read the latest value.
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
   // While a discard is in flight/settling, keep showing the thrown card on the pile
   // so the previous top never flashes back before the server state catches up.
   const [discardHold, setDiscardHold] = useState<import('../../kalooki').Card | null>(null);
@@ -97,6 +106,39 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Prime audio on first gesture; load the persisted mute preference.
+  useEffect(() => {
+    unlockAudioOnce();
+    try { setMuted(localStorage.getItem('kortn-muted') === '1'); } catch { /* ignore */ }
+  }, []);
+  function toggleMuted() {
+    setMuted((m) => {
+      const next = !m;
+      try { localStorage.setItem('kortn-muted', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  // Unread chat: reset when open, otherwise count messages since last opened.
+  useEffect(() => {
+    if (chatOpen) { seenChat.current = chat.length; setUnread(0); }
+    else setUnread(chat.length - seenChat.current);
+  }, [chat.length, chatOpen]);
+
+  // Sound: chime when it becomes your turn; flourish when a hand ends. Edge-
+  // triggered (prev refs) so they never fire on initial mount.
+  const prevMyTurn = useRef(isMyTurn(view));
+  useEffect(() => {
+    const now = isMyTurn(view);
+    if (now && !prevMyTurn.current && !mutedRef.current) playYourTurn();
+    prevMyTurn.current = now;
+  }, [view.currentTurn, view.seat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const prevRoundFinished = useRef(view.roundFinished);
+  useEffect(() => {
+    if (view.roundFinished && !prevRoundFinished.current && !mutedRef.current) playHandEnd();
+    prevRoundFinished.current = view.roundFinished;
+  }, [view.roundFinished]);
 
   // Highlight newly-arrived cards (e.g. the one you just drew) so it's easy to spot.
   const prevHandIds = useRef<Set<string>>(new Set(view.you.hand.map((c) => c.id)));
@@ -418,7 +460,26 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
           )}
         </span>
-        <span className="flex items-center gap-3 justify-self-end">
+        <span className="flex items-center gap-2 justify-self-end">
+          <button
+            type="button"
+            aria-label={chatOpen ? 'Close chat' : 'Open chat'}
+            onClick={() => setChatOpen((o) => !o)}
+            className="relative rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+          >
+            💬
+            {!chatOpen && unread > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-maroon px-1 text-[9px] font-bold text-bone">{unread}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            aria-label={muted ? 'Unmute' : 'Mute'}
+            onClick={toggleMuted}
+            className="rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
           <button
             type="button"
             onClick={() => setShowScores((s) => !s)}
@@ -617,7 +678,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       ))}
 
       {/* in-game chat */}
-      <ChatPanel matchId={matchId} chat={chat} seatNames={view.seatNames} mySeat={view.seat} />
+      <ChatPanel matchId={matchId} chat={chat} seatNames={view.seatNames} mySeat={view.seat} open={chatOpen} onClose={() => setChatOpen(false)} />
 
       {/* toast */}
       {toast && (

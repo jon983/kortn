@@ -6,21 +6,13 @@ import type { ChatLine } from './useMatchStream';
 const QUICK = ['👍', 'Nice!', 'Your turn', 'Good game'];
 
 export function ChatPanel({
-  matchId, chat, seatNames, mySeat,
+  matchId, chat, seatNames, mySeat, open, onClose,
 }: {
   matchId: string; chat: ChatLine[]; seatNames: string[]; mySeat: number;
+  open: boolean; onClose: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
-  const [unread, setUnread] = useState(0);
-  const seen = useRef(chat.length);
   const listRef = useRef<HTMLDivElement>(null);
-
-  // Track unread while closed; clear when opened.
-  useEffect(() => {
-    if (open) { seen.current = chat.length; setUnread(0); }
-    else setUnread(chat.length - seen.current);
-  }, [chat.length, open]);
 
   // Keep the newest message in view.
   useEffect(() => {
@@ -34,23 +26,14 @@ export function ChatPanel({
     await sendChatAction(matchId, t);
   }
 
+  if (!open) return null;
+
   return (
-    <div className="absolute right-3 top-14 z-40 flex flex-col items-end">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="relative rounded-full border-2 border-brass bg-[#2a1c12] px-4 py-2 text-sm font-bold text-brass shadow-lg hover:bg-brass/10"
-      >
-        💬 Chat
-        {!open && unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-maroon px-1 text-[10px] font-bold text-bone">{unread}</span>
-        )}
-      </button>
-      {open && (
-        <div className="mt-2 flex h-80 w-72 max-w-[85vw] flex-col rounded-lg border-2 border-brass bg-[#2a1c12] shadow-2xl">
+    <div className="absolute right-3 top-14 z-40">
+      <div className="flex h-80 w-72 max-w-[85vw] flex-col rounded-lg border-2 border-brass bg-[#2a1c12] shadow-2xl">
           <div className="flex items-center justify-between border-b border-brass/30 px-3 py-1.5">
             <span className="text-sm font-bold text-brass">Table talk</span>
-            <button type="button" onClick={() => setOpen(false)} className="text-xs text-[#c9b48a] hover:text-bone">✕</button>
+            <button type="button" onClick={onClose} className="text-xs text-[#c9b48a] hover:text-bone">✕</button>
           </div>
           <div ref={listRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-2 text-sm">
             {chat.length === 0 && <p className="text-xs italic text-[#c9b48a]">No messages yet — say hello.</p>}
@@ -79,8 +62,7 @@ export function ChatPanel({
             />
             <button type="submit" className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 text-sm font-bold text-bone">Send</button>
           </form>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
