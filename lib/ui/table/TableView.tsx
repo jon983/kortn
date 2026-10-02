@@ -19,12 +19,25 @@ import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
 const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
+const SPACE_PREFIX = '__space_';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
   const { view, chat } = useMatchStream(matchId, initial, initialChat);
   const [selected, setSelected] = useState<string[]>([]);
   const [staged, setStaged] = useState<{ cards: import('../../kalooki').Card[] }[]>([]);
   const [order, setOrder] = useState<string[] | null>(null);
+  const spaceSeq = useRef(0);
+  // Insert a draggable separator into the hand. It's local/visual only — never
+  // part of play — and is removed by dragging it off either end (see Hand).
+  function addSpace() {
+    setOrder((prev) => {
+      const base = prev ?? sortHand(view.you.hand).map((c) => c.id);
+      return [...base, `${SPACE_PREFIX}${++spaceSeq.current}`];
+    });
+  }
+  function sortHandCards() {
+    setOrder(sortHand(view.you.hand).map((c) => c.id)); // re-sort cards; clears spaces
+  }
   const [obligationId, setObligationId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showScores, setShowScores] = useState(false);
@@ -241,12 +254,20 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     prevRoundForDraw.current = view.roundNumber;
   }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hand = useMemo(() => {
+  // The hand order may include synthetic spacer ids (purely-visual separators the
+  // player can drag between groups). handItems keeps them; `hand` is cards only.
+  const handItems = useMemo(() => {
     const byId = new Map(view.you.hand.map((c) => [c.id, c] as const));
-    const base = order ? order.filter((id) => byId.has(id)) : sortHand(view.you.hand).map((c) => c.id);
+    const base = order
+      ? order.filter((id) => byId.has(id) || id.startsWith(SPACE_PREFIX))
+      : sortHand(view.you.hand).map((c) => c.id);
     for (const c of view.you.hand) if (!base.includes(c.id)) base.push(c.id);
-    return base.map((id) => byId.get(id)!).filter(Boolean);
+    return base.map((id) => ({ id, card: byId.get(id) ?? null }));
   }, [view.you.hand, order]);
+  const hand = useMemo(
+    () => handItems.filter((i) => i.card).map((i) => i.card as import('../../kalooki').Card),
+    [handItems],
+  );
 
   // Cards moved into the laying-down tray shouldn't also appear in the hand.
   const stagedIds = useMemo(() => new Set(staged.flatMap((g) => g.cards.map((c) => c.id))), [staged]);
@@ -485,9 +506,17 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           </div>
         )}
         <div className="mt-2 flex items-stretch justify-center gap-3">
+          {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
+          <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">
+            <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
+            <button type="button" className={ctrlBtn} onClick={addSpace}>＋ Add space</button>
+          </div>
+
           <div className="min-w-0" data-hand>
             <Hand
-              cards={dealing ? handInPlay.slice(0, dealCounts[view.seat] ?? 0) : handInPlay}
+              items={dealing
+                ? handInPlay.slice(0, dealCounts[view.seat] ?? 0).map((c) => ({ id: c.id, card: c }))
+                : handItems.filter((i) => !i.card || !stagedIds.has(i.id))}
               selectedIds={selected}
               onToggle={(id) =>
                 setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
@@ -497,18 +526,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               hiddenId={flyHiddenId}
             />
           </div>
-          {/* Match the hand's height/padding (pt-6 pb-2) so the three buttons span
-              exactly the card zone and align top-and-bottom with the cards. */}
-          <div className="flex shrink-0 flex-col justify-between pt-6 pb-2">
-            <button
-              type="button"
-              className={ctrlBtn}
-              onClick={() => setOrder(sortHand(view.you.hand).map((c) => c.id))}
-            >
-              ↕ Sort
-            </button>
-            {/* Always rendered (disabled when you can't act) so the column keeps a
-                fixed height and the screen never shifts between turns. */}
+
+          {/* right controls: Meld + Discard, centred with a gap. Always rendered
+              (disabled when you can't act) so the column height never shifts. */}
+          <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">
             {(() => {
               const canAct = isMyTurn(view) && view.phase === 'awaitingDiscard';
               return (

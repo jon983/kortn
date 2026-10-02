@@ -17,25 +17,29 @@ export function sortHand(cards: Card[]): Card[] {
   });
 }
 
+/** An entry in the hand row: a real card, or a spacer separator (card === null). */
+export interface HandItem { id: string; card: Card | null }
+
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag (vs a tap)
 
 export function Hand({
-  cards, selectedIds, onToggle, onReorder, highlightIds = [], hiddenId = null,
+  items, selectedIds, onToggle, onReorder, highlightIds = [], hiddenId = null,
 }: {
-  cards: Card[]; selectedIds: string[]; onToggle: (id: string) => void;
+  items: HandItem[]; selectedIds: string[]; onToggle: (id: string) => void;
   onReorder: (ids: string[]) => void; highlightIds?: string[]; hiddenId?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Pointer-based drag so it works with touch (iPad) as well as mouse; HTML5
-  // drag-and-drop doesn't fire for touch on iOS Safari.
+  // Pointer-based drag so it works with touch (iPad) as well as mouse.
   const drag = useRef<{ id: string; startX: number; active: boolean; pointerId: number } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // New order with the dragged card inserted where the pointer sits.
+  const isSpace = (id: string) => items.find((i) => i.id === id)?.card == null;
+
+  // New order with the dragged item inserted where the pointer sits.
   function orderForPointer(clientX: number): string[] {
     const el = containerRef.current;
     const d = drag.current;
-    if (!el || !d) return cards.map((c) => c.id);
+    if (!el || !d) return items.map((i) => i.id);
     const others = Array.from(el.querySelectorAll<HTMLElement>('[data-card-id]'))
       .filter((n) => n.dataset.cardId !== d.id);
     let insert = others.length;
@@ -43,7 +47,7 @@ export function Hand({
       const r = others[i].getBoundingClientRect();
       if (clientX < r.left + r.width / 2) { insert = i; break; }
     }
-    const rest = cards.map((c) => c.id).filter((x) => x !== d.id);
+    const rest = items.map((i) => i.id).filter((x) => x !== d.id);
     rest.splice(insert, 0, d.id);
     return rest;
   }
@@ -69,25 +73,42 @@ export function Hand({
     const d = drag.current;
     drag.current = null;
     setActiveId(null);
-    if (d && !d.active) onToggle(id); // no meaningful movement → treat as a tap
+    if (!d) return;
+    if (!d.active) { onToggle(id); return; } // no movement → a tap
+    // A spacer dragged off either end is removed.
+    const ids = items.map((i) => i.id);
+    const idx = ids.indexOf(id);
+    if (isSpace(id) && (idx === 0 || idx === ids.length - 1)) {
+      onReorder(ids.filter((x) => x !== id));
+    }
   }
 
   return (
     <div ref={containerRef} className="flex justify-center overflow-x-auto pt-6 pb-2">
-      {cards.map((c) => (
-        <div
-          key={c.id}
-          data-card-id={c.id}
-          style={{ touchAction: 'none' }}
-          className={`-ml-10 shrink-0 first:ml-0 ${hiddenId === c.id ? 'opacity-0' : ''} ${activeId === c.id ? 'z-20 scale-105' : ''}`}
-          onPointerDown={(e) => onPointerDown(e, c.id)}
-          onPointerMove={onPointerMove}
-          onPointerUp={() => endDrag(c.id)}
-          onPointerCancel={() => endDrag(c.id)}
-        >
-          <CardFace card={c} selected={selectedIds.includes(c.id)} highlight={highlightIds.includes(c.id)} />
-        </div>
-      ))}
+      {items.map((item, i) => {
+        const space = item.card == null;
+        const prevSpace = i > 0 && items[i - 1].card == null;
+        // Cards fan with overlap; a spacer (and the card after it) break the fan.
+        const margin = i === 0 ? '' : space || prevSpace ? 'ml-2' : '-ml-10';
+        return (
+          <div
+            key={item.id}
+            data-card-id={item.id}
+            style={{ touchAction: 'none' }}
+            className={`${margin} shrink-0 ${hiddenId === item.id ? 'opacity-0' : ''} ${activeId === item.id ? 'z-20 scale-105' : ''}`}
+            onPointerDown={(e) => onPointerDown(e, item.id)}
+            onPointerMove={onPointerMove}
+            onPointerUp={() => endDrag(item.id)}
+            onPointerCancel={() => endDrag(item.id)}
+          >
+            {space ? (
+              <div className="h-32 w-7 rounded-md border-2 border-dashed border-bone/25" aria-label="separator" />
+            ) : (
+              <CardFace card={item.card as Card} selected={selectedIds.includes(item.id)} highlight={highlightIds.includes(item.id)} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
