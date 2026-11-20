@@ -1,8 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { db, getMatch } from '../../../../lib/db';
-import { resolveSeat, redactStateFor } from '../../../../lib/server';
-import { loadGameState, listPlayersWithNames, listRecentChatMessages } from '../../../../lib/db';
+import { loadClientView } from '../../../../lib/server';
+import { listRecentChatMessages } from '../../../../lib/db';
 import { TableView } from '../../../../lib/ui/table/TableView';
 
 export default async function TablePage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,14 +12,8 @@ export default async function TablePage({ params }: { params: Promise<{ id: stri
   const match = await getMatch(db, id);
   if (!match) redirect('/');
   if (match.status === 'lobby') redirect(`/match/${id}/lobby`);
-  const seat = await resolveSeat(db, id, userId);
-  if (seat === null) redirect('/');
-  const loaded = await loadGameState(db, id);
-  if (!loaded) redirect('/');
-  const players = await listPlayersWithNames(db, id);
-  const names: (string | null)[] = [];
-  for (const p of players) names[p.seatIndex] = p.displayName;
-  const initial = redactStateFor(loaded.state, seat, names);
+  const initial = await loadClientView(db, id, userId);
+  if (!initial) redirect('/');
   const chatRows = await listRecentChatMessages(db, id);
   const initialChat = chatRows.map((m) => ({
     id: m.id,

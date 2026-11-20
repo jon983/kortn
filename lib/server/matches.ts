@@ -1,7 +1,8 @@
 import type { RuntimeDeps, SubmitResult } from './deps';
 import {
   upsertUser, addPlayer, listPlayers, getMatch, getMatchByJoinCode,
-  updateMatchStatus, updatePlayer, initGameState, reseatOne,
+  updateMatchStatus, updatePlayer, initGameState, reseatOne, abandonMatch,
+  loadGameState, saveGameState, OptimisticLockError,
   createMatch as createMatchRow,
 } from '../db';
 import { startMatch as engineStartMatch, shuffle } from '../kalooki';
@@ -76,4 +77,43 @@ export async function startGame(
   await updateMatchStatus(deps.db, input.matchId, 'active');
   await deps.pubsub.publish('match:' + input.matchId, state);
   return { ok: true };
+}
+
+/**
+ * End a game early (people walked away). Any seated player may do it. The match
+ * is marked abandoned: no winner, no pot paid out, and it doesn't count as a
+ * game played — only the bits already paid hand-by-hand stand.
+ */
+export async function endMatch(
+  deps: RuntimeDeps,
+  input: { matchId: string; userId: string },
+): Promise<SubmitResult> {
+  const match = await getMatch(deps.db, input.matchId);
+  if (!match) return { ok: false, reason: 'No such match' };
+  const players = await listPlayers(deps.db, input.matchId);
+  if (!players.some((p) => p.userId === input.userId)) return { ok: false, reason: 'Not a player in this match' };
+  if (match.status !== 'lobby' && match.status !== 'active') return { ok: false, reason: 'This game is already over' };
+
+  if (match.status === 'lobby') {
+    await abandonMatch(deps.db, input.matchId);
+    await deps.pubsub.publish('match:' + input.matchId, { type: 'lobby', matchId: input.matchId });
+    return { ok: true };
+  }
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const loaded = await loadGameState(deps.db, input.matchId);
+    if (!loaded) break;
+    if (loaded.state.finished) return { ok: false, reason: 'This game is already over' };
+    const ended = { ...loaded.state, finished: true, winnerSeat: null, abandoned: true };
+    try {
+      await saveGameState(deps.db, input.matchId, loaded.version, ended);
+    } catch (e) {
+      if (e instanceof OptimisticLockError) continue;
+      throw e;
+    }
+    await abandonMatch(deps.db, input.matchId);
+    await deps.pubsub.publish('match:' + input.matchId, ended);
+    return { ok: true };
+  }
+  return { ok: false, reason: 'conflict' };
 }

@@ -11,9 +11,11 @@ import type { ClientView } from '../../server';
  * Discard) live in the control column beside the hand, not here.
  */
 export function ActionBar({
-  view, onReturnDiscard,
+  view, onReturnDiscard, jokerOwed = false, onReturnJoker,
 }: {
   view: ClientView; onReturnDiscard: () => void;
+  /** A joker reclaimed this turn is still in hand (must be melded or put back). */
+  jokerOwed?: boolean; onReturnJoker?: () => void;
 }) {
   // Whose turn it is already shows in the top bar; render nothing here when it's
   // not your turn (or before you've drawn) so the hand never shifts.
@@ -27,6 +29,14 @@ export function ActionBar({
           <span className="text-xs italic text-[#c9b48a]">Can&apos;t use the card you took?</span>
           <button type="button" className="text-xs font-bold underline text-brass" onClick={onReturnDiscard}>
             Put it back &amp; draw from stock
+          </button>
+        </div>
+      )}
+      {jokerOwed && (
+        <div className="flex items-center gap-3 rounded-md bg-black/30 px-3 py-1">
+          <span className="text-xs italic text-amber-300">Use the reclaimed joker in a new meld — or</span>
+          <button type="button" className="text-xs font-bold underline text-brass" onClick={onReturnJoker}>
+            Put the joker back
           </button>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { desc, eq, sql } from 'drizzle-orm';
 import type { DB } from '../client';
-import { matches, matchPlayers, type MatchSettings } from '../schema';
+import { matches, matchPlayers, gameStates, type MatchSettings } from '../schema';
 
 export type Match = typeof matches.$inferSelect;
 
@@ -34,14 +34,32 @@ export async function getMatchByJoinCode(db: DB, joinCode: string): Promise<Matc
   return row ?? null;
 }
 
-export async function listMatchesForUser(db: DB, userId: string): Promise<Match[]> {
+export type MatchListItem = Match & {
+  /** Game number: order of creation across all games, so every player sees the same one. */
+  number: number;
+  /** Last move / state change, else when the game was set up. */
+  lastActiveAt: Date;
+};
+
+export async function listMatchesForUser(db: DB, userId: string): Promise<MatchListItem[]> {
+  const lastActive = sql<Date>`coalesce(${gameStates.updatedAt}, ${matches.createdAt})`;
   const rows = await db
-    .select({ match: matches })
+    .select({
+      match: matches,
+      number: sql<number>`(select count(*) from ${matches} m2 where m2.created_at <= ${matches.createdAt})`,
+      lastActiveMs: sql<number>`(extract(epoch from ${lastActive}) * 1000)::bigint`,
+    })
     .from(matchPlayers)
     .innerJoin(matches, eq(matches.id, matchPlayers.matchId))
+    .leftJoin(gameStates, eq(gameStates.matchId, matches.id))
     .where(eq(matchPlayers.userId, userId))
-    .orderBy(desc(matches.createdAt));
-  return rows.map((r) => r.match);
+    // Most recently active first.
+    .orderBy(desc(lastActive));
+  return rows.map((r) => ({
+    ...r.match,
+    number: Number(r.number),
+    lastActiveAt: new Date(Number(r.lastActiveMs)),
+  }));
 }
 
 export async function updateMatchStatus(db: DB, id: string, status: Match['status']): Promise<void> {
@@ -57,5 +75,13 @@ export async function setMatchWinner(db: DB, id: string, winnerUserId: string): 
   await db
     .update(matches)
     .set({ winnerUserId, status: 'finished', finishedAt: sql`now()` })
+    .where(eq(matches.id, id));
+}
+
+/** Ended early by a player: no winner, nothing paid out. */
+export async function abandonMatch(db: DB, id: string): Promise<void> {
+  await db
+    .update(matches)
+    .set({ status: 'abandoned', finishedAt: sql`now()` })
     .where(eq(matches.id, id));
 }

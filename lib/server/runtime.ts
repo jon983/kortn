@@ -1,7 +1,7 @@
 import type { RuntimeDeps, SubmitResult, ServerAction } from './deps';
 import { resolveSeat } from './seats';
 import { loadGameState, saveGameState, appendMove, listMoves, OptimisticLockError, recordRound, incrementUserStats, setMatchWinner, listPlayers } from '../db';
-import { applyAction, settleRound, applyBusts, matchWinner, awardPot, rebuy as engineRebuy, dealRound, type MatchState } from '../kalooki';
+import { applyAction, settleRound, applyBusts, resolveImpossibleRebuys, canRebuy, matchWinner, awardPot, rebuy as engineRebuy, dealRound, type MatchState } from '../kalooki';
 
 async function userIdForSeat(deps: RuntimeDeps, matchId: string, seat: number): Promise<string | null> {
   const players = await listPlayers(deps.db, matchId);
@@ -86,8 +86,10 @@ export async function finishRoundTransition(
   const winnerUser = await userIdForSeat(deps, matchId, state.round.winnerSeat!);
   if (winnerUser) await incrementUserStats(deps.db, winnerUser, { roundsWon: 1 });
   // 4. busts, then pause between hands (the finished round stays current so the
-  //    scorecard shows) until every active player clicks "Next hand".
-  const busted = applyBusts(settled);
+  //    scorecard shows) until every active player clicks "Next hand". Busted seats
+  //    that can't rebuy (fewer than two seats left) are ruled out here, so a
+  //    decided match ends now rather than waiting on the loser to click.
+  const busted = resolveImpossibleRebuys(applyBusts(settled));
   const paused: MatchState = { ...busted, readyNext: new Array(busted.seats).fill(false) };
   return persistAdvance(deps, matchId, paused);
 }
@@ -118,6 +120,7 @@ export async function submitAction(
         }
         ready[seat] = true; // a rebuy/decline also counts as "ready to continue"
         if (actionType === 'rebuy') {
+          if (!canRebuy(st, seat)) return { ok: false, reason: 'Too few players remain to buy back in.' };
           updated = { ...engineRebuy(st, seat), readyNext: ready };
         } else {
           // decline: mark rebought=true so the seat is permanently out and no longer pending

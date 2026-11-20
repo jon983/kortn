@@ -28,6 +28,12 @@ describe('ActionBar (info strip)', () => {
     btn.click();
     expect(onReturn).toHaveBeenCalled();
   });
+  it('offers to put a reclaimed joker back when one is owed', () => {
+    const onReturnJoker = vi.fn();
+    render(<ActionBar view={view() as any} onReturnDiscard={() => {}} jokerOwed onReturnJoker={onReturnJoker} />);
+    screen.getByRole('button', { name: /put the joker back/i }).click();
+    expect(onReturnJoker).toHaveBeenCalled();
+  });
   it('renders nothing actionable during the draw phase', () => {
     const { container } = render(<ActionBar view={view({ phase: 'awaitingDraw' }) as any}
       onReturnDiscard={() => {}} />);

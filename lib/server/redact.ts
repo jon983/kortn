@@ -39,6 +39,10 @@ export interface ClientView {
   goOutType: GoOutType | null;
   matchFinished: boolean;
   matchWinnerSeat: number | null;
+  /** Ended early by a player: no winner, no pot paid out. */
+  matchAbandoned: boolean;
+  /** End-of-match bit settlement per seat (ante, rebuys, pot), or null until the match is won. */
+  payout: number[] | null;
   /** Between hands: which seats have clicked "Next hand" (seat-indexed). */
   readyNext: boolean[];
   /** Completed hands, oldest first — the scorepad. */
@@ -91,6 +95,8 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
     goOutType: round.goOutType,
     matchFinished: state.finished,
     matchWinnerSeat: state.winnerSeat,
+    matchAbandoned: state.abandoned ?? false,
+    payout: state.payout ?? null,
     readyNext: Array.from({ length: state.seats }, (_, i) => state.readyNext?.[i] ?? false),
     history: state.history ?? [],
   };

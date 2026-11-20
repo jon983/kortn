@@ -7,6 +7,14 @@ export type SeatStatus = 'active' | 'busted' | 'left';
 export type GoOutType = 'normal' | 'kalooki' | 'treasure';
 
 export interface TableMeld { id: string; kind: MeldKind; ownerSeat: number; cards: Card[] }
+export interface JokerRetrieval {
+  jokerId: string;
+  meldId: string;
+  /** The natural card(s) laid off that freed the joker. */
+  naturalIds: string[];
+  /** Where the joker sat in the meld before it was reclaimed. */
+  jokerIndex: number;
+}
 export interface PlayerState {
   seat: number; hand: Card[]; hasOpened: boolean;
 }
@@ -21,6 +29,8 @@ export interface RoundState {
   drawObligation: Card | null;
   /** Jokers reclaimed from a table meld this turn that must be used in a new meld before discarding. */
   jokerObligation?: string[];
+  /** How each joker in jokerObligation was reclaimed, so it can be put back (returnJoker). */
+  jokerRetrievals?: JokerRetrieval[];
   addedToOpponentThisTurn: boolean;
   finished: boolean;
   winnerSeat: number | null;
@@ -54,7 +64,14 @@ export interface MatchState {
   /** Between hands: which seats have clicked "Next hand". Reset when a new round is dealt. */
   readyNext?: boolean[];
   statuses: SeatStatus[];
+  /** Rebuy decision made (bought back OR declined / ruled out). */
   rebought: boolean[];
+  /** Seats that actually paid to buy back in (absent on matches from before this was tracked). */
+  boughtBack?: boolean[];
+  /** End-of-match bit settlement per seat (ante, rebuys, pot) — already folded into `bits`. */
+  payout?: number[];
+  /** Ended early by a player: no winner, no pot paid out; per-hand bits stand. */
+  abandoned?: boolean;
   round: RoundState;
   roundNumber: number;
   finished: boolean;

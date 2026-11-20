@@ -6,6 +6,8 @@ export function handScore(hand: Card[]): number {
 }
 
 const BIT_COST: Record<string, number> = { normal: 1, kalooki: 2, treasure: 4 };
+/** Every seat antes this many bits into the pot at the start; a rebuy costs the same again. */
+export const ANTE = 4;
 
 /**
  * Tally hand-point penalties and bit payments for the round that just ended.
@@ -60,9 +62,31 @@ export function applyBusts(match: MatchState): MatchState {
   return { ...match, statuses };
 }
 
+const activeCount = (match: MatchState): number =>
+  match.statuses.filter((s) => s === 'active').length;
+
+/**
+ * A busted seat may buy back in (once) only while at least two seats are still
+ * in — otherwise the match is already decided.
+ */
+export function canRebuy(match: MatchState, seat: number): boolean {
+  return match.statuses[seat] === 'busted' && !match.rebought[seat] && activeCount(match) >= 2;
+}
+
+/**
+ * Close out every pending rebuy decision that can't be taken (fewer than two
+ * seats still in), so the match can end without waiting on a busted player.
+ */
+export function resolveImpossibleRebuys(match: MatchState): MatchState {
+  if (activeCount(match) >= 2) return match;
+  const rebought = match.rebought.map((r, s) => r || match.statuses[s] === 'busted');
+  return { ...match, rebought };
+}
+
 export function rebuy(match: MatchState, seat: number): MatchState {
   if (match.statuses[seat] !== 'busted') throw new Error('Only a busted seat can rebuy.');
   if (match.rebought[seat]) throw new Error('A seat may only rebuy once.');
+  if (!canRebuy(match, seat)) throw new Error('Too few players remain to buy back in.');
   const activeScores = match.scores.filter((_, s) => match.statuses[s] === 'active');
   const highest = activeScores.length ? Math.max(...activeScores) : 0;
   const scores = match.scores.slice();
@@ -71,7 +95,9 @@ export function rebuy(match: MatchState, seat: number): MatchState {
   statuses[seat] = 'active';
   const rebought = match.rebought.slice();
   rebought[seat] = true;
-  return { ...match, scores, statuses, rebought, pot: match.pot + 4 };
+  const boughtBack = (match.boughtBack ?? new Array(match.seats).fill(false)).slice();
+  boughtBack[seat] = true;
+  return { ...match, scores, statuses, rebought, boughtBack, pot: match.pot + ANTE };
 }
 
 /**
@@ -93,13 +119,57 @@ export function matchWinner(match: MatchState): number | null {
 }
 
 /**
- * Marks the match finished if exactly one 'active' seat remains, and records
- * that seat as the winner. Returns the updated MatchState unchanged if the
- * match is still ongoing.
+ * For matches begun before `boughtBack` was tracked (`rebought` also covers
+ * declines): a rebuy resets a busted seat's score to the highest active score,
+ * so a seat whose score going into a hand doesn't match its total after going
+ * over 150 bought back. Cross-checked against the pot; if the scorepad can't
+ * account for every rebuy, fall back to the seats marked `rebought` when that
+ * count fits, else assume none.
+ */
+export function inferBoughtBack(match: MatchState): boolean[] {
+  const rebuys = Math.round((match.pot - match.seats * ANTE) / ANTE);
+  const none = new Array(match.seats).fill(false);
+  if (rebuys <= 0) return none;
+  const bb = none.slice();
+  const h = match.history ?? [];
+  for (let k = 0; k + 1 < h.length; k++) {
+    for (let s = 0; s < match.seats; s++) {
+      const prior = h[k + 1].scores[s] - (h[k + 1].handPoints?.[s] ?? 0);
+      if (h[k].scores[s] > 150 && prior !== h[k].scores[s]) bb[s] = true;
+    }
+  }
+  // A seat that's back in play after a rebuy decision paid to get there (declining
+  // leaves it busted) — this also catches a rebuy after the last scored hand.
+  for (let s = 0; s < match.seats; s++) {
+    if (match.rebought[s] && match.statuses[s] === 'active') bb[s] = true;
+  }
+  if (bb.filter(Boolean).length === rebuys) return bb;
+  const marked = match.rebought.slice();
+  return marked.filter(Boolean).length === rebuys ? marked : none;
+}
+
+/**
+ * Per-seat bit settlement at match end: every seat paid the ante, each rebuy
+ * cost another ANTE, and the winner collects the whole pot. Sums to zero.
+ */
+export function potPayout(match: MatchState, winnerSeat: number): number[] {
+  const boughtBack = match.boughtBack ?? [];
+  return Array.from({ length: match.seats }, (_, s) =>
+    -ANTE - (boughtBack[s] ? ANTE : 0) + (s === winnerSeat ? match.pot : 0));
+}
+
+/**
+ * Marks the match finished if exactly one 'active' seat remains, records that
+ * seat as the winner and pays out the pot (folded into `bits`, itemised in
+ * `payout`). Returns the MatchState unchanged if the match is still ongoing.
  *
  * See matchWinner for the call-order invariant regarding rebuy and busted seats.
  */
 export function awardPot(match: MatchState): MatchState {
   const winner = matchWinner(match);
-  return { ...match, finished: winner !== null, winnerSeat: winner };
+  if (winner === null) return { ...match, finished: false, winnerSeat: null };
+  const boughtBack = match.boughtBack ?? inferBoughtBack(match);
+  const payout = potPayout({ ...match, boughtBack }, winner);
+  const bits = (match.bits ?? new Array(match.seats).fill(0)).map((b, s) => b + payout[s]);
+  return { ...match, finished: true, winnerSeat: winner, boughtBack, payout, bits };
 }

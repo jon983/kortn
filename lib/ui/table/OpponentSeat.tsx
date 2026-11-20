@@ -3,6 +3,9 @@ import { MeldPile } from './MeldPile';
 import type { TableMeld, Pack } from '../../kalooki';
 import type { ReactElement } from 'react';
 
+/** Dark, slightly blurred plate behind seat labels so they read on any table art. */
+export const SEAT_LABEL = 'inline-block rounded-md bg-black/75 px-2 py-0.5 leading-tight shadow-md backdrop-blur-sm';
+
 export function OpponentSeat({
   name, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
   meldOrientation = 'row', visibleCount, side,
@@ -23,12 +26,13 @@ export function OpponentSeat({
   // During the deal, only show the backs that have "landed" so far.
   const packs = visibleCount == null ? allPacks : allPacks.slice(0, visibleCount);
 
+  // Labels sit on a dark plate so they stay legible over the doily / pale felt.
   const nameLine = (
-    <div className={`text-sm font-bold ${isTurn ? 'text-brass' : 'text-bone'} ${status !== 'active' ? 'opacity-50 line-through' : ''}`}>
+    <div className={`${SEAT_LABEL} text-sm font-bold ${isTurn ? 'text-brass ring-1 ring-brass' : 'text-bone'} ${status !== 'active' ? 'opacity-60 line-through' : ''}`}>
       {name}
     </div>
   );
-  const countLine = <div className="text-[10px] text-[#c9b48a]">{handCount} cards · {score} pts</div>;
+  const countLine = <div className={`${SEAT_LABEL} mt-0.5 text-[11px] text-[#e6d3a8]`}>{handCount} cards · {score} pts</div>;
   const meldPile = (m: TableMeld) => (
     <MeldPile key={m.id} meld={m} armed={armedMeldIds?.includes(m.id)} flash={flashMeldIds?.includes(m.id)} onClick={onMeldClick ? () => onMeldClick(m.id) : undefined} />
   );

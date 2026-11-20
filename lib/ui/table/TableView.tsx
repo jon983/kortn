@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
 import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
-import { playAction } from '../../../app/actions/play';
+import { playAction, getTableView } from '../../../app/actions/play';
+import { EndGameButton } from '../../../app/EndGameButton';
 import { Hand, sortHand } from './Hand';
-import { OpponentSeat } from './OpponentSeat';
+import { OpponentSeat, SEAT_LABEL } from './OpponentSeat';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
@@ -16,6 +17,7 @@ import { ActionBar, LayingDownTray } from './ActionBar';
 import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
+import { seatAround } from '../table-geometry';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
@@ -23,7 +25,7 @@ const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180d
 const SPACE_PREFIX = '__space_';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
-  const { view, chat } = useMatchStream(matchId, initial, initialChat);
+  const { view, chat, connected } = useMatchStream(matchId, initial, initialChat, { fetchView: () => getTableView(matchId) });
   const [selected, setSelected] = useState<string[]>([]);
   const [staged, setStaged] = useState<{ cards: import('../../kalooki').Card[] }[]>([]);
   const [order, setOrder] = useState<string[] | null>(null);
@@ -330,17 +332,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   // it's lay down or discard, never both in one turn.
   const discardEnabled = selected.length === 1 && (!obligationId || trayIncludesObligation) && !jokerOwed && staged.length === 0;
 
-  // Seat the opponents around the table. 2p → top; 3p → left/right; 4p → left/top/right.
-  // Side seats stack their melds vertically so they read as a column down each edge.
-  const seating = useMemo(() => {
-    const o = [...view.opponents].sort((a, b) => a.seat - b.seat);
-    const n = o.length;
-    if (n <= 1) return { left: [], top: o, right: [] };
-    if (n === 2) return { left: [o[0]], top: [], right: [o[1]] };
-    if (n === 3) return { left: [o[0]], top: [o[1]], right: [o[2]] };
-    const k = Math.floor(n / 2);
-    return { left: o.slice(0, k), top: o.slice(k, n - k), right: o.slice(n - k) };
-  }, [view.opponents]);
+  // Seat the opponents around the table relative to you, so play runs clockwise
+  // on every screen (next to act on your left). Side seats stack their melds
+  // vertically so they read as a column down each edge.
+  const seating = useMemo(
+    () => seatAround(view.seat, view.seatNames.length, view.opponents),
+    [view.seat, view.seatNames.length, view.opponents],
+  );
   // Lay-off is armed once you've opened, it's your turn to act, one or more cards
   // are picked, and none is the just-taken discard (which must start a new meld).
   // Tap a table meld to add them; if the meld holds a joker and the cards complete
@@ -448,6 +446,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     await playAction(matchId, { type: 'draw', source: 'stock' });
   }
 
+  // Can't use a joker reclaimed from a meld: put it back and take the natural(s) back.
+  async function handleReturnJoker() {
+    const res = await playAction(matchId, { type: 'returnJoker' });
+    if (!res.ok) { setToast(res.reason ?? 'illegal move'); return; }
+    setSelected([]);
+  }
+
   return (
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
@@ -456,7 +461,26 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
             ⌂ Kitchen
           </Link>
+          {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            title="Refresh the table"
+            aria-label="Refresh the table"
+            className={`rounded-md border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide hover:bg-brass/10 ${
+              connected ? 'border-brass/60 text-brass' : 'animate-pulse border-amber-300 text-amber-300'
+            }`}
+          >
+            ↻{connected ? '' : ' Reconnecting…'}
+          </button>
           <span>Round {view.roundNumber}</span>
+          {!view.matchFinished && (
+            <EndGameButton
+              matchId={matchId}
+              label="Abandon"
+              className="rounded-md border border-maroon/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#e0a08a] hover:bg-maroon/20 disabled:opacity-40"
+            />
+          )}
         </span>
         <span className="justify-self-center">
           {isMyTurn(view) ? (
@@ -581,17 +605,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 text-center">
-          <div className={`text-sm font-bold ${isMyTurn(view) ? 'text-brass' : 'text-bone'}`}>
+          <div className={`${SEAT_LABEL} text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
             {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
           </div>
-          <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
+          <div className={`${SEAT_LABEL} ml-1 text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
-        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} />
-        {jokerOwed && (
-          <div className="mt-1 text-center text-[11px] text-amber-300">
-            The reclaimed joker must go into a new meld before you discard.
-          </div>
-        )}
+        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
           {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
           <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">

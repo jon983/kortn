@@ -4,7 +4,7 @@ import { makeTestDb } from '../../db/__tests__/helpers';
 import { InMemoryPubSub } from '../pubsub';
 import { finishRoundTransition, submitAction } from '../runtime';
 import { upsertUser, createMatch, addPlayer, initGameState, loadGameState, recordRound as _rr } from '../../db';
-import { users } from '../../db/schema';
+import { users, matches as matchesTable } from '../../db/schema';
 import { startMatch, makeRng, type MatchState } from '../../kalooki';
 
 function mkDeps(db: any) { return { db, pubsub: new InMemoryPubSub(), rng: makeRng(7) }; }
@@ -61,7 +61,7 @@ describe('finishRoundTransition', () => {
     expect(persisted!.state.finished).toBe(false);
   });
 
-  it('pauses for a busted player, then ends the match when they decline', async () => {
+  it('ends a 2-player match as soon as a player busts — no click needed — and pays out the pot', async () => {
     const { db, client } = await makeTestDb();
     close = () => client.close();
     const d = mkDeps(db);
@@ -71,21 +71,77 @@ describe('finishRoundTransition', () => {
     await addPlayer(db as any, { matchId: m.id, userId: 'u1', seatIndex: 0 });
     await addPlayer(db as any, { matchId: m.id, userId: 'u2', seatIndex: 1 });
 
-    // seat 1 already at 145, will bust with +9 -> 154 > 150
+    // seat 1 already at 145, will bust with +9 -> 154 > 150; nobody left to rebuy against
     const state = finishedRoundState();
     state.scores = [0, 145];
     await initGameState(db as any, m.id, state);
 
-    const paused = await finishRoundTransition(d, m.id, state);
-    expect(paused.finished).toBe(false);         // paused for the rebuy decision
-    expect(paused.statuses[1]).toBe('busted');
+    const done = await finishRoundTransition(d, m.id, state);
+    expect(done.finished).toBe(true);
+    expect(done.winnerSeat).toBe(0);
+    // hand: seat 1 pays 1 bit; match: both ante 4, winner takes the pot of 8
+    expect(done.payout).toEqual([4, -4]);
+    expect(done.bits).toEqual([5, -5]);
 
-    // seat 1 declines → only seat 0 active → match ends
-    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'decline' } });
-    expect(res.ok).toBe(true);
     const persisted = await loadGameState(db as any, m.id);
     expect(persisted!.state.finished).toBe(true);
-    expect(persisted!.state.winnerSeat).toBe(0);
+    const [row] = await db.select().from(matchesTable).where(eq(matchesTable.id, m.id));
+    expect(row.status).toBe('finished');
+    expect(row.winnerUserId).toBe('u1');
+  });
+
+  it('3 players: a bust with two still in pauses for the rebuy decision', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    const d = mkDeps(db);
+    for (const u of ['u1', 'u2', 'u3']) await upsertUser(db as any, { id: u, displayName: u });
+    const m = await createMatch(db as any, { createdBy: 'u1', seats: 3, joinCode: 'T4' });
+    for (const [i, u] of ['u1', 'u2', 'u3'].entries()) await addPlayer(db as any, { matchId: m.id, userId: u, seatIndex: i });
+
+    const s = startMatch({ seats: 3, seed: 1 });
+    const nine = { id: 'A-clubs-9', kind: 'natural', rank: 9, suit: 'clubs', pack: 'A' } as any;
+    const state: MatchState = {
+      ...s,
+      scores: [0, 145, 20],
+      round: {
+        ...s.round,
+        players: [
+          { seat: 0, hand: [], hasOpened: true },
+          { seat: 1, hand: [nine], hasOpened: true },
+          { seat: 2, hand: [], hasOpened: true },
+        ],
+        finished: true, winnerSeat: 0, goOutType: 'normal' as const,
+      },
+    };
+    await initGameState(db as any, m.id, state);
+
+    const paused = await finishRoundTransition(d, m.id, state);
+    expect(paused.finished).toBe(false);
+    expect(paused.statuses[1]).toBe('busted');
+    expect(paused.rebought[1]).toBe(false);
+
+    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'rebuy' } });
+    expect(res.ok).toBe(true);
+    const persisted = await loadGameState(db as any, m.id);
+    expect(persisted!.state.statuses[1]).toBe('active');
+    expect(persisted!.state.boughtBack?.[1]).toBe(true);
+    expect(persisted!.state.pot).toBe(16);
+  });
+
+  it('refuses a rebuy when too few players remain', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    const d = mkDeps(db);
+    await upsertUser(db as any, { id: 'u1', displayName: 'A' });
+    await upsertUser(db as any, { id: 'u2', displayName: 'B' });
+    const m = await createMatch(db as any, { createdBy: 'u1', seats: 2, joinCode: 'T5' });
+    await addPlayer(db as any, { matchId: m.id, userId: 'u1', seatIndex: 0 });
+    await addPlayer(db as any, { matchId: m.id, userId: 'u2', seatIndex: 1 });
+    const base = startMatch({ seats: 2, seed: 1 });
+    await initGameState(db as any, m.id, { ...base, statuses: ['active', 'busted'], scores: [0, 154] });
+
+    const res = await submitAction(d, { matchId: m.id, userId: 'u2', action: { type: 'rebuy' } });
+    expect(res.ok).toBe(false);
   });
 
   it('all-decline match-end awards gamesPlayed to every player', async () => {

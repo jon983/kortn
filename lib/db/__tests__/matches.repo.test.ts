@@ -5,7 +5,8 @@ import { upsertUser } from '../repositories/users';
 import {
   createMatch, getMatch, getMatchByJoinCode, listMatchesForUser, updateMatchStatus, setMatchWinner, deleteMatch,
 } from '../repositories/matches';
-import { matchPlayers } from '../schema';
+import { matchPlayers, matches, gameStates } from '../schema';
+import { sql } from 'drizzle-orm';
 
 let close: (() => Promise<void>) | null = null;
 afterEach(async () => { if (close) await close(); close = null; });
@@ -37,6 +38,30 @@ describe('matches repository', () => {
     expect(forU2.map((x) => x.id)).toContain(m.id);
     const forU1 = await listMatchesForUser(db as any, 'u1');
     expect(forU1).toHaveLength(0); // u1 created it but holds no seat
+  });
+
+  it('lists a user’s matches most-recently-active first', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    await upsertUser(db as any, { id: 'u1', displayName: 'A' });
+    const mk = async (code: string, created: string, played?: string) => {
+      const m = await createMatch(db as any, { createdBy: 'u1', seats: 2, joinCode: code });
+      await db.insert(matchPlayers).values({ matchId: m.id, userId: 'u1', seatIndex: 0 });
+      await db.update(matches).set({ createdAt: sql`${created}::timestamptz` }).where(eq(matches.id, m.id));
+      if (played) {
+        await db.insert(gameStates).values({ matchId: m.id, state: {} as any, updatedAt: sql`${played}::timestamptz` });
+      }
+      return m.id;
+    };
+    const oldButJustPlayed = await mk('R1', '2026-01-01T12:00:00Z', '2026-03-10T12:00:00Z');
+    const newLobby = await mk('R2', '2026-03-01T12:00:00Z');
+    const stale = await mk('R3', '2026-02-01T12:00:00Z', '2026-02-02T12:00:00Z');
+    const list = await listMatchesForUser(db as any, 'u1');
+    expect(list.map((m) => m.id)).toEqual([oldButJustPlayed, newLobby, stale]);
+    // Game number = order of creation (shared by every player); last activity = last state change.
+    expect(list.map((m) => m.number)).toEqual([1, 3, 2]);
+    expect(list[0].lastActiveAt.toISOString().slice(0, 10)).toBe('2026-03-10');
+    expect(list[1].lastActiveAt.toISOString().slice(0, 10)).toBe('2026-03-01');
   });
 
   it('deletes a match and cascades its players', async () => {

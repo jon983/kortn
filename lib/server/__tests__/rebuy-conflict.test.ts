@@ -36,12 +36,11 @@ describe('submitAction rebuy/decline conflict recovery', () => {
     close = () => client.close();
     const d = { db, pubsub: new InMemoryPubSub(), rng: makeRng(42) };
 
-    const { matchId } = await createLobby(d as any, { userId: 'u1', displayName: 'A', seats: 2 });
-    await joinLobby(d as any, {
-      userId: 'u2',
-      displayName: 'B',
-      joinCode: (await getMatch(db as any, matchId))!.joinCode,
-    });
+    // 3 seats: a rebuy is only allowed while two other seats are still in.
+    const { matchId } = await createLobby(d as any, { userId: 'u1', displayName: 'A', seats: 3 });
+    const joinCode = (await getMatch(db as any, matchId))!.joinCode;
+    await joinLobby(d as any, { userId: 'u2', displayName: 'B', joinCode });
+    await joinLobby(d as any, { userId: 'u3', displayName: 'C', joinCode });
     await startGame(d as any, { matchId, userId: 'u1' });
 
     // Patch the live state to have u1's seat busted.

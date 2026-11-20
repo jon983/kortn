@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seatPositions, tableKind } from '../table-geometry';
+import { seatPositions, tableKind, seatAround } from '../table-geometry';
 
 describe('table geometry', () => {
   it('chooses square for 2-4, pentagon for 5', () => {
@@ -31,5 +31,36 @@ describe('table geometry', () => {
   it('pentagon seats sit on edges (none at the top vertex x=50,y=0)', () => {
     const p = seatPositions(5);
     for (const s of p) expect(!(Math.abs(s.xPct - 50) < 1 && s.yPct < 3)).toBe(true);
+  });
+});
+
+describe('seatAround — clockwise seating relative to the viewer', () => {
+  const opps = (seats: number, me: number) =>
+    Array.from({ length: seats }, (_, s) => ({ seat: s })).filter((o) => o.seat !== me);
+  const ids = (xs: { seat: number }[]) => xs.map((o) => o.seat);
+
+  it('2 players: the opponent sits across the top', () => {
+    const r = seatAround(1, 2, opps(2, 1));
+    expect([ids(r.left), ids(r.top), ids(r.right)]).toEqual([[], [0], []]);
+  });
+
+  it('3 players: next to play sits on your left, the one after on your right — for every viewer', () => {
+    // Play goes seat → seat+1, so from seat 1 the next is 2 (left), then 0 (right).
+    expect(ids(seatAround(0, 3, opps(3, 0)).left)).toEqual([1]);
+    expect(ids(seatAround(0, 3, opps(3, 0)).right)).toEqual([2]);
+    expect(ids(seatAround(1, 3, opps(3, 1)).left)).toEqual([2]);
+    expect(ids(seatAround(1, 3, opps(3, 1)).right)).toEqual([0]);
+    expect(ids(seatAround(2, 3, opps(3, 2)).left)).toEqual([0]);
+    expect(ids(seatAround(2, 3, opps(3, 2)).right)).toEqual([1]);
+  });
+
+  it('4 players: left, top, right in play order', () => {
+    const r = seatAround(2, 4, opps(4, 2));
+    expect([ids(r.left), ids(r.top), ids(r.right)]).toEqual([[3], [0], [1]]);
+  });
+
+  it('5 players: left, then the two across the top left-to-right, then right', () => {
+    const r = seatAround(3, 5, opps(5, 3));
+    expect([ids(r.left), ids(r.top), ids(r.right)]).toEqual([[4], [0, 1], [2]]);
   });
 });
