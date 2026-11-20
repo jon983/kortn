@@ -7,6 +7,7 @@ import { Framed } from '../lib/ui/Framed';
 import { LampButton } from '../lib/ui/LampButton';
 import { JoinBox } from './JoinBox';
 import { DeleteGameButton } from './DeleteGameButton';
+import { EndGameButton } from './EndGameButton';
 
 export default async function Home() {
   const { userId } = await auth();
@@ -57,7 +58,7 @@ export default async function Home() {
             {summaries.map(({ match: m, players }) => (
               <div key={m.id} className="relative border-b border-dotted border-[#b0a98f]">
                 <Link href={`/match/${m.id}/${m.status === 'lobby' ? 'lobby' : 'table'}`}
-                  className="block p-2 pr-8 text-sm hover:bg-black/5">
+                  className={`block p-2 text-sm hover:bg-black/5 ${m.status === 'active' ? 'pr-16' : 'pr-8'}`}>
                   <div className="flex justify-between">
                     <span>{m.status === 'lobby' ? 'Kitchen' : 'Game'} · {players.length}/{m.seats} seats</span>
                     <span className="uppercase text-[10px] tracking-wide text-maroon">{m.status} ▸</span>
@@ -74,9 +75,10 @@ export default async function Home() {
                     )}
                   </div>
                 </Link>
-                {m.createdBy === userId && (
-                  <div className="absolute right-1 top-1.5">
-                    <DeleteGameButton matchId={m.id} />
+                {(m.status === 'active' || m.createdBy === userId) && (
+                  <div className="absolute right-1 top-1.5 flex items-center gap-1">
+                    {m.status === 'active' && <EndGameButton matchId={m.id} />}
+                    {m.createdBy === userId && <DeleteGameButton matchId={m.id} />}
                   </div>
                 )}
               </div>

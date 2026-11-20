@@ -63,7 +63,8 @@ export async function getUserStats(db: DB, userId: string): Promise<UserStats> {
     .select({
       gamesPlayed: sql<number>`count(*) filter (where ${matches.status} = 'finished')`,
       gamesWon: sql<number>`count(*) filter (where ${matches.winnerUserId} = ${userId})`,
-      netBits: sql<number>`coalesce(sum((${gameStates.state} -> 'bits' ->> ${matchPlayers.seatIndex})::int) filter (where ${matches.status} = 'finished'), 0)`,
+      // Abandoned games count too: their hand-by-hand bits stand (no pot was paid).
+      netBits: sql<number>`coalesce(sum((${gameStates.state} -> 'bits' ->> ${matchPlayers.seatIndex})::int) filter (where ${matches.status} in ('finished', 'abandoned')), 0)`,
       totalPoints: sql<number>`coalesce(sum((${gameStates.state} -> 'scores' ->> ${matchPlayers.seatIndex})::int) filter (where ${matches.status} = 'finished'), 0)`,
       potWinnings: sql<number>`coalesce(sum((${gameStates.state} ->> 'pot')::int) filter (where ${matches.winnerUserId} = ${userId}), 0)`,
     })

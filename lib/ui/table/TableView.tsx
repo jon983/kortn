@@ -6,6 +6,7 @@ import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
 import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
 import { playAction } from '../../../app/actions/play';
+import { EndGameButton } from '../../../app/EndGameButton';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat } from './OpponentSeat';
 import { StockDiscard } from './StockDiscard';
@@ -464,6 +465,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             ⌂ Kitchen
           </Link>
           <span>Round {view.roundNumber}</span>
+          {!view.matchFinished && (
+            <EndGameButton
+              matchId={matchId}
+              label="End game"
+              className="rounded-md border border-maroon/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#e0a08a] hover:bg-maroon/20 disabled:opacity-40"
+            />
+          )}
         </span>
         <span className="justify-self-center">
           {isMyTurn(view) ? (

@@ -1,7 +1,7 @@
 'use server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-import { getProdDeps, createLobby, joinLobby } from '../../lib/server';
+import { getProdDeps, createLobby, joinLobby, endMatch } from '../../lib/server';
 import { db, getMatch, deleteMatch } from '../../lib/db';
 
 async function displayName(): Promise<string> {
@@ -37,4 +37,13 @@ export async function joinTableAction(formData: FormData): Promise<{ matchId: st
   } catch (e) {
     return { error: (e as Error).message };
   }
+}
+
+/** End a game people walked away from: abandoned, no winner, no pot paid. Any seated player may. */
+export async function endGameAction(matchId: string): Promise<{ ok: boolean; reason?: string }> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, reason: 'unauthorized' };
+  const res = await endMatch(getProdDeps(), { matchId, userId });
+  if (res.ok) revalidatePath('/');
+  return res.ok ? { ok: true } : { ok: false, reason: res.reason };
 }

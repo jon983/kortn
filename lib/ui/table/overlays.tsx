@@ -141,9 +141,27 @@ export function RebuyPrompt({ canRebuy = true, onRebuy, onDecline }: { canRebuy?
 }
 
 export function MatchSummary({ view }: { view: ClientView }) {
+  const back = <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the front room</Link>;
+  if (view.matchAbandoned) {
+    return <Scrim>
+      <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Game ended</h3>
+      <p className="mt-2">This game was ended early — no winner. Buy-ins are returned; bits won hand-by-hand stand.</p>
+      {back}
+    </Scrim>;
+  }
+  const fmt = (b: number) => (b > 0 ? `+${b}` : String(b));
   return <Scrim>
     <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Winner!</h3>
     <p className="mt-2">{view.matchWinnerSeat !== null ? view.seatNames[view.matchWinnerSeat] : 'The winner'} takes the pot of {view.pot} bits.</p>
-    <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the front room</Link>
+    {view.payout && (
+      <ul className="mt-3 text-sm" aria-label="Pot payout">
+        {view.payout.map((b, seat) => (
+          <li key={seat} className={seat === view.matchWinnerSeat ? 'font-bold text-brass' : ''}>
+            {view.seatNames[seat]}{seat === view.seat ? ' (you)' : ''}: <span className="tabular-nums">{fmt(b)}</span> bits
+          </li>
+        ))}
+      </ul>
+    )}
+    {back}
   </Scrim>;
 }
