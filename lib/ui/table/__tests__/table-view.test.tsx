@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('../useMatchStream', () => ({ useMatchStream: (_id: string, initial: any) => ({ view: initial, chat: [] }) }));
+vi.mock('../useMatchStream', () => ({ useMatchStream: (_id: string, initial: any) => ({ view: initial, chat: [], connected: true }) }));
 vi.mock('../ChatPanel', () => ({ ChatPanel: () => null })); // avoids pulling in the server action chain
 vi.mock('../../../../app/EndGameButton', () => ({ EndGameButton: () => null })); // needs the app router
 

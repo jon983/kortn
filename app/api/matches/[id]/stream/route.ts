@@ -18,15 +18,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   for (const p of players) names[p.seatIndex] = p.displayName;
 
   const encoder = new TextEncoder();
+  let cleanup: (() => Promise<void>) | null = null;
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (view: unknown) =>
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(view)}\n\n`));
+      let closed = false;
+      const write = (chunk: string) => {
+        if (closed) return;
+        try { controller.enqueue(encoder.encode(chunk)); } catch { closed = true; }
+      };
+      const send = (view: unknown) => write(`data: ${JSON.stringify(view)}\n\n`);
 
-      // initial catch-up
-      const cur = await loadGameState(deps.db, id);
-      if (cur) send(redactStateFor(cur.state, seat, names));
-
+      // Subscribe BEFORE the catch-up read, so a move published in between is
+      // never lost (it arrives as a message; the catch-up is at least as new).
       const off = await deps.pubsub.subscribe('match:' + id, (msg) => {
         if (msg != null && typeof msg === 'object' && 'round' in (msg as Record<string, unknown>)) {
           // full MatchState → always redact per this client's seat
@@ -36,12 +39,25 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           send(msg);
         }
       });
-      // close handling
-      _req.signal.addEventListener('abort', async () => {
+
+      // initial catch-up
+      const cur = await loadGameState(deps.db, id);
+      if (cur) send(redactStateFor(cur.state, seat, names));
+
+      // Keep-alive comment so idle connections (players thinking) aren't dropped
+      // by proxies / mobile networks. EventSource ignores comment lines.
+      const ping = setInterval(() => write(': ping\n\n'), 25_000);
+
+      cleanup = async () => {
+        if (closed) return;
+        closed = true;
+        clearInterval(ping);
         await off();
-        controller.close();
-      });
+        try { controller.close(); } catch { /* already closed */ }
+      };
+      _req.signal.addEventListener('abort', () => { void cleanup?.(); });
     },
+    cancel() { void cleanup?.(); },
   });
 
   return new Response(stream, {
