@@ -53,11 +53,15 @@ describe('matches repository', () => {
       }
       return m.id;
     };
-    const oldButJustPlayed = await mk('R1', '2026-01-01', '2026-03-10');
-    const newLobby = await mk('R2', '2026-03-01');
-    const stale = await mk('R3', '2026-02-01', '2026-02-02');
+    const oldButJustPlayed = await mk('R1', '2026-01-01T12:00:00Z', '2026-03-10T12:00:00Z');
+    const newLobby = await mk('R2', '2026-03-01T12:00:00Z');
+    const stale = await mk('R3', '2026-02-01T12:00:00Z', '2026-02-02T12:00:00Z');
     const list = await listMatchesForUser(db as any, 'u1');
     expect(list.map((m) => m.id)).toEqual([oldButJustPlayed, newLobby, stale]);
+    // Game number = order of creation (shared by every player); last activity = last state change.
+    expect(list.map((m) => m.number)).toEqual([1, 3, 2]);
+    expect(list[0].lastActiveAt.toISOString().slice(0, 10)).toBe('2026-03-10');
+    expect(list[1].lastActiveAt.toISOString().slice(0, 10)).toBe('2026-03-01');
   });
 
   it('deletes a match and cascades its players', async () => {

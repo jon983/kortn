@@ -477,7 +477,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           {!view.matchFinished && (
             <EndGameButton
               matchId={matchId}
-              label="End game"
+              label="Abandon"
               className="rounded-md border border-maroon/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#e0a08a] hover:bg-maroon/20 disabled:opacity-40"
             />
           )}

@@ -4,7 +4,11 @@ import { useRouter } from 'next/navigation';
 import { endGameAction } from './actions/lobby';
 
 export const END_GAME_CONFIRM =
-  'End this game for everyone? Nobody wins and buy-ins are returned — bits won hand-by-hand stand.';
+  'Abandon this game for everyone? Nobody wins and buy-ins are returned — bits won hand-by-hand stand.';
+
+/** Outlined, low-emphasis style shared by the list's secondary actions (Abandon / Delete). */
+export const SECONDARY_ACTION =
+  'rounded-md border border-maroon/50 px-4 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-maroon/80 hover:bg-maroon/10 hover:text-maroon disabled:opacity-40';
 
 /** Ends a stalled game for everyone (marked abandoned). Any seated player can use it. */
 export function EndGameButton({ matchId, className = '', label = 'End' }: { matchId: string; className?: string; label?: string }) {
@@ -14,8 +18,8 @@ export function EndGameButton({ matchId, className = '', label = 'End' }: { matc
     <button
       type="button"
       disabled={pending}
-      title="End game"
-      className={className || 'rounded px-1.5 text-[10px] font-bold uppercase tracking-wide text-maroon/70 hover:bg-maroon/10 hover:text-maroon disabled:opacity-40'}
+      title="Abandon game"
+      className={className || SECONDARY_ACTION}
       onClick={() => {
         if (!confirm(END_GAME_CONFIRM)) return;
         start(async () => {
@@ -25,7 +29,7 @@ export function EndGameButton({ matchId, className = '', label = 'End' }: { matc
         });
       }}
     >
-      {pending ? 'Ending…' : label}
+      {pending ? 'Abandoning…' : label}
     </button>
   );
 }

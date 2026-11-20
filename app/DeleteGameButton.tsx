@@ -1,5 +1,6 @@
 'use client';
 import { deleteMatchAction } from './actions/lobby';
+import { SECONDARY_ACTION } from './EndGameButton';
 
 export function DeleteGameButton({ matchId }: { matchId: string }) {
   return (
@@ -12,11 +13,10 @@ export function DeleteGameButton({ matchId }: { matchId: string }) {
       <input type="hidden" name="matchId" value={matchId} />
       <button
         type="submit"
-        aria-label="Delete game"
         title="Delete game"
-        className="rounded px-1.5 text-sm font-bold text-maroon/70 hover:bg-maroon/10 hover:text-maroon"
+        className={`w-full ${SECONDARY_ACTION}`}
       >
-        ✕
+        Delete
       </button>
     </form>
   );
