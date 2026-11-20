@@ -119,6 +119,36 @@ export function matchWinner(match: MatchState): number | null {
 }
 
 /**
+ * For matches begun before `boughtBack` was tracked (`rebought` also covers
+ * declines): a rebuy resets a busted seat's score to the highest active score,
+ * so a seat whose score going into a hand doesn't match its total after going
+ * over 150 bought back. Cross-checked against the pot; if the scorepad can't
+ * account for every rebuy, fall back to the seats marked `rebought` when that
+ * count fits, else assume none.
+ */
+export function inferBoughtBack(match: MatchState): boolean[] {
+  const rebuys = Math.round((match.pot - match.seats * ANTE) / ANTE);
+  const none = new Array(match.seats).fill(false);
+  if (rebuys <= 0) return none;
+  const bb = none.slice();
+  const h = match.history ?? [];
+  for (let k = 0; k + 1 < h.length; k++) {
+    for (let s = 0; s < match.seats; s++) {
+      const prior = h[k + 1].scores[s] - (h[k + 1].handPoints?.[s] ?? 0);
+      if (h[k].scores[s] > 150 && prior !== h[k].scores[s]) bb[s] = true;
+    }
+  }
+  // A seat that's back in play after a rebuy decision paid to get there (declining
+  // leaves it busted) — this also catches a rebuy after the last scored hand.
+  for (let s = 0; s < match.seats; s++) {
+    if (match.rebought[s] && match.statuses[s] === 'active') bb[s] = true;
+  }
+  if (bb.filter(Boolean).length === rebuys) return bb;
+  const marked = match.rebought.slice();
+  return marked.filter(Boolean).length === rebuys ? marked : none;
+}
+
+/**
  * Per-seat bit settlement at match end: every seat paid the ante, each rebuy
  * cost another ANTE, and the winner collects the whole pot. Sums to zero.
  */
@@ -138,7 +168,8 @@ export function potPayout(match: MatchState, winnerSeat: number): number[] {
 export function awardPot(match: MatchState): MatchState {
   const winner = matchWinner(match);
   if (winner === null) return { ...match, finished: false, winnerSeat: null };
-  const payout = potPayout(match, winner);
+  const boughtBack = match.boughtBack ?? inferBoughtBack(match);
+  const payout = potPayout({ ...match, boughtBack }, winner);
   const bits = (match.bits ?? new Array(match.seats).fill(0)).map((b, s) => b + payout[s]);
-  return { ...match, finished: true, winnerSeat: winner, payout, bits };
+  return { ...match, finished: true, winnerSeat: winner, boughtBack, payout, bits };
 }

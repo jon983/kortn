@@ -17,23 +17,15 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, listPlayers, setMatchWinner, incrementUserStats } from '../lib/db';
 import { matches, gameStates } from '../lib/db/schema';
-import { resolveImpossibleRebuys, matchWinner, awardPot, potPayout, ANTE, type MatchState } from '../lib/kalooki';
+import { resolveImpossibleRebuys, matchWinner, awardPot, potPayout, inferBoughtBack as inferFromScorepad, ANTE, type MatchState } from '../lib/kalooki';
 
 const apply = process.argv.includes('--apply');
 
+/** Who bought back, or null if the scorepad can't account for every rebuy in the pot. */
 function inferBoughtBack(st: MatchState): boolean[] | null {
   if (st.boughtBack) return st.boughtBack;
+  const bb = inferFromScorepad(st);
   const rebuys = (st.pot - st.seats * ANTE) / ANTE;
-  const bb = new Array(st.seats).fill(false);
-  const h = st.history ?? [];
-  for (let k = 0; k + 1 < h.length; k++) {
-    for (let s = 0; s < st.seats; s++) {
-      // Score going into hand k+1 (its total minus the points it added). A rebuy
-      // resets it, so it no longer matches the total after hand k.
-      const prior = h[k + 1].scores[s] - (h[k + 1].handPoints?.[s] ?? 0);
-      if (h[k].scores[s] > 150 && prior !== h[k].scores[s]) bb[s] = true;
-    }
-  }
   return bb.filter(Boolean).length === rebuys ? bb : null;
 }
 
