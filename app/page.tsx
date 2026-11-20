@@ -41,7 +41,7 @@ export default async function Home() {
   );
 
   return (
-    <RoomBackdrop plate="room-home">
+    <RoomBackdrop plate="room-home" kitchenLink={false}>
       <main className="mx-auto max-w-3xl px-5 py-10">
         <div className="text-center">
           <h1 className="font-[family-name:var(--font-display)] text-6xl text-brass drop-shadow">kortn</h1>

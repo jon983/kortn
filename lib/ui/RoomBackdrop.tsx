@@ -1,6 +1,19 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 
-export function RoomBackdrop({ plate, children }: { plate?: string; children: ReactNode }) {
+/** Always-visible way back to the front room — so nobody gets stranded on a screen. */
+export function KitchenLink({ className = '' }: { className?: string }) {
+  return (
+    <Link
+      href="/"
+      className={`rounded-md border border-brass/70 bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brass shadow backdrop-blur hover:bg-black/75 ${className}`}
+    >
+      ⌂ Kitchen
+    </Link>
+  );
+}
+
+export function RoomBackdrop({ plate, children, kitchenLink = true }: { plate?: string; children: ReactNode; kitchenLink?: boolean }) {
   return (
     <div className="relative min-h-screen overflow-hidden isolate font-[family-name:var(--font-body)]">
       {/* base fallback gradient (always present) */}
@@ -14,6 +27,7 @@ export function RoomBackdrop({ plate, children }: { plate?: string; children: Re
       {/* vignette */}
       <div className="pointer-events-none absolute inset-0 -z-[5]"
         style={{ background: 'radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(30,26,18,.5) 100%)' }} />
+      {kitchenLink && <KitchenLink className="fixed left-3 top-3 z-50" />}
       {children}
     </div>
   );

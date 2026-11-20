@@ -12,6 +12,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ id: stri
   const match = await getMatch(db, id);
   if (!match) redirect('/');
   if (match.status === 'active') redirect(`/match/${id}/table`);
+  if (match.status === 'finished' || match.status === 'abandoned') redirect('/');
   const initial = await getLobbyState(id);
   return (
     <RoomBackdrop plate="room-waiting">

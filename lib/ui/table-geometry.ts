@@ -37,3 +37,21 @@ export function seatPositions(seats: number): SeatPos[] {
     yPct: Math.max(0, Math.min(100, y)),
   }));
 }
+
+/**
+ * Seat the opponents around the viewer (who is always at the bottom) so play
+ * runs clockwise on every screen: play passes seat → seat+1, so the next seat
+ * to act sits on your left, then across the top (left → right), then on your
+ * right. 2p → top; 3p → left/right; 4p → left/top/right; 5p → left/top×2/right.
+ */
+export function seatAround<T extends { seat: number }>(
+  mySeat: number,
+  seats: number,
+  opponents: T[],
+): { left: T[]; top: T[]; right: T[] } {
+  const rel = (s: number) => (s - mySeat + seats) % seats;
+  const o = [...opponents].sort((a, b) => rel(a.seat) - rel(b.seat));
+  if (o.length <= 1) return { left: [], top: o, right: [] };
+  if (o.length === 2) return { left: [o[0]], top: [], right: [o[1]] };
+  return { left: [o[0]], top: o.slice(1, -1), right: [o[o.length - 1]] };
+}
