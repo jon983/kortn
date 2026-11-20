@@ -448,6 +448,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     await playAction(matchId, { type: 'draw', source: 'stock' });
   }
 
+  // Can't use a joker reclaimed from a meld: put it back and take the natural(s) back.
+  async function handleReturnJoker() {
+    const res = await playAction(matchId, { type: 'returnJoker' });
+    if (!res.ok) { setToast(res.reason ?? 'illegal move'); return; }
+    setSelected([]);
+  }
+
   return (
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
@@ -586,12 +593,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           </div>
           <div className="text-[10px] text-[#c9b48a]">{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
-        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} />
-        {jokerOwed && (
-          <div className="mt-1 text-center text-[11px] text-amber-300">
-            The reclaimed joker must go into a new meld before you discard.
-          </div>
-        )}
+        <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
           {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
           <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">

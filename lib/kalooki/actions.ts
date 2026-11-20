@@ -8,6 +8,7 @@ import type { Card } from './cards';
 export type Action =
   | { type: 'draw'; source: 'stock' | 'discard' }
   | { type: 'returnDiscard' }
+  | { type: 'returnJoker' }
   | { type: 'drawJokerDecline' }
   | { type: 'meld'; groups: { kind: MeldKind; cardIds: string[] }[] }
   | { type: 'layoff'; cardIds: string[]; meldId: string; end?: 'low' | 'high' }
@@ -79,6 +80,39 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       next.discard.push(card);
       next.drawObligation = null;
       next.phase = 'awaitingDraw';
+      return { ok: true, match: withRound(match, next) };
+    }
+    case 'returnJoker': {
+      // A player who reclaimed a joker but can't use it in a new meld puts it
+      // back: the joker returns to its meld and the natural(s) that freed it come
+      // back to hand. Applies to every reclaimed joker still in hand this turn.
+      if (round.phase !== 'awaitingDiscard') return { ok: false, reason: 'Nothing to return.' };
+      const next = cloneRound(round);
+      const p = next.players[seat];
+      const inHand = (id: string) => p.hand.some((c) => c.id === id);
+      const pending = (round.jokerRetrievals ?? []).filter((r) => inHand(r.jokerId));
+      if (pending.length === 0) return { ok: false, reason: 'No reclaimed joker to put back.' };
+      for (const r of pending) {
+        const meld = next.melds.find((m) => m.id === r.meldId);
+        if (!meld || !r.naturalIds.every((id) => meld.cards.some((c) => c.id === id))) {
+          return { ok: false, reason: 'That joker can no longer be put back.' };
+        }
+        const jk = p.hand.find((c) => c.id === r.jokerId)!;
+        const naturals = r.naturalIds.map((id) => meld.cards.find((c) => c.id === id)!);
+        if (r.naturalIds.length === 1) {
+          // The joker stood in for exactly this card: swap it back into the same slot
+          // (keeps any cards laid on the meld since).
+          meld.cards = meld.cards.map((c) => (c.id === r.naturalIds[0] ? jk : c));
+        } else {
+          const rest = meld.cards.filter((c) => !r.naturalIds.includes(c.id));
+          rest.splice(Math.min(r.jokerIndex, rest.length), 0, jk);
+          meld.cards = rest;
+        }
+        p.hand = [...p.hand.filter((c) => c.id !== r.jokerId), ...naturals];
+      }
+      const returned = new Set(pending.map((r) => r.jokerId));
+      next.jokerObligation = (round.jokerObligation ?? []).filter((id) => !returned.has(id));
+      next.jokerRetrievals = (round.jokerRetrievals ?? []).filter((r) => !returned.has(r.jokerId));
       return { ok: true, match: withRound(match, next) };
     }
     case 'drawJokerDecline': {
@@ -199,6 +233,12 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       if (retrievedJoker) {
         p.hand.push(retrievedJoker);
         next.jokerObligation = [...(next.jokerObligation ?? []), retrievedJoker.id];
+        next.jokerRetrievals = [...(next.jokerRetrievals ?? []), {
+          jokerId: retrievedJoker.id,
+          meldId: meld.id,
+          naturalIds: adds.map((c) => c.id),
+          jokerIndex: meld.cards.findIndex((c) => c.id === retrievedJoker!.id),
+        }];
       }
       if (nMeld.ownerSeat !== seat) next.addedToOpponentThisTurn = true;
       return { ok: true, match: withRound(match, next) };
@@ -258,6 +298,7 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       next.players[seat].hand = next.players[seat].hand.filter((c) => c.id !== action.cardId);
       next.discard.push(card);
       next.jokerObligation = [];
+      next.jokerRetrievals = [];
 
       if (next.players[seat].hand.length === 0) {
         next.finished = true;
