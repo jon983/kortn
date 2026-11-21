@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { makeTestDb } from './helpers';
-import { upsertUser, getUserStats, getVsParLeaderboard } from '../index';
+import { upsertUser, getUserStats, getHandAggregates, leaderboardsFrom } from '../index';
 import { matches, matchPlayers, rounds, gameStates } from '../schema';
 
 let close: (() => Promise<void>) | null = null;
@@ -66,10 +66,13 @@ describe('getUserStats (computed from game data)', () => {
       { matchId: m.id, roundNumber: 4, dealerSeat: 1, winnerSeat: 1, goOutType: 'normal', scores: [10, 30] },
     ]);
 
-    const board = await getVsParLeaderboard(db as any, { limit: 10 });
-    expect(board.map((e) => e.userId)).toEqual(['u1', 'u2']); // u1 ranked first
-    expect(board[0].vsPar).toBeCloseTo(1.5, 5); // 3 won / (4 * 0.5 = 2 par)
-    expect(board[1].vsPar).toBeCloseTo(0.5, 5); // 1 won / 2 par
+    const boards = leaderboardsFrom(await getHandAggregates(db as any), { limit: 10 });
+    expect(boards.vsPar.map((e) => e.userId)).toEqual(['u1', 'u2']); // u1 ranked first
+    expect(boards.vsPar[0].value).toBeCloseTo(1.5, 5); // 3 won / (4 * 0.5 = 2 par)
+    expect(boards.vsPar[1].value).toBeCloseTo(0.5, 5); // 1 won / 2 par
+    expect(boards.winsPer100.map((e) => [e.userId, e.value])).toEqual([['u1', 75], ['u2', 25]]);
+    // u1: 10 pts over 4 hands (3 won at 0); u2: 30 pts over 4 hands. Lower is better.
+    expect(boards.pointsPerHand.map((e) => [e.userId, e.value])).toEqual([['u1', 2.5], ['u2', 7.5]]);
   });
 
   it('returns zeroed stats for a user with no games', async () => {
