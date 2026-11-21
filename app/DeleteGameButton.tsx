@@ -2,7 +2,7 @@
 import { deleteMatchAction } from './actions/lobby';
 import { SECONDARY_ACTION } from './EndGameButton';
 
-export function DeleteGameButton({ matchId }: { matchId: string }) {
+export function DeleteGameButton({ matchId, className, label = 'Delete' }: { matchId: string; className?: string; label?: string }) {
   return (
     <form
       action={deleteMatchAction}
@@ -14,9 +14,9 @@ export function DeleteGameButton({ matchId }: { matchId: string }) {
       <button
         type="submit"
         title="Delete game"
-        className={SECONDARY_ACTION}
+        className={className || SECONDARY_ACTION}
       >
-        Delete
+        {label}
       </button>
     </form>
   );
