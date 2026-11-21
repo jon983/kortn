@@ -141,7 +141,7 @@ export function RebuyPrompt({ canRebuy = true, onRebuy, onDecline }: { canRebuy?
 }
 
 export function MatchSummary({ view }: { view: ClientView }) {
-  const back = <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the front room</Link>;
+  const back = <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the kitchen</Link>;
   if (view.matchAbandoned) {
     return <Scrim>
       <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Game ended</h3>
