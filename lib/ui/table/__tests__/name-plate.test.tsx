@@ -19,8 +19,9 @@ describe('name plates', () => {
   it('no ribbon when it is not their turn', () => {
     expect(seat().container.querySelector('[data-turn-ribbon]')).toBeNull();
   });
-  it('long names can wrap', () => {
-    seat({ name: 'Bartholomew-Featherstonehaugh' });
-    expect(screen.getByText('Bartholomew-Featherstonehaugh').className).toContain('[overflow-wrap:anywhere]');
+  it('long names wrap inside a width-capped plate (short names stay whole)', () => {
+    const { container } = seat({ name: 'Bartholomew-Featherstonehaugh' });
+    expect(screen.getByText('Bartholomew-Featherstonehaugh').className).toContain('break-words');
+    expect(container.querySelector('[data-plate]')!.className).toMatch(/max-w-\[34vw\]/);
   });
 });

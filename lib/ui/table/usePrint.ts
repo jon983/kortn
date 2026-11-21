@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -12,11 +12,17 @@ function prefersReducedMotion(): boolean {
  * With reduced motion everything shows immediately.
  */
 export function usePrint(lineCount: number, key: string | number, stepMs = 140): { shown: number; done: boolean; finish: () => void } {
-  const [state, setState] = useState(() => ({ key, shown: prefersReducedMotion() ? Infinity : 0 }));
+  // Always start unprinted so the first client render matches the server's HTML.
+  const [state, setState] = useState(() => ({ key, shown: 0 }));
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // A new hand: start printing again (during render, so the old receipt never flashes as "done").
-  if (state.key !== key) setState({ key, shown: prefersReducedMotion() ? Infinity : 0 });
+  if (state.key !== key) setState({ key, shown: 0 });
+
+  // Reduced motion: print it all before the first paint.
+  useLayoutEffect(() => {
+    if (prefersReducedMotion()) setState((s) => ({ ...s, shown: Infinity }));
+  }, [state.key]);
 
   const finished = state.shown >= lineCount;
   useEffect(() => {

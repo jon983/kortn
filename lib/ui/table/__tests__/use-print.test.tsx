@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, render } from '@testing-library/react';
 import { usePrint } from '../usePrint';
 
 beforeEach(() => { vi.useFakeTimers(); });
@@ -40,5 +40,13 @@ describe('usePrint', () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), addEventListener() {}, removeEventListener() {} }));
     const { result } = renderHook(() => usePrint(6, 8));
     expect(result.current.done).toBe(true);
+  });
+  it('first render matches the server even with reduced motion (no hydration mismatch)', () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), addEventListener() {}, removeEventListener() {} }));
+    const seen: number[] = [];
+    function Probe() { seen.push(usePrint(6, 8).shown); return null; }
+    render(<Probe />);
+    expect(seen[0]).toBe(0);
+    expect(seen.at(-1)).toBe(6);
   });
 });

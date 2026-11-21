@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { Avatar } from '../Avatar';
 
 /** Cream name-plate sign behind seat labels (deli style); reads on any table art. */
-export const SEAT_LABEL = 'relative inline-block max-w-full overflow-hidden rounded-[4px] bg-deli-cream px-2.5 pb-1 pt-1.5 leading-tight text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
+export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1 pt-1.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
 
 /** The red ribbon across the top of whoever's turn it is (slides on as the turn arrives). */
 export function TurnRibbon(): ReactElement {
@@ -40,9 +40,9 @@ export function OpponentSeat({
       {isTurn && <TurnRibbon key="ribbon" />}
       <div className="flex items-center justify-center gap-1.5">
         <Avatar name={name} src={avatarUrl} size={20} />
-        <span className={`font-cond min-w-0 text-[15px] font-extrabold uppercase leading-none tracking-[.04em] [overflow-wrap:anywhere] ${status !== 'active' ? 'line-through' : ''}`}>{name}</span>
+        <span className={`font-cond min-w-0 break-words text-[13px] font-extrabold uppercase leading-none tracking-[.04em] sm:text-[15px] ${status !== 'active' ? 'line-through' : ''}`}>{name}</span>
       </div>
-      <div className="mt-0.5 font-sans-deli text-[10.5px] font-medium tracking-[.02em] opacity-80">{handCount} cards · {score} pts</div>
+      <div className="mt-0.5 font-sans-deli text-[10px] font-medium tracking-[.02em] opacity-80 sm:text-[10.5px]">{handCount} cards · {score} pts</div>
     </div>
   );
   const meldPile = (m: TableMeld) => (

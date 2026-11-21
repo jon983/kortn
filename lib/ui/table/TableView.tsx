@@ -30,7 +30,7 @@ const SPACE_PREFIX = '__space_';
 /** Header controls: cream-outlined tags in condensed caps on the green header. */
 const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
 /** Hand and pot: small printed price tags. */
-const PRINTED_TAG = 'whitespace-nowrap rounded-[3px] bg-deli-cream px-1.5 py-px font-sans-deli text-[9.5px] font-semibold uppercase tracking-[.14em] text-deli-green sm:text-[10.5px]';
+const PRINTED_TAG = 'whitespace-nowrap rounded-[3px] bg-deli-cream px-1.5 font-sans-deli text-[9px] font-semibold uppercase leading-[1.45] tracking-[.14em] text-deli-green sm:py-px sm:text-[10.5px]';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
   const { view, chat, connected } = useMatchStream(matchId, initial, initialChat, { fetchView: () => getTableView(matchId) });
@@ -490,7 +490,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           {/* Phones: call buttons live on this second row so the top row never overflows. */}
           {!view.matchFinished && <span className="sm:hidden"><CallControls /></span>}
           {isMyTurn(view) ? (
-            <span key={`turn-${view.roundNumber}-${view.currentTurn}`} className="deli-ribbon deli-ribbon--red deli-ribbon-drop !px-7 !py-1.5 !text-[13px]">
+            <span key={`turn-${view.roundNumber}-${view.currentTurn}`} className="deli-ribbon deli-ribbon--red deli-ribbon-drop !px-7 !py-1 !text-[12px] sm:!py-1.5 sm:!text-[13px]">
               Your move
             </span>
           ) : (
@@ -545,7 +545,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             <span className="sm:hidden" aria-hidden>📋</span>
             <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
-          <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
+          <span className="flex flex-col items-end gap-px sm:flex-row sm:items-center sm:gap-1.5">
             <span className={PRINTED_TAG}>{`Hand ${view.roundNumber}`}</span>
             <span className={PRINTED_TAG}>{`Pot ${view.pot} bits`}</span>
           </span>
