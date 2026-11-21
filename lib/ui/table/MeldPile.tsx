@@ -1,8 +1,14 @@
+import { useEffect, useState } from 'react';
 import { Card as CardFace } from './Card';
 import { cardColor, layoutMeld, type Card, type TableMeld } from '../../kalooki';
 
 export function MeldPile({ meld, onClick, armed, flash }: { meld: TableMeld; onClick?: () => void; armed?: boolean; flash?: boolean }) {
   const ordered = layoutMeld(meld.cards, meld.kind);
+  // Settle in once when the meld first lands; after that, step aside so a lay-off's pulse can show
+  // (the settle is unlayered CSS and would otherwise override Tailwind's animate-pulse).
+  const [landing, setLanding] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setLanding(false), 300); return () => clearTimeout(t); }, []);
+  const motion = landing ? 'meld-land' : '';
   const armedCls = armed ? 'cursor-pointer ring-2 ring-deli-gold ring-offset-2 ring-offset-transparent' : '';
   const flashCls = flash ? 'animate-pulse ring-2 ring-deli-gold ring-offset-2 ring-offset-transparent' : '';
 
@@ -18,7 +24,7 @@ export function MeldPile({ meld, onClick, armed, flash }: { meld: TableMeld; onC
       naturals[0] ??
       meld.cards[0];
     return (
-      <div className={`meld-land relative rounded-lg p-1 ${armedCls} ${flashCls}`} onClick={onClick} data-meld={meld.id}>
+      <div className={`${motion} relative rounded-lg p-1 ${armedCls} ${landing ? '' : flashCls}`} onClick={onClick} data-meld={meld.id}>
         {/* stacked shadows behind, to read as a pile of four */}
         <span className="pointer-events-none absolute left-2.5 top-2.5 h-24 w-16 rounded-md border border-[#cfc9b4] bg-[#eae4d3] shadow" />
         <span className="pointer-events-none absolute left-2 top-2 h-24 w-16 rounded-md border border-[#cfc9b4] bg-[#efe9d8] shadow" />
@@ -30,7 +36,7 @@ export function MeldPile({ meld, onClick, armed, flash }: { meld: TableMeld; onC
 
   return (
     <div
-      className={`meld-land flex rounded-lg p-1 ${armedCls} ${flashCls}`}
+      className={`${motion} flex rounded-lg p-1 ${armedCls} ${landing ? '' : flashCls}`}
       onClick={onClick}
       data-meld={meld.id}
     >
