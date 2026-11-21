@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { DeleteGameButton } from './DeleteGameButton';
 import { EndGameButton } from './EndGameButton';
 import { timeAgo } from '../lib/ui/time-ago';
+import { LobbyTicket } from './LobbyTicket';
 
 export interface GameRowProps {
   id: string;
@@ -17,13 +18,19 @@ export interface GameRowProps {
   index?: number;
   /** It's the viewer's move in this game. */
   yourTurn?: boolean;
+  /** Tables being set up (lobby): the code to share, and the host's name ("You" for the host). */
+  joinCode?: string;
+  hostName?: string;
 }
 
 /** Muted text link for the ticket's secondary action (abandon / delete). */
 const QUIET_LINK = 'font-script text-[16px] text-deli-green/55 hover:text-deli-red hover:underline disabled:opacity-40';
 
 /** One game as a deli queue ticket: stamped number, who's playing, a dotted leader to Play. */
-export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now, yourTurn = false }: GameRowProps) {
+export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now, yourTurn = false, joinCode, hostName }: GameRowProps) {
+  if (status === 'lobby' && joinCode) {
+    return <LobbyTicket id={id} number={number} seats={seats} players={players} joinCode={joinCode} hostName={hostName ?? 'the host'} isHost={isHost} />;
+  }
   const href = `/match/${id}/${status === 'lobby' ? 'lobby' : 'table'}`;
   const meta = status === 'lobby'
     ? `waiting · ${players.length}/${seats} seated`

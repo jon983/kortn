@@ -36,6 +36,7 @@ export default async function Home() {
       return {
         match: m,
         yourTurn: isYourTurn(game?.state ?? null, mySeat),
+        hostName: m.createdBy === userId ? 'You' : (players.find((p) => p.userId === m.createdBy)?.displayName ?? 'the host'),
         // You first, then everyone else in play order (as they sit round the table).
         players: players
           .sort(playOrderFrom(mySeat, m.seats))
@@ -55,7 +56,7 @@ export default async function Home() {
       stats={stats}
       boards={boards}
       minHands={MIN_HANDS}
-      games={summaries.map(({ match: m, players, yourTurn }) => ({
+      games={summaries.map(({ match: m, players, yourTurn, hostName }) => ({
         id: m.id,
         status: m.status as 'lobby' | 'active',
         number: m.number,
@@ -64,6 +65,8 @@ export default async function Home() {
         players,
         isHost: m.createdBy === userId,
         yourTurn,
+        joinCode: m.joinCode,
+        hostName,
       }))}
     />
   );
