@@ -23,7 +23,8 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
   return (
     <RoomBackdrop plate="room-home" kitchenLink={false}>
       <HomeHeader name={myName} />
-      <main className="mx-auto max-w-3xl space-y-5 px-5 pb-12 pt-6">
+      {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
+      <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
         <div className="grid gap-4 md:grid-cols-[1.3fr_1fr]">
           <Framed title="Your record">
             <StatsPanel stats={stats} />
@@ -45,7 +46,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
           </Framed>
         </div>
 
-        <Framed title="Rejoin an existing game">
+        <Framed title="Rejoin an existing game" className="order-first md:order-none">
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
           {games.map((g) => <GameRow key={g.id} {...g} />)}
         </Framed>
