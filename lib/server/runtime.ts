@@ -39,6 +39,7 @@ function nextAfterReady(state: MatchState, rng: () => number): MatchState | null
     seats: state.seats,
     dealerSeat: (state.round.dealerSeat + 1) % state.seats,
     rng,
+    statuses: state.statuses, // players who are out sit the hand out
   });
   return {
     ...state,

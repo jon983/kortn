@@ -266,7 +266,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
     const seatCount = view.seatNames.length;
     const targets: ({ x: number; y: number } | null)[] = [];
+    // Players who are out sit the hand out — no cards fly to them.
+    const statusOf = (s: number) => (s === view.seat ? view.you.status : view.opponents.find((o) => o.seat === s)?.status);
     for (let s = 0; s < seatCount; s++) {
+      if (statusOf(s) !== 'active') { targets[s] = null; continue; }
       const el = s === view.seat
         ? root.querySelector('[data-hand]')
         : root.querySelector(`[data-seat="${s}"]`);
@@ -277,7 +280,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     dealTimers.current = [];
     setDealing(true);
     setDealCounts({});
-    const STEP = Math.max(55, Math.round(4000 / (13 * seatCount)));
+    const dealtSeats = Math.max(1, targets.filter(Boolean).length);
+    const STEP = Math.max(55, Math.round(4000 / (13 * dealtSeats)));
     const DUR = 420;
     let i = 0;
     for (let round = 0; round < 13; round++) {

@@ -122,7 +122,7 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       const pristine =
         round.discard.length === 1 &&
         round.melds.length === 0 &&
-        round.players.every((p) => p.hand.length === 13);
+        round.players.every((p) => match.statuses[p.seat] !== 'active' || p.hand.length === 13);
       if (!pristine) return { ok: false, reason: 'You can only decline the joker on the opening flip.' };
       const next = cloneRound(round);
       next.turnStartHandSize = round.players[seat].hand.length;

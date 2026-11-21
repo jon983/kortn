@@ -31,3 +31,21 @@ describe('startMatch', () => {
     expect(m.round.players).toHaveLength(3);
   });
 });
+
+describe('dealRound with players out', () => {
+  it('deals only to seats still in, skips an out dealer, and starts with a seat still in', async () => {
+    const { dealRound, makeRng } = await import('../index');
+    // dealer candidate is seat 1 (out) → dealer moves on to seat 2; first turn wraps past out seat 1 to seat 0
+    const r = dealRound({ seats: 4, dealerSeat: 1, rng: makeRng(5), statuses: ['active', 'busted', 'active', 'left'] });
+    expect(r.players.map((p) => p.hand.length)).toEqual([13, 0, 13, 0]);
+    expect(r.dealerSeat).toBe(2);
+    expect(r.turn).toBe(0);
+    expect(r.stock.length).toBe(106 - 26 - 1); // two packs + 2 jokers
+  });
+  it('with everyone in, deals as before', async () => {
+    const { dealRound, makeRng } = await import('../index');
+    const r = dealRound({ seats: 3, dealerSeat: 1, rng: makeRng(5) });
+    expect(r.players.map((p) => p.hand.length)).toEqual([13, 13, 13]);
+    expect(r.turn).toBe(2);
+  });
+});
