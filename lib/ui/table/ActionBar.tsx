@@ -25,17 +25,17 @@ export function ActionBar({
   return (
     <div className="flex flex-col items-center gap-2">
       {view.you.drawObligationId && (
-        <div className="flex items-center gap-3 rounded-md bg-black/30 px-3 py-1">
-          <span className="text-xs italic text-[#c9b48a]">Can&apos;t use the card you took?</span>
-          <button type="button" className="text-xs font-bold underline text-brass" onClick={onReturnDiscard}>
+        <div className="deli-paper flex items-center gap-3 rounded-[4px] px-3 py-1 text-deli-green shadow-md">
+          <span className="font-sans-deli text-xs">Can&apos;t use the card you took?</span>
+          <button type="button" className="font-script text-[16px] text-deli-red underline" onClick={onReturnDiscard}>
             Put it back &amp; draw from stock
           </button>
         </div>
       )}
       {jokerOwed && (
-        <div className="flex items-center gap-3 rounded-md bg-black/30 px-3 py-1">
-          <span className="text-xs italic text-amber-300">Use the reclaimed joker in a new meld — or</span>
-          <button type="button" className="text-xs font-bold underline text-brass" onClick={onReturnJoker}>
+        <div className="deli-paper flex items-center gap-3 rounded-[4px] px-3 py-1 text-deli-green shadow-md">
+          <span className="font-sans-deli text-xs">Use the reclaimed joker in a new meld — or</span>
+          <button type="button" className="font-script text-[16px] text-deli-red underline" onClick={onReturnJoker}>
             Put the joker back
           </button>
         </div>
@@ -58,16 +58,16 @@ export function LayingDownTray({
   const staged = stagedPoints(stagedGroups);
   const toOpen = Math.max(0, OPEN_THRESHOLD - staged);
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg border border-brass/40 bg-black/75 px-3 py-2 shadow-xl backdrop-blur">
-      <span className="text-xs text-[#c9b48a]">Laying down:</span>
+    <div className="deli-paper flex flex-wrap items-center justify-center gap-3 rounded-md px-3 py-2 text-deli-green shadow-xl">
+      <span className="font-script text-[17px] text-deli-red">Laying down:</span>
       {stagedGroups.map((g, i) => (
         <span key={i} className="flex">{g.cards.map((c) => <span key={c.id} className="-ml-1 first:ml-0"><CardFace card={c} size="sm" /></span>)}</span>
       ))}
-      <span className="text-xs text-brass">{staged} pts{!view.you.hasOpened && toOpen > 0 ? ` · ${toOpen} to open` : ''}</span>
-      <button type="button" className="text-xs underline text-[#c9b48a]" onClick={onClearTray}>clear</button>
+      <span className="font-cond text-[14px] font-extrabold uppercase tracking-[.06em]">{staged} pts{!view.you.hasOpened && toOpen > 0 ? ` · ${toOpen} to open` : ''}</span>
+      <button type="button" className="font-script text-[16px] text-deli-green/60 hover:text-deli-red hover:underline" onClick={onClearTray}>clear</button>
       <button
         type="button"
-        className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-1.5 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40"
+        className="deli-pill deli-pill--green btn-lift !px-4 !py-2 !text-[14px]"
         disabled={!canLayDown}
         onClick={onLayDown}
       >

@@ -30,37 +30,38 @@ export function ChatPanel({
 
   return (
     <div className="absolute right-3 top-14 z-40">
-      <div className="flex h-80 w-72 max-w-[85vw] flex-col rounded-lg border-2 border-brass bg-[#2a1c12] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-brass/30 px-3 py-1.5">
-            <span className="text-sm font-bold text-brass">Table talk</span>
-            <button type="button" onClick={onClose} className="text-xs text-[#c9b48a] hover:text-bone">✕</button>
+      {/* A cream order slip: script heading, green bubbles for you, cream for everyone else. */}
+      <div className="deli-paper flex h-80 w-72 max-w-[85vw] flex-col rounded-md text-deli-green shadow-2xl">
+          <div className="flex items-baseline justify-between border-b-2 border-deli-red/70 px-3 pb-1 pt-2">
+            <span className="font-script text-[22px] leading-none text-deli-red">Table talk</span>
+            <button type="button" onClick={onClose} className="font-script text-[17px] text-deli-green/70 hover:text-deli-red hover:underline">close</button>
           </div>
-          <div ref={listRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-2 text-sm">
-            {chat.length === 0 && <p className="text-xs italic text-[#c9b48a]">No messages yet — say hello.</p>}
+          <div ref={listRef} className="flex-1 space-y-1.5 overflow-y-auto px-3 py-2 font-sans-deli text-sm">
+            {chat.length === 0 && <p className="font-script text-[17px] text-deli-green/70">No messages yet — say hello.</p>}
             {chat.map((m) => {
               const mine = m.seat === mySeat;
               return (
                 <div key={m.id} className={mine ? 'text-right' : 'text-left'}>
-                  <div className="text-[10px] uppercase tracking-wide text-[#c9b48a]">{mine ? 'You' : seatNames[m.seat] ?? `Seat ${m.seat}`}</div>
-                  <div className={`inline-block max-w-[85%] break-words rounded-lg px-2 py-1 ${mine ? 'bg-[linear-gradient(180deg,#6b4a30,#402c1a)]' : 'bg-black/30'} text-bone`}>{m.body}</div>
+                  <div className="font-cond text-[11px] font-extrabold uppercase tracking-[.1em] opacity-70">{mine ? 'You' : seatNames[m.seat] ?? `Seat ${m.seat}`}</div>
+                  <div className={`inline-block max-w-[85%] break-words rounded-xl px-2.5 py-1 shadow-sm ${mine ? 'bg-deli-green text-deli-cream' : 'bg-white/70 text-deli-green ring-1 ring-deli-green/15'}`}>{m.body}</div>
                 </div>
               );
             })}
           </div>
-          <div className="flex flex-wrap gap-1 border-t border-brass/30 px-2 py-1.5">
+          <div className="flex flex-wrap gap-1 border-t border-dashed border-deli-green/30 px-2 py-1.5">
             {QUICK.map((q) => (
-              <button key={q} type="button" onClick={() => send(q)} className="rounded-full border border-brass/50 px-2 py-0.5 text-xs text-brass hover:bg-brass/10">{q}</button>
+              <button key={q} type="button" onClick={() => send(q)} className="font-cond rounded-full border border-deli-green/50 px-2 py-0.5 text-[12px] font-bold uppercase tracking-[.06em] hover:bg-deli-green/10">{q}</button>
             ))}
           </div>
-          <form className="flex gap-2 border-t border-brass/30 p-2" onSubmit={(e) => { e.preventDefault(); send(text); }}>
+          <form className="flex gap-2 border-t border-dashed border-deli-green/30 p-2" onSubmit={(e) => { e.preventDefault(); send(text); }}>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={300}
               placeholder="Say something…"
-              className="min-w-0 flex-1 rounded-md border border-brass/40 bg-black/30 px-2 py-1 text-sm text-bone placeholder:text-[#c9b48a]/60 focus:outline-none"
+              className="min-w-0 flex-1 rounded-full border-2 border-deli-green/40 bg-white/70 px-3 py-1 font-sans-deli text-sm text-deli-green placeholder:text-deli-green/45 focus:border-deli-green focus:outline-none"
             />
-            <button type="submit" className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 text-sm font-bold text-bone">Send</button>
+            <button type="submit" className="deli-pill deli-pill--green btn-lift !px-3.5 !py-1.5 !text-[13px]">Send</button>
           </form>
       </div>
     </div>

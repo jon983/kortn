@@ -4,8 +4,13 @@ import type { TableMeld, Pack } from '../../kalooki';
 import type { ReactElement, ReactNode } from 'react';
 import { Avatar } from '../Avatar';
 
-/** Dark, slightly blurred plate behind seat labels so they read on any table art. */
-export const SEAT_LABEL = 'inline-block rounded-md bg-black/75 px-2 py-0.5 leading-tight shadow-md backdrop-blur-sm';
+/** Cream name-plate sign behind seat labels (deli style); reads on any table art. */
+export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1.5 pt-2.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
+
+/** The red ribbon across the top of whoever's turn it is (slides on as the turn arrives). */
+export function TurnRibbon(): ReactElement {
+  return <span data-turn-ribbon aria-hidden className="plate-ribbon-in absolute inset-x-0 top-0 h-[6px] bg-deli-red" />;
+}
 
 export function OpponentSeat({
   name, avatarUrl, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
@@ -29,14 +34,17 @@ export function OpponentSeat({
   // During the deal, only show the backs that have "landed" so far.
   const packs = visibleCount == null ? allPacks : allPacks.slice(0, visibleCount);
 
-  // Labels sit on a dark plate so they stay legible over the doily / pale felt.
-  const nameLine = (
-    <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isTurn ? 'text-brass ring-1 ring-brass' : 'text-bone'} ${status !== 'active' ? 'opacity-60' : ''}`}>
-      <Avatar name={name} src={avatarUrl} size={20} />
-      <span className={status !== 'active' ? 'line-through' : ''}>{name}</span>
+  // One cream plate: name (condensed caps) over the count line; the turn ribbon on top.
+  const plate = (
+    <div data-plate className={`${SEAT_LABEL} text-center ${status !== 'active' ? 'opacity-60' : ''}`}>
+      {isTurn && <TurnRibbon key="ribbon" />}
+      <div className="flex items-center justify-center gap-1.5">
+        <Avatar name={name} src={avatarUrl} size={20} />
+        <span className={`font-cond min-w-0 break-words text-[13px] font-extrabold uppercase leading-none tracking-[.04em] sm:text-[15px] ${status !== 'active' ? 'line-through' : ''}`}>{name}</span>
+      </div>
+      <div className="mt-0.5 font-sans-deli text-[10px] font-medium tracking-[.02em] opacity-80 sm:text-[10.5px]">{handCount} cards · {score} pts</div>
     </div>
   );
-  const countLine = <div className={`${SEAT_LABEL} mt-0.5 text-[11px] text-[#e6d3a8]`}>{handCount} cards · {score} pts</div>;
   const meldPile = (m: TableMeld) => (
     <MeldPile key={m.id} meld={m} armed={armedMeldIds?.includes(m.id)} flash={flashMeldIds?.includes(m.id)} onClick={onMeldClick ? () => onMeldClick(m.id) : undefined} />
   );
@@ -63,10 +71,9 @@ export function OpponentSeat({
     return (
       <div className="flex shrink-0 flex-col items-center text-center">
         {media}
-        {nameLine}
-        {countLine}
+        {plate}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge */}
-        <div className={`mt-1 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
           {meldsCol}
           {hand}
         </div>
@@ -79,7 +86,7 @@ export function OpponentSeat({
     <div className="flex shrink-0 flex-col items-center text-center">
       {media}
       <div className="w-40">
-        {nameLine}
+        {plate}
         <div className="mt-1 flex min-h-[3.5rem] justify-center">
           {packs.map((pack, i) => (
             <span key={i} data-cardback className="-ml-2.5 first:ml-0">
@@ -87,7 +94,6 @@ export function OpponentSeat({
             </span>
           ))}
         </div>
-        {countLine}
       </div>
       <div className={`mt-1 flex justify-center gap-2 ${
         meldOrientation === 'column' ? 'flex-col items-center' : 'max-w-[90vw] flex-nowrap gap-3 overflow-x-auto'

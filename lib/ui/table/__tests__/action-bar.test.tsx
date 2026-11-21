@@ -43,4 +43,12 @@ describe('ActionBar (info strip)', () => {
     const { container } = render(<ActionBar view={view({ currentTurn: 1 }) as any} onReturnDiscard={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
+  it('laying-down tray uses deli pills (and still respects canLayDown)', () => {
+    render(<LayingDownTray view={view() as any}
+      stagedGroups={[{ cards: [nat(3, 'clubs'), nat(3, 'hearts'), nat(3, 'spades')] }]}
+      onClearTray={() => {}} canLayDown={false} />);
+    const btn = screen.getByRole('button', { name: /lay down/i });
+    expect(btn.className).toContain('deli-pill');
+    expect(btn).toBeDisabled();
+  });
 });

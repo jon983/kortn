@@ -1,13 +1,14 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
 import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
 import { playAction, getTableView } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
-import { OpponentSeat, SEAT_LABEL } from './OpponentSeat';
+import { OpponentSeat, SEAT_LABEL, TurnRibbon } from './OpponentSeat';
+import { ChatIcon, SpeakerIcon, ScoresIcon, RefreshIcon } from './icons';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
@@ -22,8 +23,26 @@ import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
-const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
+/** Secondary table buttons (Sort, Add space, run ends): cream pills with a green edge. */
+const ctrlBtn = 'deli-pill deli-pill--table btn-lift';
+/** Primary actions (Meld, Discard): green pills with a cream edge. */
+const goBtn = 'deli-pill deli-pill--table-go btn-lift';
 const SPACE_PREFIX = '__space_';
+/** Wider than a phone (Tailwind's sm). False on the server and first paint, then live. */
+function useWide(): boolean {
+  const mq = () => (typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 640px)') : null);
+  return useSyncExternalStore(
+    (cb) => { const m = mq(); m?.addEventListener('change', cb); return () => m?.removeEventListener('change', cb); },
+    () => mq()?.matches ?? false,
+    () => false,
+  );
+}
+/** Header controls: cream-outlined tags in condensed caps on the green header. */
+const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
+/** Hand and pot: small printed price tags. */
+/** Icon-only header buttons: the same pill as the video-call buttons. */
+const ICON_TAG = 'flex items-center justify-center rounded-full border border-deli-cream/50 px-2 py-[3px] text-deli-cream hover:bg-deli-cream/10';
+const PRINTED_TAG = 'whitespace-nowrap rounded-[3px] bg-deli-cream px-1.5 font-sans-deli text-[9px] font-semibold uppercase leading-[1.45] tracking-[.14em] text-deli-green sm:py-px sm:text-[10.5px]';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
   const { view, chat, connected } = useMatchStream(matchId, initial, initialChat, { fetchView: () => getTableView(matchId) });
@@ -80,6 +99,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const rootRef = useRef<HTMLDivElement>(null);
   const stockRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDivElement>(null);
+  const wide = useWide();
   const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
@@ -405,7 +425,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <OpponentSeat
         name={view.seatNames[o.seat]}
         avatarUrl={view.seatAvatars?.[o.seat]}
-        media={<SeatVideo seat={o.seat} className="mb-1 h-12 w-12 sm:h-[72px] sm:w-[72px]" />}
+        media={<SeatVideo seat={o.seat} className="mb-1.5 h-16 w-16 sm:h-24 sm:w-24" />}
         handCount={o.handCount}
         handPacks={o.handPacks}
         score={o.score}
@@ -460,13 +480,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   return (
     <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
-      {/* status bar */}
-      {/* Phones: controls on one row, whose turn on a full-width row beneath.
-          Wider: left controls · whose turn (centred) · right controls. */}
-      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-black/60 px-3 py-2 text-xs backdrop-blur sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
+      {/* status bar: the deli's green header with printed tags. */}
+      {/* Phones: controls on one row, whose move on a full-width row beneath.
+          Wider: left controls · whose move (centred) · right controls. */}
+      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-deli-green px-3 py-2 text-xs text-deli-cream shadow-[0_4px_14px_rgba(0,0,0,.35)] sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
         <span className="flex items-center gap-2 justify-self-start sm:gap-3">
-          <Link href="/" className="whitespace-nowrap rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
-            ⌂ Kitchen
+          <Link href="/" className={`${HEADER_TAG} whitespace-nowrap`}>
+            Kitchen
           </Link>
           {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
           <button
@@ -474,22 +494,20 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             onClick={() => window.location.reload()}
             title="Refresh the table"
             aria-label="Refresh the table"
-            className={`rounded-md border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide hover:bg-brass/10 ${
-              connected ? 'border-brass/60 text-brass' : 'animate-pulse border-amber-300 text-amber-300'
-            }`}
+            className={`${ICON_TAG} gap-1.5 ${connected ? '' : 'animate-pulse !border-deli-gold !text-deli-gold'}`}
           >
-            ↻{!connected && <span className="hidden sm:inline"> Reconnecting…</span>}
+            <RefreshIcon />{!connected && <span className="hidden font-cond text-[12px] font-extrabold uppercase tracking-[.12em] sm:inline">Reconnecting…</span>}
           </button>
         </span>
         <span className="order-last flex w-full items-center justify-center gap-3 sm:order-none sm:w-auto sm:justify-self-center">
           {/* Phones: call buttons live on this second row so the top row never overflows. */}
           {!view.matchFinished && <span className="sm:hidden"><CallControls /></span>}
           {isMyTurn(view) ? (
-            <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
-              ● Your turn
+            <span key={`turn-${view.roundNumber}-${view.currentTurn}`} className="deli-ribbon deli-ribbon--red deli-ribbon-drop !px-7 !py-1 !text-[12px] sm:!py-1.5 sm:!text-[13px]">
+              Your move
             </span>
           ) : (
-            <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
+            <span className="font-script text-[19px] leading-none text-deli-cream/90">{`${view.seatNames[view.currentTurn]}'s move`}</span>
           )}
         </span>
         <span className="flex items-center gap-1.5 justify-self-end sm:gap-2">
@@ -498,11 +516,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             type="button"
             aria-label={chatOpen ? 'Close chat' : 'Open chat'}
             onClick={() => setChatOpen((o) => !o)}
-            className="relative rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+            className={`${ICON_TAG} relative`}
           >
-            💬
+            <ChatIcon />
             {!chatOpen && unread > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-maroon px-1 text-[9px] font-bold text-bone">{unread}</span>
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-deli-red px-1 font-sans-deli text-[9px] font-bold text-deli-cream">{unread}</span>
             )}
           </button>
           <span className="relative">
@@ -510,24 +528,24 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               type="button"
               aria-label="Volume"
               onClick={() => setVolOpen((o) => !o)}
-              className="rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+              className={ICON_TAG}
             >
-              {volume === 0 ? '🔇' : volume < 0.5 ? '🔈' : '🔊'}
+              <SpeakerIcon volume={volume} />
             </button>
             {volOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 flex items-center gap-2 rounded-md border border-brass/60 bg-[#2a1c12] px-3 py-2 shadow-xl">
-                <span className="text-[11px] text-[#c9b48a]">Vol</span>
+              <div className="deli-paper absolute right-0 top-full z-50 mt-1.5 flex items-center gap-2 rounded-md px-3 py-2 text-deli-green shadow-xl">
+                <span className="font-sans-deli text-[10px] font-semibold uppercase tracking-[.14em]">Vol</span>
                 <input
                   type="range"
                   min={0}
                   max={100}
                   value={Math.round(volume * 100)}
                   aria-label="Sound volume"
-                  className="h-1 w-28 accent-brass"
+                  className="h-1 w-28 accent-deli-red"
                   onChange={(e) => onVolumeInput(Number(e.target.value) / 100)}
                   onPointerUp={() => { if (volumeRef.current > 0) playYourTurn(); }}
                 />
-                <span className="w-7 text-right text-[11px] tabular-nums text-brass">{Math.round(volume * 100)}</span>
+                <span className="w-7 text-right font-cond text-[13px] font-bold tabular-nums">{Math.round(volume * 100)}</span>
               </div>
             )}
           </span>
@@ -535,14 +553,14 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             type="button"
             onClick={() => setShowScores((s) => !s)}
             aria-label={showScores ? 'Hide scores' : 'Scores'}
-            className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+            className={HEADER_TAG}
           >
-            <span className="sm:hidden" aria-hidden>📋</span>
+            <span className="sm:hidden" aria-hidden><ScoresIcon /></span>
             <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
-          <span className="flex flex-col items-end text-[10px] leading-tight sm:flex-row sm:items-center sm:gap-2 sm:text-xs">
-            <span className="whitespace-nowrap text-[#c9b48a]">Hand: {view.roundNumber}</span>
-            <span className="whitespace-nowrap text-[#c9a24b]">Pot: {view.pot} bits</span>
+          <span className="flex flex-col items-end gap-px sm:flex-row sm:items-center sm:gap-1.5">
+            <span className={PRINTED_TAG}>{`Hand ${view.roundNumber}`}</span>
+            <span className={PRINTED_TAG}>{`Pot ${view.pot} bits`}</span>
           </span>
         </span>
       </div>
@@ -550,15 +568,15 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* full scorecard (toggle) */}
       {showScores && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-6" onClick={() => setShowScores(false)}>
-          <div className="w-full max-w-3xl rounded-xl border-2 border-brass bg-[#2a1c12] p-6 text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Scorecard</h3>
+          <div className="deli-paper w-full max-w-3xl rounded-sm px-5 pb-5 pt-4 text-deli-green shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-baseline justify-between border-b-2 border-deli-red/70 pb-1">
+              <h3 className="font-cond text-[26px] font-black uppercase leading-none tracking-[.06em]">Scores</h3>
               <button
                 type="button"
                 onClick={() => setShowScores(false)}
-                className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+                className="font-script text-[18px] text-deli-green/60 hover:text-deli-red hover:underline"
               >
-                Close
+                close
               </button>
             </div>
             <ScorePad view={view} />
@@ -612,12 +630,18 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
-          <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
+          {/* Phones: your video sits beside your plate (the hand row is full). */}
+          {!wide && <SeatVideo seat={view.seat} className="mr-2 h-16 w-16" />}
           {/* No name label for yourself — just your count (highlighted on your turn). */}
-          <div className={`${SEAT_LABEL} text-[11px] ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-[#e6d3a8]'}`}>{view.you.handCount} cards · {view.you.score} pts</div>
+          <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold`}>
+            {isMyTurn(view) && <TurnRibbon />}
+            {view.you.handCount} cards · {view.you.score} pts
+          </div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
+          {/* Wider screens: your video sits at the side of your cards. */}
+          {wide && <div className="flex shrink-0 items-center pt-6 pb-2"><SeatVideo seat={view.seat} className="h-24 w-24" /></div>}
           {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
           <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">
             <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
@@ -648,7 +672,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               <>
               <button
                 type="button"
-                className={ctrlBtn}
+                className={goBtn}
                 disabled={!canAct || !evaluateMeld(selectedCards)}
                 onClick={() => {
                   if (evaluateMeld(selectedCards)) {
@@ -661,7 +685,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               </button>
               <button
                 type="button"
-                className={ctrlBtn}
+                className={goBtn}
                 disabled={!canAct || !discardEnabled}
                 onClick={() => {
                   const id = selected[0];
@@ -701,13 +725,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* which-end chooser for laying a joker onto a run */}
       {pendingLayoff && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50" onClick={() => setPendingLayoff(null)}>
-          <div className="rounded-xl border-2 border-brass bg-[#2a1c12] p-5 text-center text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 text-sm text-[#c9b48a]">Which end of the run?</div>
+          <div className="deli-paper rounded-md p-5 text-center text-deli-green shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 font-script text-[20px] text-deli-red">Which end of the run?</div>
             <div className="flex gap-3">
               <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'low')}>◀ Low end</button>
               <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'high')}>High end ▶</button>
             </div>
-            <button type="button" className="mt-3 text-xs text-[#c9b48a] underline" onClick={() => setPendingLayoff(null)}>cancel</button>
+            <button type="button" className="mt-3 font-script text-[16px] text-deli-green/60 hover:text-deli-red hover:underline" onClick={() => setPendingLayoff(null)}>cancel</button>
           </div>
         </div>
       )}
