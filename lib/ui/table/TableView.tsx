@@ -415,7 +415,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <OpponentSeat
         name={view.seatNames[o.seat]}
         avatarUrl={view.seatAvatars?.[o.seat]}
-        media={<SeatVideo seat={o.seat} className="mb-1 h-12 w-12 sm:h-[72px] sm:w-[72px]" />}
+        media={<SeatVideo seat={o.seat} className="mb-1.5 h-16 w-16 sm:h-24 sm:w-24" />}
         handCount={o.handCount}
         handPacks={o.handPacks}
         score={o.score}
@@ -620,7 +620,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
-          <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
+          <SeatVideo seat={view.seat} className="mr-2 h-16 w-16 sm:h-24 sm:w-24" />
           {/* No name label for yourself — just your count (highlighted on your turn). */}
           <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold`}>
             {isMyTurn(view) && <TurnRibbon />}
