@@ -30,7 +30,13 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
   const t = TABS.find((x) => x.key === tab)!;
   const entries = boards[tab];
   return (
-    <div onMouseEnter={rot.pause} onMouseLeave={rot.resume} onFocus={rot.pause} onBlur={rot.resume}>
+    <div
+      onMouseEnter={() => rot.hold('hover', true)}
+      onMouseLeave={() => rot.hold('hover', false)}
+      onFocus={() => rot.hold('focus', true)}
+      // Only release when focus actually leaves the leaderboard (not when it moves between choices).
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) rot.hold('focus', false); }}
+    >
       <div role="tablist" aria-label="Leaderboards" className="mt-2 flex flex-wrap items-baseline justify-center gap-x-3.5 gap-y-1">
         <span aria-hidden className="font-script text-[19px] text-deli-red">Choice of:</span>
         {TABS.map((x) => {

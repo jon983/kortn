@@ -16,10 +16,16 @@ export function JoinPill() {
 
   async function submit(fd: FormData) {
     setError(null); setBusy(true);
-    const res = await joinTableAction(fd);
-    setBusy(false);
-    if ('error' in res) { setError(res.error); input.current?.select(); }
-    else router.push(`/match/${res.matchId}/lobby`);
+    try {
+      const res = await joinTableAction(fd);
+      if ('error' in res) { setError(res.error); input.current?.select(); }
+      else router.push(`/match/${res.matchId}/lobby`);
+    } catch {
+      // Expired session, offline, server error: never leave the button stuck on "…".
+      setError('Couldn’t join just now — try again.');
+    } finally {
+      setBusy(false);
+    }
   }
   const close = () => { setOpen(false); setError(null); };
   const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };

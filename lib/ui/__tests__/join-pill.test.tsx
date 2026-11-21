@@ -34,4 +34,13 @@ describe('JoinPill', () => {
     fireEvent.keyDown(screen.getByRole('textbox', { name: /table code/i }), { key: 'Escape' });
     expect(screen.getByRole('button', { name: /join with a code/i })).toBeInTheDocument();
   });
+
+  it('recovers if joining fails outright (e.g. the session expired)', async () => {
+    joinTableAction.mockRejectedValue(new Error('unauthorized'));
+    render(<JoinPill />);
+    fireEvent.click(screen.getByRole('button', { name: /join with a code/i }));
+    fireEvent.submit(screen.getByRole('textbox', { name: /table code/i }).closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/try again/i);
+    expect(screen.getByRole('button', { name: 'Join' })).not.toBeDisabled();
+  });
 });

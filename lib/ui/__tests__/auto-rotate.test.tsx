@@ -83,4 +83,30 @@ describe('LeaderboardTabs rotation', () => {
     act(() => { vi.advanceTimersByTime(6000); });
     expect(firstRow()).toHaveTextContent('Ines');
   });
+
+  it('stays paused while focused even if the mouse passes over and leaves', () => {
+    const { container } = render(<LeaderboardTabs boards={boards} meId="j" minHands={10} />);
+    const wrap = container.firstElementChild as HTMLElement;
+    const tabA = screen.getByRole('tab', { name: 'Pts' });
+    act(() => { tabA.focus(); });
+    fireEvent.mouseEnter(wrap); fireEvent.mouseLeave(wrap);
+    tick(1); // one rotation would land on Pts (Ines first)
+    expect(firstRow()).toHaveTextContent('Jonathan');
+  });
+
+  it('moving focus between choices inside the leaderboard does not resume it', () => {
+    render(<LeaderboardTabs boards={boards} meId="j" minHands={10} />);
+    act(() => { screen.getByRole('tab', { name: 'Pts' }).focus(); });
+    act(() => { screen.getByRole('tab', { name: 'Wins' }).focus(); });
+    tick(1);
+    expect(firstRow()).toHaveTextContent('Jonathan');
+  });
+
+  it('resumes once focus leaves the leaderboard', () => {
+    render(<><LeaderboardTabs boards={boards} meId="j" minHands={10} /><button>elsewhere</button></>);
+    act(() => { screen.getByRole('tab', { name: 'Pts' }).focus(); });
+    act(() => { screen.getByRole('button', { name: 'elsewhere' }).focus(); });
+    act(() => { vi.advanceTimersByTime(6000); });
+    expect(firstRow()).toHaveTextContent('Ines');
+  });
 });
