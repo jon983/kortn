@@ -1,21 +1,19 @@
 import { UserButton } from '@clerk/nextjs';
 import { Avatar } from '../lib/ui/Avatar';
+import { Wordmark } from '../lib/ui/deli';
 
-/** Front-room top bar: logo on the left, who's signed in on the right (avatar opens account / sign-out). */
+/** The deli's green header: KORTN wordmark centred; who's signed in on the right (avatar opens account / sign-out). */
 export function HomeHeader({ name }: { name: string }) {
   return (
-    <header className="sticky top-0 z-30 bg-black/55 backdrop-blur">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-2.5">
-        <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element -- tiny static svg */}
-          <img src="/art/favicon.svg" alt="" width={32} height={32} className="rounded-md shadow" />
-          <span className="font-[family-name:var(--font-display)] text-2xl leading-none text-brass drop-shadow">kortn</span>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span className="max-w-[40vw] truncate text-sm font-bold text-bone">{name}</span>
+    <header className="sticky top-0 z-30 bg-deli-green text-deli-cream shadow-[0_6px_20px_rgba(0,0,0,.35)]">
+      <div className="mx-auto grid h-[60px] max-w-5xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-[68px] sm:px-7">
+        <span />
+        <Wordmark />
+        <div className="flex items-center justify-self-end gap-2.5">
+          <span className="hidden max-w-[30vw] truncate font-cond text-[15px] font-extrabold uppercase tracking-[.08em] sm:inline">{name}</span>
           <UserButton
-            fallback={<Avatar name={name} size={32} />}
-            appearance={{ elements: { userButtonAvatarBox: { width: 32, height: 32, boxShadow: '0 0 0 1.5px var(--color-brass)' } } }}
+            fallback={<Avatar name={name} size={34} />}
+            appearance={{ elements: { userButtonAvatarBox: { width: 34, height: 34, boxShadow: '0 0 0 2px var(--color-deli-cream)' } } }}
           />
         </div>
       </div>
