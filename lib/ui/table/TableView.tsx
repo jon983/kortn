@@ -480,7 +480,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
   return (
     <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
-    <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
+    <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center portrait:bg-[url(/art/table-surface-portrait.jpg)] text-bone">
       {/* status bar: the deli's green header with printed tags. */}
       {/* Phones: controls on one row, whose move on a full-width row beneath.
           Wider: left controls · whose move (centred) · right controls. */}
