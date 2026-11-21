@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { startTransition, useState, ViewTransition } from 'react';
 import type { Leaderboards, BoardEntry } from '../lib/stats/hands';
 
 type BoardKey = keyof Leaderboards;
@@ -30,7 +30,7 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
             type="button"
             role="tab"
             aria-selected={x.key === tab}
-            onClick={() => setTab(x.key)}
+            onClick={() => startTransition(() => setTab(x.key))}
             className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${
               x.key === tab ? 'bg-walnut text-bone' : 'text-ink/60 hover:bg-black/5 hover:text-ink'
             }`}
@@ -39,6 +39,9 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
           </button>
         ))}
       </div>
+      {/* Switching tabs crossfades the blurb + list (the tab bar stays put). */}
+      <ViewTransition key={tab} name="leaderboard-list" share="vt-tab" enter="vt-tab" exit="vt-tab" default="none">
+      <div>
       <p className="px-2 pb-1 text-[11px] italic text-ink/55">{t.blurb}</p>
       {entries.length === 0 ? (
         <p className="p-2 text-sm text-ink/70">Nobody qualifies yet — players appear here once they&apos;ve played at least {minHands} hands.</p>
@@ -58,6 +61,8 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
           })}
         </ol>
       )}
+      </div>
+      </ViewTransition>
     </div>
   );
 }

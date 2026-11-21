@@ -6,7 +6,7 @@ import { JoinBox } from './JoinBox';
 import { GameRow, type GameRowProps } from './GameRow';
 import { HomeHeader } from './HomeHeader';
 import { LeaderboardTabs } from './LeaderboardTabs';
-import type { ReactNode } from 'react';
+import { ViewTransition, type ReactNode } from 'react';
 import type { UserStats } from '../lib/db';
 import { CountUp } from '../lib/ui/CountUp';
 import type { Leaderboards } from '../lib/stats/hands';
@@ -50,7 +50,12 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
 
         <Framed tilt={false} title="Rejoin an existing game" className="settle order-first md:order-none" style={{ animationDelay: '360ms' }}>
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
-          {games.map((g, i) => <GameRow key={g.id} {...g} index={i} />)}
+          {games.map((g, i) => (
+            // Rows slide in, and slide out when a game is abandoned or deleted.
+            <ViewTransition key={g.id} enter="vt-row-in" exit="vt-row-out" default="none">
+              <div><GameRow {...g} index={i} /></div>
+            </ViewTransition>
+          ))}
         </Framed>
       </main>
     </RoomBackdrop>

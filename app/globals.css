@@ -80,6 +80,24 @@ body { background: #201811; color: var(--color-bone); }
 .btn-lift:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0, 0, 0, .45); }
 .btn-lift:not(:disabled):active { transform: translateY(0); box-shadow: 0 3px 6px rgba(0, 0, 0, .4); }
 
+/* ───────── View transitions (React <ViewTransition>) ───────── */
+::view-transition { pointer-events: none; } /* clicks pass through during a transition */
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-from-right { from { transform: translateX(8px); } }
+@keyframes vt-to-left { to { transform: translateX(-8px); } }
+@keyframes vt-from-below { from { transform: translateY(8px); } }
+@keyframes vt-rise { from { transform: translateY(6px); } }
+/* Leaderboard tabs: old list slides out left, new one in from the right. */
+::view-transition-old(.vt-tab) { animation: 140ms ease-out both vt-fade-out, 140ms ease-out both vt-to-left; }
+::view-transition-new(.vt-tab) { animation: 200ms ease-out 90ms both vt-fade-in, 260ms ease-out both vt-from-right; }
+/* Game rows: slide up into place; fade away when removed. */
+::view-transition-new(.vt-row-in) { animation: 260ms ease-out both vt-fade-in, 300ms ease-out both vt-from-below; }
+::view-transition-old(.vt-row-out) { animation: 200ms ease-in both vt-fade-out; }
+/* Page changes: a soft crossfade, the new page rising slightly. */
+::view-transition-old(.vt-page-out) { animation: 160ms ease-out both vt-fade-out; }
+::view-transition-new(.vt-page-in) { animation: 240ms ease-out 60ms both vt-fade-in, 300ms ease-out both vt-rise; }
+
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
   .amb-drift, .amb-glow, .amb-shaft { animation: none !important; }
