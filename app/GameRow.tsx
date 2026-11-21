@@ -45,7 +45,8 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
             <span className="opacity-60">No players yet</span>
           ) : (
             players.map((p, i) => (
-              <span key={i} data-player className={`whitespace-nowrap ${p.out ? 'opacity-40' : ''}`}>
+              // Long names wrap (even a single long word) rather than running under the Play pill.
+              <span key={i} data-player className={`min-w-0 [overflow-wrap:anywhere] ${p.out ? 'opacity-40' : ''}`}>
                 {p.name}
                 {p.out
                   ? <span className="ml-1 font-sans-deli text-[10px] font-semibold tracking-[.14em]">out</span>

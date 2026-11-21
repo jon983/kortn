@@ -126,6 +126,8 @@ body { background: #201811; color: var(--color-bone); }
 ::view-transition-new(.vt-page-in) { animation: 240ms ease-out 60ms both vt-fade-in, 300ms ease-out both vt-rise; }
 
 /* ───────── Corner-deli print styles ───────── */
+/* Always the Display optical size of the condensed face, whatever the font size. */
+.font-cond, .deli-pill { font-variation-settings: 'opsz' 72; }
 /* Cream stock with a faint printed-paper grain. */
 .deli-paper {
   background-color: var(--color-deli-cream);

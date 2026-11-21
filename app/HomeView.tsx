@@ -25,7 +25,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
     <RoomBackdrop plate="room-home" kitchenLink={false} ambient>
       <HomeHeader name={myName} />
       <main className="mx-auto max-w-[860px] px-3 pb-12 sm:px-5">
-        <ShopSign name={myName} className="settle h-[200px] sm:h-[210px]" />
+        <ShopSign name={myName} className="settle pb-2" />
 
         <MenuBoard className="settle mt-2 [animation-delay:90ms]">
           {/* Phones: today's tables come first (the common case); wider screens lead with the record. */}

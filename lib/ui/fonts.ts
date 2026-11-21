@@ -6,8 +6,9 @@ export const bodyFont = Zilla_Slab({ weight: ['400', '600', '700'], subsets: ['l
 /* ── The corner-deli look (kitchen first; other pages later) ── */
 /** Heavy wordmark: KORTN. */
 export const markFont = Archivo_Black({ weight: '400', subsets: ['latin'], variable: '--nf-mark' });
-/** Condensed shop-sign capitals: names, numbers, buttons. */
-export const condFont = Big_Shoulders({ weight: ['700', '800', '900'], subsets: ['latin'], variable: '--nf-cond' });
+/** Condensed shop-sign capitals: names, numbers, buttons ("Big Shoulders", formerly Big Shoulders Display). */
+// Variable, with the optical-size axis so we can pin the tall, tight *Display* cut (opsz 72) — see .font-cond in globals.css.
+export const condFont = Big_Shoulders({ subsets: ['latin'], axes: ['opsz'], variable: '--nf-cond' });
 /** Wide, letter-spaced capitals: ribbon banners and small labels (expanded width axis). */
 export const wideFont = Archivo({ subsets: ['latin'], axes: ['wdth'], variable: '--nf-wide' });
 /** Sign-writer script accents. */
