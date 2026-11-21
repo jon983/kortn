@@ -49,6 +49,12 @@ describe('TableView', () => {
     render(<TableView matchId="m1" initial={baseView} />);
     expect(screen.getAllByText(/your turn/i)).toHaveLength(1);
   });
+  it('your hand sits in the middle of three columns with equal sides (stays centred)', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    const row = container.querySelector('[data-hand-row]')!;
+    expect(row.className).toContain('grid-cols-[1fr_minmax(0,auto)_1fr]');
+    expect(row.children[1].hasAttribute('data-hand')).toBe(true);
+  });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);
     expect(screen.getByText('Hand 1')).toBeInTheDocument();
