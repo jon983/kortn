@@ -4,14 +4,14 @@ import type { ReactNode } from 'react';
 import { displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont } from '../lib/ui/fonts';
 
 export const metadata = {
-  title: 'kortn — Kalooki',
+  title: 'KORTN',
   description: 'Online Kalooki in the front room',
   icons: {
     icon: '/art/favicon.svg',
     apple: '/art/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'kortn — Kalooki',
+    title: 'KORTN',
     description: 'Online Kalooki in the front room',
     images: ['/art/vercel-avatar.png'],
   },
