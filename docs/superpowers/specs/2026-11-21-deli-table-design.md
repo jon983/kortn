@@ -53,11 +53,12 @@ Each has a cream border, a fine repeating print pattern (a deli-paper style chec
   >
   > Running total for each player
   >
-  > Pot: N bits
+  > Bits this hand: the winner's gain ("Bits to Ines +2"), taken from the last scorepad entry's `handBits`
+>
+> Pot: N bits
   >
   > "Thank you — deal again soon!"
 
-  - **No "bits to the winner" line:** bits don't move per hand. They change only at buy-backs and when the pot is paid at match end, so the receipt shows the pot standing instead.
   - **The "Next hand" pill** appears under the receipt once printing finishes, or straight away if the player taps the receipt; tapping finishes the print instantly.
   - **After pressing it:** the pill reads "Waiting… n/N", as today.
   - **Players who are out** see the same receipt with "Waiting for the next hand… n/N ready" in place of the pill.
@@ -128,7 +129,7 @@ Each has a cream border, a fine repeating print pattern (a deli-paper style chec
 - **Back colours:** green for pack A and tomato red for pack B, both with a K monogram, as proposed in conversation. They're drawn as an inline SVG/CSS component rather than images, so they're crisp at every size and need no assets.
 - **Opponent's turn text:** "Ines's move" in script, so it matches the "Your move" ribbon's wording.
 - **Winner sign wording:** "{Name} takes the pot".
-- **The receipt:** shows the pot rather than "bits to the winner" (bits don't move per hand). It keeps the ready marks and the "how it ended" line, and tapping it finishes the print.
+- **The receipt:** shows the bits won this hand and the pot. It keeps the ready marks and the "how it ended" line, and tapping it finishes the print.
 - **The buy-back ticket** keeps the "4 bits" price.
 - **The old back images** (`card-back-blue.png`, `card-back-red.png`) are deleted. Only `CardBack` uses them.
 
