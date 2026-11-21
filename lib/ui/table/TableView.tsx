@@ -36,7 +36,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   function addSpace() {
     setOrder((prev) => {
       const base = prev ?? sortHand(view.you.hand).map((c) => c.id);
-      return [...base, `${SPACE_PREFIX}${++spaceSeq.current}`];
+      // New spaces start at the left; drag one into place (or off either end to remove).
+      return [`${SPACE_PREFIX}${++spaceSeq.current}`, ...base];
     });
   }
   function sortHandCards() {

@@ -35,4 +35,14 @@ describe('TableView', () => {
     expect(screen.getByText(/sol.*turn/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /draw stock/i })).toBeNull();
   });
+  it('adds a space at the left end of your hand', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    const handIds = () => [...container.querySelectorAll('[data-hand] [data-card-id]')].map((el) => el.getAttribute('data-card-id'));
+    expect(handIds()[0]).toBe('A-clubs-4');
+    fireEvent.click(screen.getByRole('button', { name: /add space/i }));
+    const ids = handIds();
+    expect(ids).toHaveLength(3);
+    expect(ids[0]).not.toMatch(/^A-/); // the new spacer leads
+    expect(ids.slice(1)).toEqual(['A-clubs-4', 'A-hearts-5']);
+  });
 });
