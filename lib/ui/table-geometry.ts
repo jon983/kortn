@@ -55,3 +55,9 @@ export function seatAround<T extends { seat: number }>(
   if (o.length === 2) return { left: [o[0]], top: [], right: [o[1]] };
   return { left: [o[0]], top: o.slice(1, -1), right: [o[o.length - 1]] };
 }
+
+/** Sort comparator: your seat first, then the others in play order (seat+1, seat+2, …). */
+export function playOrderFrom(mySeat: number | null, seats: number) {
+  const rel = (s: number) => (mySeat === null ? s : (s - mySeat + seats) % seats);
+  return (a: { seatIndex: number }, b: { seatIndex: number }) => rel(a.seatIndex) - rel(b.seatIndex);
+}

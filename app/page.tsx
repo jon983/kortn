@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { HomeView } from './HomeView';
+import { playOrderFrom } from '../lib/ui/table-geometry';
 import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats, getHandAggregates, leaderboardsFrom, upsertUser } from '../lib/db';
 
 const MIN_HANDS = 10;
@@ -31,8 +32,9 @@ export default async function Home() {
       const scores = game?.state.scores ?? null;
       return {
         match: m,
+        // You first, then everyone else in play order (as they sit round the table).
         players: players
-          .sort((a, b) => a.seatIndex - b.seatIndex)
+          .sort(playOrderFrom(players.find((p) => p.userId === userId)?.seatIndex ?? null, m.seats))
           .map((p) => ({
             name: p.userId === userId ? 'You' : p.displayName,
             score: scores?.[p.seatIndex] ?? null,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seatPositions, tableKind, seatAround } from '../table-geometry';
+import { seatPositions, tableKind, seatAround, playOrderFrom } from '../table-geometry';
 
 describe('table geometry', () => {
   it('chooses square for 2-4, pentagon for 5', () => {
@@ -62,5 +62,17 @@ describe('seatAround — clockwise seating relative to the viewer', () => {
   it('5 players: left, then the two across the top left-to-right, then right', () => {
     const r = seatAround(3, 5, opps(5, 3));
     expect([ids(r.left), ids(r.top), ids(r.right)]).toEqual([[4], [0, 1], [2]]);
+  });
+});
+
+describe('playOrderFrom — you first, then in play order', () => {
+  it('starts with your seat and wraps round the table', () => {
+    const seats = [0, 1, 2, 3].map((seatIndex) => ({ seatIndex }));
+    expect([...seats].sort(playOrderFrom(2, 4)).map((s) => s.seatIndex)).toEqual([2, 3, 0, 1]);
+    expect([...seats].sort(playOrderFrom(0, 4)).map((s) => s.seatIndex)).toEqual([0, 1, 2, 3]);
+  });
+  it('without a seat for you (lobby), keeps plain seat order', () => {
+    const seats = [2, 0, 1].map((seatIndex) => ({ seatIndex }));
+    expect([...seats].sort(playOrderFrom(null, 3)).map((s) => s.seatIndex)).toEqual([0, 1, 2]);
   });
 });
