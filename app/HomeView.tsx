@@ -25,7 +25,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
       <HomeHeader name={myName} />
       {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
-        <div className="grid gap-4 md:grid-cols-[1.3fr_1fr]">
+        <div className="grid gap-4 md:grid-cols-2">
           <Framed title="Your record">
             <StatsPanel stats={stats} />
           </Framed>
@@ -34,7 +34,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
           </Framed>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <Framed title="Create a new game">
             <div className="flex flex-col items-center gap-2 p-1">
               <p className="text-center text-xs text-ink/65">Set the table and send friends the code.</p>
@@ -80,7 +80,7 @@ function StatsPanel({ stats }: { stats: Stats }) {
 
   return (
     <div className="p-1">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2">
         <Tile label="Win rate" value={`${pct}%`} sub={`${stats.gamesWon} of ${stats.gamesPlayed} games`} />
         <Tile
           label="Hands vs par"
