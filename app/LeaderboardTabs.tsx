@@ -50,7 +50,7 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
             return (
               <li key={e.userId} className={`flex items-baseline gap-2 border-b border-dotted border-[#b0a98f] px-2 py-1.5 ${me ? 'bg-brass/10' : ''}`}>
                 <span className="w-5 text-right tabular-nums text-ink/50">{i + 1}</span>
-                <span className="flex-1 truncate">{e.name}{me ? ' (you)' : ''}</span>
+                <span className="flex-1 truncate">{e.name}</span>
                 <span className="text-[10px] tabular-nums text-ink/45">{t.hint(e)}</span>
                 <b className={`w-14 text-right tabular-nums ${good === null ? 'text-walnut' : good ? 'text-sage-deep' : 'text-maroon'}`}>{t.fmt(e)}</b>
               </li>

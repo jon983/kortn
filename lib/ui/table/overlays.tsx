@@ -16,7 +16,7 @@ function Scrim({ children, wide = false }: { children: React.ReactNode; wide?: b
  */
 export function ScorePad({ view }: { view: ClientView }) {
   const seats = [
-    { seat: view.you.seat, name: `${view.seatNames[view.you.seat]} (you)`, score: view.you.score, bits: view.you.bits },
+    { seat: view.you.seat, name: view.seatNames[view.you.seat], score: view.you.score, bits: view.you.bits },
     ...view.opponents.map((o) => ({ seat: o.seat, name: view.seatNames[o.seat], score: o.score, bits: o.bits })),
   ].sort((a, b) => a.seat - b.seat);
   const order = seats.map((s) => s.seat);
@@ -99,7 +99,7 @@ export function RoundSummary({ view, onReady }: { view: ClientView; onReady: () 
     <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-[#c9b48a]">
       {seats.map((r) => (
         <span key={r.seat} className={r.seat === view.roundWinnerSeat ? 'font-bold text-brass' : ''}>
-          {view.seatNames[r.seat]}{r.you ? ' (you)' : ''}: {r.status !== 'active' ? 'out' : view.readyNext[r.seat] ? 'ready ✓' : 'not ready ·'}
+          {view.seatNames[r.seat]}: {r.status !== 'active' ? 'out' : view.readyNext[r.seat] ? 'ready ✓' : 'not ready ·'}
         </span>
       ))}
     </div>
@@ -157,7 +157,7 @@ export function MatchSummary({ view }: { view: ClientView }) {
       <ul className="mt-3 text-sm" aria-label="Pot payout">
         {view.payout.map((b, seat) => (
           <li key={seat} className={seat === view.matchWinnerSeat ? 'font-bold text-brass' : ''}>
-            {view.seatNames[seat]}{seat === view.seat ? ' (you)' : ''}: <span className="tabular-nums">{fmt(b)}</span> bits
+            {view.seatNames[seat]}: <span className="tabular-nums">{fmt(b)}</span> bits
           </li>
         ))}
       </ul>

@@ -39,14 +39,14 @@ export async function reseatOne(db: DB, matchId: string, fromSeat: number, toSea
 export async function listPlayersWithNames(
   db: DB,
   matchId: string,
-): Promise<Array<MatchPlayer & { displayName: string }>> {
+): Promise<Array<MatchPlayer & { displayName: string; avatarUrl: string | null }>> {
   const rows = await db
-    .select({ p: matchPlayers, name: users.displayName })
+    .select({ p: matchPlayers, name: users.displayName, avatarUrl: users.avatarUrl })
     .from(matchPlayers)
     .innerJoin(users, eq(users.id, matchPlayers.userId))
     .where(eq(matchPlayers.matchId, matchId))
     .orderBy(asc(matchPlayers.seatIndex));
-  return rows.map((r) => ({ ...r.p, displayName: r.name }));
+  return rows.map((r) => ({ ...r.p, displayName: r.name, avatarUrl: r.avatarUrl }));
 }
 
 export async function updatePlayer(

@@ -17,6 +17,9 @@ import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
+import { Avatar } from '../Avatar';
+import { CallProvider, CallControls, SeatVideo } from './call';
+import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
@@ -401,6 +404,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     <div key={o.seat} data-seat={o.seat}>
       <OpponentSeat
         name={view.seatNames[o.seat]}
+        avatarUrl={view.seatAvatars?.[o.seat]}
+        media={<SeatVideo seat={o.seat} className="mb-1 h-12 w-12 sm:h-[72px] sm:w-[72px]" />}
         handCount={o.handCount}
         handPacks={o.handPacks}
         score={o.score}
@@ -453,11 +458,14 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   }
 
   return (
+    <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
-      <div className="sticky top-0 z-30 grid grid-cols-3 items-center bg-black/60 px-4 py-2 text-xs backdrop-blur">
-        <span className="flex items-center gap-3 justify-self-start">
-          <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
+      {/* Phones: controls on one row, whose turn on a full-width row beneath.
+          Wider: left controls · whose turn (centred) · right controls. */}
+      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-black/60 px-3 py-2 text-xs backdrop-blur sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
+        <span className="flex items-center gap-2 justify-self-start sm:gap-3">
+          <Link href="/" className="whitespace-nowrap rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
             ⌂ Kitchen
           </Link>
           {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
@@ -470,11 +478,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               connected ? 'border-brass/60 text-brass' : 'animate-pulse border-amber-300 text-amber-300'
             }`}
           >
-            ↻{connected ? '' : ' Reconnecting…'}
+            ↻{!connected && <span className="hidden sm:inline"> Reconnecting…</span>}
           </button>
-          <span>Round {view.roundNumber}</span>
         </span>
-        <span className="justify-self-center">
+        <span className="order-last flex w-full items-center justify-center gap-3 sm:order-none sm:w-auto sm:justify-self-center">
+          {/* Phones: call buttons live on this second row so the top row never overflows. */}
+          {!view.matchFinished && <span className="sm:hidden"><CallControls /></span>}
           {isMyTurn(view) ? (
             <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
               ● Your turn
@@ -483,7 +492,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
           )}
         </span>
-        <span className="flex items-center gap-2 justify-self-end">
+        <span className="flex items-center gap-1.5 justify-self-end sm:gap-2">
+          {!view.matchFinished && <span className="hidden sm:inline-flex"><CallControls /></span>}
           <button
             type="button"
             aria-label={chatOpen ? 'Close chat' : 'Open chat'}
@@ -524,11 +534,16 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           <button
             type="button"
             onClick={() => setShowScores((s) => !s)}
+            aria-label={showScores ? 'Hide scores' : 'Scores'}
             className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
           >
-            {showScores ? 'Hide scores' : 'Scores'}
+            <span className="sm:hidden" aria-hidden>📋</span>
+            <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
-          <span className="text-[#c9a24b]">Pot {view.pot}</span>
+          <span className="flex flex-col items-end text-[10px] leading-tight sm:flex-row sm:items-center sm:gap-2 sm:text-xs">
+            <span className="whitespace-nowrap text-[#c9b48a]">Hand {view.roundNumber}</span>
+            <span className="whitespace-nowrap text-[#c9a24b]">Pot: {view.pot} bits</span>
+          </span>
         </span>
       </div>
 
@@ -596,11 +611,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
-        <div className="mb-1 text-center">
-          <div className={`${SEAT_LABEL} text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
-            {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
+        <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
+          <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
+          <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
+            <Avatar name={view.seatNames[view.seat]} src={view.seatAvatars?.[view.seat]} size={20} />
+            <span>{view.seatNames[view.seat]}</span>
           </div>
-          <div className={`${SEAT_LABEL} ml-1 text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
+          <div className={`${SEAT_LABEL} text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
@@ -737,5 +754,6 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         <RoundSummary view={view} onReady={() => submit({ type: 'readyNext' })} />
       ))}
     </div>
+    </CallProvider>
   );
 }

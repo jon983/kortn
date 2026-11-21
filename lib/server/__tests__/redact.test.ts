@@ -39,3 +39,11 @@ describe('redactStateFor', () => {
     expect(view.you.status).toBe('active');
   });
 });
+
+describe('seat avatars', () => {
+  it('carries each seat’s avatar URL (null when unknown)', () => {
+    const state = startMatch({ seats: 3, seed: 1 });
+    const view = redactStateFor(state, 0, ['A', 'B', 'C'], ['https://img/a.png', null]);
+    expect(view.seatAvatars).toEqual(['https://img/a.png', null, null]);
+  });
+});
