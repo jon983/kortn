@@ -51,8 +51,8 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
         <Framed tilt={false} title="Rejoin an existing game" className="settle [animation-delay:0ms] md:[animation-delay:360ms] order-first md:order-none">
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
           {games.map((g, i) => (
-            // Rows slide in, and slide out when a game is abandoned or deleted.
-            <ViewTransition key={g.id} enter="vt-row-in" exit="vt-row-out" default="none">
+            // Rows slide in; an abandoned/deleted row slides out while the rest glide up into its place.
+            <ViewTransition key={g.id} enter="vt-row-in" exit="vt-row-out" update="vt-row-move" default="none">
               <div><GameRow {...g} index={i} /></div>
             </ViewTransition>
           ))}
