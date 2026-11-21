@@ -1,6 +1,7 @@
 import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { JoinPill } from './JoinPill';
 import { SetTablePill } from './SetTablePill';
+import { KitchenLive } from './KitchenLive';
 import { ShopSign, MenuBoard, Ribbon } from '../lib/ui/deli';
 import { RecordList } from '../lib/ui/deli/RecordList';
 import { GameRow, type GameRowProps } from './GameRow';
@@ -23,6 +24,7 @@ export interface HomeViewProps {
 export function HomeView({ userId, myName, stats, boards, minHands, games }: HomeViewProps) {
   return (
     <RoomBackdrop plate="room-home" kitchenLink={false} ambient>
+      <KitchenLive hasLobby={games.some((g) => g.status === 'lobby')} yourTurnIds={games.filter((g) => g.yourTurn).map((g) => g.id)} />
       <HomeHeader name={myName} />
       <main className="mx-auto max-w-[860px] px-3 pb-12 sm:px-5">
         <ShopSign name={myName} className="settle pb-2" />
