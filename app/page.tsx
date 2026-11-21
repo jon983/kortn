@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats, getVsParLeaderboard } from '../lib/db';
+import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats, getHandAggregates, leaderboardsFrom } from '../lib/db';
+import { LeaderboardTabs } from './LeaderboardTabs';
+
+const MIN_HANDS = 10;
 import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { Framed } from '../lib/ui/Framed';
 import { LampButton } from '../lib/ui/LampButton';
@@ -12,11 +15,10 @@ export default async function Home() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const [matches, stats, leaderboard] = await Promise.all([
-    listMatchesForUser(db, userId),
-    getUserStats(db, userId),
-    getVsParLeaderboard(db, { minRounds: 10, limit: 10 }),
-  ]);
+  const [matches, hands] = await Promise.all([listMatchesForUser(db, userId), getHandAggregates(db)]);
+  // One pass over every hand feeds both the leaderboards and your own record.
+  const stats = await getUserStats(db, userId, hands.get(userId) ?? null);
+  const boards = leaderboardsFrom(hands, { minHands: MIN_HANDS, limit: 10 });
   const active = matches.filter((m) => m.status === 'lobby' || m.status === 'active');
 
   // Pull player names + live scores for each active game so the list is informative.
@@ -73,8 +75,8 @@ export default async function Home() {
           <Framed title="Your record">
             <StatsPanel stats={stats} />
           </Framed>
-          <Framed title="Leaderboard · hands vs par">
-            <Leaderboard entries={leaderboard} meId={userId} />
+          <Framed title="Leaderboards">
+            <LeaderboardTabs boards={boards} meId={userId} minHands={MIN_HANDS} />
           </Framed>
         </div>
 
@@ -92,29 +94,6 @@ function Tile({ label, value, sub, accent }: { label: string; value: string; sub
       <div className="mt-0.5 text-[11px] uppercase tracking-wide text-ink/60">{label}</div>
       {sub && <div className="text-[10px] text-ink/45">{sub}</div>}
     </div>
-  );
-}
-
-type Leaders = Awaited<ReturnType<typeof getVsParLeaderboard>>;
-
-function Leaderboard({ entries, meId }: { entries: Leaders; meId: string }) {
-  if (entries.length === 0) {
-    return <p className="p-2 text-sm text-ink/70">Nobody qualifies yet — players appear here once they&apos;ve played at least 10 hands.</p>;
-  }
-  return (
-    <ol className="text-sm">
-      {entries.map((e, i) => {
-        const me = e.userId === meId;
-        return (
-          <li key={e.userId} className={`flex items-baseline gap-2 border-b border-dotted border-[#b0a98f] px-2 py-1.5 ${me ? 'bg-brass/10' : ''}`}>
-            <span className="w-5 text-right text-ink/50 tabular-nums">{i + 1}</span>
-            <span className="flex-1 truncate">{e.name}{me ? ' (you)' : ''}</span>
-            <span className="text-[10px] text-ink/45 tabular-nums">{e.roundsWon}/{e.roundsPlayed}</span>
-            <b className={`w-14 text-right tabular-nums ${e.vsPar >= 1 ? 'text-sage-deep' : 'text-maroon'}`}>{e.vsPar.toFixed(2)}×</b>
-          </li>
-        );
-      })}
-    </ol>
   );
 }
 
