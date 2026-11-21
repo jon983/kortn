@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { JoinPill } from './JoinPill';
+import { SetTablePill } from './SetTablePill';
 import { ShopSign, MenuBoard, Ribbon } from '../lib/ui/deli';
 import { RecordList } from '../lib/ui/deli/RecordList';
 import { GameRow, type GameRowProps } from './GameRow';
@@ -42,7 +42,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
             </div>
 
             <div className="mb-2 mt-7 flex flex-wrap items-start justify-center gap-3.5">
-              <Link href="/create" className="deli-pill deli-pill--green btn-lift">Set the table</Link>
+              <SetTablePill />
               <JoinPill />
             </div>
 

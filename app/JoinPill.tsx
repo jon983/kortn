@@ -6,6 +6,7 @@ import { joinTableAction } from './actions/lobby';
 /**
  * "Join with a code": an outlined pill that opens, in place, into a code box and
  * a Join button. Enter submits, Escape (or "cancel") closes, errors show inline.
+ * Joining keeps you in the kitchen; your waiting ticket appears in Today's tables.
  */
 export function JoinPill() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export function JoinPill() {
     try {
       const res = await joinTableAction(fd);
       if ('error' in res) { setError(res.error); input.current?.select(); }
-      else router.push(`/match/${res.matchId}/lobby`);
+      else { setOpen(false); router.refresh(); } // stay in the kitchen: the waiting ticket appears
     } catch {
       // Expired session, offline, server error: never leave the button stuck on "…".
       setError('Couldn’t join just now — try again.');
