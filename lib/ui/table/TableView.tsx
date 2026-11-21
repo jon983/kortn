@@ -7,7 +7,7 @@ import { ChatPanel } from './ChatPanel';
 import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
 import { playAction, getTableView } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
-import { OpponentSeat, SEAT_LABEL } from './OpponentSeat';
+import { OpponentSeat, SEAT_LABEL, TurnRibbon } from './OpponentSeat';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
@@ -616,7 +616,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
           <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
           {/* No name label for yourself — just your count (highlighted on your turn). */}
-          <div className={`${SEAT_LABEL} text-[11px] ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-[#e6d3a8]'}`}>{view.you.handCount} cards · {view.you.score} pts</div>
+          <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold ${isMyTurn(view) ? 'ring-2 ring-deli-red' : ''}`}>
+            {isMyTurn(view) && <TurnRibbon />}
+            {view.you.handCount} cards · {view.you.score} pts
+          </div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">

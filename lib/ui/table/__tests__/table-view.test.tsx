@@ -55,4 +55,11 @@ describe('TableView', () => {
     expect(screen.getByText('Hand 1')).toBeInTheDocument();
     expect(screen.getByText('Pot 8 bits')).toBeInTheDocument();
   });
+  it('your plate has no name, and wears the ribbon on your turn', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    const you = container.querySelector('[data-you-seat]')!;
+    expect(you.textContent).toContain('2 cards · 0 pts');
+    expect(you.textContent).not.toContain('Ruth');
+    expect(you.querySelector('[data-turn-ribbon]')).not.toBeNull();
+  });
 });

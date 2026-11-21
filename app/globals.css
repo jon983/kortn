@@ -165,6 +165,9 @@ body { background: #201811; color: var(--color-bone); }
 .deli-ribbon--red { background: var(--color-deli-red); }
 /* "Your move" drops in once when your turn starts (no endless pulse). */
 .deli-ribbon-drop { animation: deli-ribbon-drop 260ms cubic-bezier(.2, .8, .3, 1.2) both; }
+/* The turn ribbon slides across the top of a name plate. */
+.plate-ribbon-in { transform-origin: left; animation: plate-ribbon-in 220ms ease-out both; }
+@keyframes plate-ribbon-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes deli-ribbon-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
@@ -173,7 +176,7 @@ body { background: #201811; color: var(--color-bone); }
   .amb-mote { animation: none !important; display: none; }
   .deli-swing { animation: none !important; transform: none !important; }
   .deli-progress { animation: none !important; }
-  .deli-ribbon-drop { animation: none !important; }
+  .deli-ribbon-drop, .plate-ribbon-in { animation: none !important; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
   .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }
