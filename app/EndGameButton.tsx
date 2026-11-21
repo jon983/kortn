@@ -8,7 +8,7 @@ export const END_GAME_CONFIRM =
 
 /** Outlined, low-emphasis style shared by the list's secondary actions (Abandon / Delete). */
 export const SECONDARY_ACTION =
-  'rounded-md border border-maroon/50 px-4 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-maroon/80 hover:bg-maroon/10 hover:text-maroon disabled:opacity-40';
+  'rounded-md border border-maroon/50 px-2.5 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-maroon/80 hover:bg-maroon/10 hover:text-maroon disabled:opacity-40';
 
 /** Ends a stalled game for everyone (marked abandoned). Any seated player can use it. */
 export function EndGameButton({ matchId, className = '', label = 'End' }: { matchId: string; className?: string; label?: string }) {

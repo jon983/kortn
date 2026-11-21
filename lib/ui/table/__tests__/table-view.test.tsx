@@ -5,7 +5,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('../useMatchStream', () => ({ useMatchStream: (_id: string, initial: any) => ({ view: initial, chat: [], connected: true }) }));
 vi.mock('../ChatPanel', () => ({ ChatPanel: () => null })); // avoids pulling in the server action chain
-vi.mock('../../../../app/EndGameButton', () => ({ EndGameButton: () => null })); // needs the app router
 
 const playAction = vi.fn(async (_id: string, _action: any) => ({ ok: true as const }));
 vi.mock('../../../../app/actions/play', () => ({ playAction: (id: string, action: any) => playAction(id, action) }));
