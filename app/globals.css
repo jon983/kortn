@@ -61,6 +61,10 @@ body { background: #201811; color: var(--color-bone); }
   100% { transform: translate(var(--dx, 20px), -70vh); opacity: 0; }
 }
 
+/* Panels settle into place on arrival (staggered via inline animation-delay). */
+.settle { animation: settle 500ms cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes settle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
   .amb-drift, .amb-glow, .amb-shaft { animation: none !important; }

@@ -6,7 +6,9 @@ import { JoinBox } from './JoinBox';
 import { GameRow, type GameRowProps } from './GameRow';
 import { HomeHeader } from './HomeHeader';
 import { LeaderboardTabs } from './LeaderboardTabs';
+import type { ReactNode } from 'react';
 import type { UserStats } from '../lib/db';
+import { CountUp } from '../lib/ui/CountUp';
 import type { Leaderboards } from '../lib/stats/hands';
 
 export interface HomeViewProps {
@@ -26,27 +28,27 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
       {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed tilt={false} title="Your record">
+          <Framed tilt={false} title="Your record" className="settle" style={{ animationDelay: '0ms' }}>
             <StatsPanel stats={stats} />
           </Framed>
-          <Framed tilt={false} title="Leaderboards">
+          <Framed tilt={false} title="Leaderboards" className="settle" style={{ animationDelay: '90ms' }}>
             <LeaderboardTabs boards={boards} meId={userId} minHands={minHands} />
           </Framed>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed tilt={false} title="Create a new game">
+          <Framed tilt={false} title="Create a new game" className="settle" style={{ animationDelay: '180ms' }}>
             <div className="flex flex-col items-center gap-2 p-1">
               <p className="text-center text-xs text-ink/65">Set the table and send friends the code.</p>
               <Link href="/create" className="w-full"><LampButton className="w-full !py-2">Set the table</LampButton></Link>
             </div>
           </Framed>
-          <Framed tilt={false} title="Join a new game">
+          <Framed tilt={false} title="Join a new game" className="settle" style={{ animationDelay: '270ms' }}>
             <JoinBox />
           </Framed>
         </div>
 
-        <Framed tilt={false} title="Rejoin an existing game" className="order-first md:order-none">
+        <Framed tilt={false} title="Rejoin an existing game" className="settle order-first md:order-none" style={{ animationDelay: '360ms' }}>
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
           {games.map((g) => <GameRow key={g.id} {...g} />)}
         </Framed>
@@ -55,7 +57,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
   );
 }
 
-function Tile({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: 'good' | 'bad' }) {
+function Tile({ label, value, sub, accent }: { label: string; value: ReactNode; sub?: string; accent?: 'good' | 'bad' }) {
   const valueColor = accent === 'good' ? 'text-sage-deep' : accent === 'bad' ? 'text-maroon' : 'text-walnut';
   return (
     <div className="rounded-lg border border-[#b0a98f]/50 bg-black/[0.03] p-3 text-center">
@@ -72,7 +74,6 @@ function StatsPanel({ stats }: { stats: Stats }) {
   const pct = Math.round(stats.winRate * 100);
   const vsPar = stats.vsPar;
   const avg = stats.avgPointsPerRound;
-  const fmtBits = (b: number) => (b > 0 ? `+${b}` : String(b));
 
   if (stats.gamesPlayed === 0 && stats.roundsWon === 0) {
     return <p className="p-2 text-sm text-ink/70">No games played yet — your record will fill in as you play.</p>;
@@ -81,15 +82,15 @@ function StatsPanel({ stats }: { stats: Stats }) {
   return (
     <div className="p-1">
       <div className="grid grid-cols-2 gap-2">
-        <Tile label="Win rate" value={`${pct}%`} sub={`${stats.gamesWon} of ${stats.gamesPlayed} games`} />
+        <Tile label="Win rate" value={<CountUp value={pct} suffix="%" />} sub={`${stats.gamesWon} of ${stats.gamesPlayed} games`} />
         <Tile
           label="Hands vs par"
-          value={vsPar == null ? '—' : `${vsPar.toFixed(2)}×`}
+          value={vsPar == null ? '—' : <CountUp value={vsPar} decimals={2} suffix="×" />}
           sub={`${stats.roundsWon} won · par ${stats.parWins.toFixed(1)}`}
           accent={vsPar == null ? undefined : vsPar >= 1 ? 'good' : 'bad'}
         />
-        <Tile label="Avg pts / hand" value={avg == null ? '—' : avg.toFixed(1)} sub="lower is better" />
-        <Tile label="Net bits" value={fmtBits(stats.netBits)} sub="all games" accent={stats.netBits > 0 ? 'good' : stats.netBits < 0 ? 'bad' : undefined} />
+        <Tile label="Avg pts / hand" value={avg == null ? '—' : <CountUp value={avg} decimals={1} />} sub="lower is better" />
+        <Tile label="Net bits" value={<CountUp value={stats.netBits} signed />} sub="all games" accent={stats.netBits > 0 ? 'good' : stats.netBits < 0 ? 'bad' : undefined} />
       </div>
 
       <details className="group mt-3">
@@ -98,12 +99,12 @@ function StatsPanel({ stats }: { stats: Stats }) {
           <span className="hidden group-open:inline">Fewer stats ▴</span>
         </summary>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Tile label="Games played" value={String(stats.gamesPlayed)} />
-          <Tile label="Games won" value={String(stats.gamesWon)} />
-          <Tile label="Hands won" value={String(stats.roundsWon)} />
-          <Tile label="Kalookis 🃏" value={String(stats.kalookis)} />
-          <Tile label="Treasures ★" value={String(stats.treasures)} />
-          <Tile label="Pot winnings" value={`${stats.potWinnings}`} sub="bits" />
+          <Tile label="Games played" value={<CountUp value={stats.gamesPlayed} />} />
+          <Tile label="Games won" value={<CountUp value={stats.gamesWon} />} />
+          <Tile label="Hands won" value={<CountUp value={stats.roundsWon} />} />
+          <Tile label="Kalookis 🃏" value={<CountUp value={stats.kalookis} />} />
+          <Tile label="Treasures ★" value={<CountUp value={stats.treasures} />} />
+          <Tile label="Pot winnings" value={<CountUp value={stats.potWinnings} />} sub="bits" />
         </div>
       </details>
     </div>
