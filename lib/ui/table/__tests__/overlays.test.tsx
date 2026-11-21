@@ -31,7 +31,7 @@ describe('overlays', () => {
     render(<MatchSummary view={{ ...view, payout: [4, -4] }} />);
     const list = screen.getByRole('list', { name: /pot payout/i });
     expect(list).toHaveTextContent('Ruth: +4 bits');
-    expect(list).toHaveTextContent('Sol (you): -4 bits');
+    expect(list).toHaveTextContent('Sol: -4 bits');
   });
   it('MatchSummary for an abandoned game says there is no winner', () => {
     render(<MatchSummary view={{ ...view, matchAbandoned: true, matchWinnerSeat: null }} />);

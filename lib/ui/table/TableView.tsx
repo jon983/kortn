@@ -457,9 +457,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   return (
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
       {/* status bar */}
-      <div className="sticky top-0 z-30 grid grid-cols-3 items-center bg-black/60 px-4 py-2 text-xs backdrop-blur">
-        <span className="flex items-center gap-3 justify-self-start">
-          <Link href="/" className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
+      {/* Phones: controls on one row, whose turn on a full-width row beneath.
+          Wider: left controls · whose turn (centred) · right controls. */}
+      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-black/60 px-3 py-2 text-xs backdrop-blur sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
+        <span className="flex items-center gap-2 justify-self-start sm:gap-3">
+          <Link href="/" className="whitespace-nowrap rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
             ⌂ Kitchen
           </Link>
           {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
@@ -472,11 +474,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               connected ? 'border-brass/60 text-brass' : 'animate-pulse border-amber-300 text-amber-300'
             }`}
           >
-            ↻{connected ? '' : ' Reconnecting…'}
+            ↻{!connected && <span className="hidden sm:inline"> Reconnecting…</span>}
           </button>
-          <span>Round {view.roundNumber}</span>
         </span>
-        <span className="justify-self-center">
+        <span className="order-last w-full text-center sm:order-none sm:w-auto sm:justify-self-center">
           {isMyTurn(view) ? (
             <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
               ● Your turn
@@ -485,7 +486,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
           )}
         </span>
-        <span className="flex items-center gap-2 justify-self-end">
+        <span className="flex items-center gap-1.5 justify-self-end sm:gap-2">
           <button
             type="button"
             aria-label={chatOpen ? 'Close chat' : 'Open chat'}
@@ -530,7 +531,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           >
             {showScores ? 'Hide scores' : 'Scores'}
           </button>
-          <span className="text-[#c9a24b]">Pot {view.pot}</span>
+          <span className="flex flex-col items-end text-[10px] leading-tight sm:flex-row sm:items-center sm:gap-2 sm:text-xs">
+            <span className="whitespace-nowrap text-[#c9b48a]">Hand {view.roundNumber}</span>
+            <span className="whitespace-nowrap text-[#c9a24b]">Pot: {view.pot} bits</span>
+          </span>
         </span>
       </div>
 
@@ -601,7 +605,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         <div className="mb-1 text-center">
           <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
             <Avatar name={view.seatNames[view.seat]} src={view.seatAvatars?.[view.seat]} size={20} />
-            <span>{view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span></span>
+            <span>{view.seatNames[view.seat]}</span>
           </div>
           <div className={`${SEAT_LABEL} ml-1 text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
