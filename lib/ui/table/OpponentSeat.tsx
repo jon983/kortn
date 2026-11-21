@@ -73,7 +73,7 @@ export function OpponentSeat({
         {media}
         {plate}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge */}
-        <div className={`mt-1 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
           {meldsCol}
           {hand}
         </div>
