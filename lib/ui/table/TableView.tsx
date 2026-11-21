@@ -1,6 +1,6 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
@@ -28,6 +28,15 @@ const ctrlBtn = 'deli-pill deli-pill--table btn-lift';
 /** Primary actions (Meld, Discard): green pills with a cream edge. */
 const goBtn = 'deli-pill deli-pill--table-go btn-lift';
 const SPACE_PREFIX = '__space_';
+/** Wider than a phone (Tailwind's sm). False on the server and first paint, then live. */
+function useWide(): boolean {
+  const mq = () => (typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 640px)') : null);
+  return useSyncExternalStore(
+    (cb) => { const m = mq(); m?.addEventListener('change', cb); return () => m?.removeEventListener('change', cb); },
+    () => mq()?.matches ?? false,
+    () => false,
+  );
+}
 /** Header controls: cream-outlined tags in condensed caps on the green header. */
 const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
 /** Hand and pot: small printed price tags. */
@@ -90,6 +99,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const rootRef = useRef<HTMLDivElement>(null);
   const stockRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDivElement>(null);
+  const wide = useWide();
   const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
@@ -620,7 +630,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
-          <SeatVideo seat={view.seat} className="mr-2 h-16 w-16 sm:h-24 sm:w-24" />
+          {/* Phones: your video sits beside your plate (the hand row is full). */}
+          {!wide && <SeatVideo seat={view.seat} className="mr-2 h-16 w-16" />}
           {/* No name label for yourself — just your count (highlighted on your turn). */}
           <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold`}>
             {isMyTurn(view) && <TurnRibbon />}
@@ -629,6 +640,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
+          {/* Wider screens: your video sits at the side of your cards. */}
+          {wide && <div className="flex shrink-0 items-center pt-6 pb-2"><SeatVideo seat={view.seat} className="h-24 w-24" /></div>}
           {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
           <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">
             <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
