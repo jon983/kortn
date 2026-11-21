@@ -1,6 +1,7 @@
-import Link from 'next/link';
 import { RoomBackdrop } from '../lib/ui/RoomBackdrop';
 import { JoinPill } from './JoinPill';
+import { SetTablePill } from './SetTablePill';
+import { KitchenLive } from './KitchenLive';
 import { ShopSign, MenuBoard, Ribbon } from '../lib/ui/deli';
 import { RecordList } from '../lib/ui/deli/RecordList';
 import { GameRow, type GameRowProps } from './GameRow';
@@ -23,6 +24,7 @@ export interface HomeViewProps {
 export function HomeView({ userId, myName, stats, boards, minHands, games }: HomeViewProps) {
   return (
     <RoomBackdrop plate="room-home" kitchenLink={false} ambient>
+      <KitchenLive games={games} />
       <HomeHeader name={myName} />
       <main className="mx-auto max-w-[860px] px-3 pb-12 sm:px-5">
         <ShopSign name={myName} className="settle pb-2" />
@@ -42,7 +44,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
             </div>
 
             <div className="mb-2 mt-7 flex flex-wrap items-start justify-center gap-3.5">
-              <Link href="/create" className="deli-pill deli-pill--green btn-lift">Set the table</Link>
+              <SetTablePill />
               <JoinPill />
             </div>
 

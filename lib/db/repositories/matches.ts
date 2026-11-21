@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { DB } from '../client';
 import { matches, matchPlayers, gameStates, type MatchSettings } from '../schema';
 
@@ -64,6 +64,12 @@ export async function listMatchesForUser(db: DB, userId: string): Promise<MatchL
 
 export async function updateMatchStatus(db: DB, id: string, status: Match['status']): Promise<void> {
   await db.update(matches).set({ status }).where(eq(matches.id, id));
+}
+
+/** Atomically move a table from setting-up to dealt; false if it was no longer in the lobby. */
+export async function claimForDeal(db: DB, id: string): Promise<boolean> {
+  const rows = await db.update(matches).set({ status: 'active' }).where(and(eq(matches.id, id), eq(matches.status, 'lobby'))).returning();
+  return rows.length > 0;
 }
 
 export async function deleteMatch(db: DB, id: string): Promise<void> {
