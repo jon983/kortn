@@ -22,7 +22,10 @@ import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
-const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
+/** Secondary table buttons (Sort, Add space, run ends): cream pills with a green edge. */
+const ctrlBtn = 'deli-pill deli-pill--table btn-lift';
+/** Primary actions (Meld, Discard): green pills with a cream edge. */
+const goBtn = 'deli-pill deli-pill--table-go btn-lift';
 const SPACE_PREFIX = '__space_';
 /** Header controls: cream-outlined tags in condensed caps on the green header. */
 const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
@@ -653,7 +656,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               <>
               <button
                 type="button"
-                className={ctrlBtn}
+                className={goBtn}
                 disabled={!canAct || !evaluateMeld(selectedCards)}
                 onClick={() => {
                   if (evaluateMeld(selectedCards)) {
@@ -666,7 +669,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               </button>
               <button
                 type="button"
-                className={ctrlBtn}
+                className={goBtn}
                 disabled={!canAct || !discardEnabled}
                 onClick={() => {
                   const id = selected[0];
@@ -706,13 +709,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* which-end chooser for laying a joker onto a run */}
       {pendingLayoff && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50" onClick={() => setPendingLayoff(null)}>
-          <div className="rounded-xl border-2 border-brass bg-[#2a1c12] p-5 text-center text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 text-sm text-[#c9b48a]">Which end of the run?</div>
+          <div className="deli-paper rounded-md p-5 text-center text-deli-green shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 font-script text-[20px] text-deli-red">Which end of the run?</div>
             <div className="flex gap-3">
               <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'low')}>◀ Low end</button>
               <button type="button" className={ctrlBtn} onClick={() => doLayoff(pendingLayoff.meldId, 'high')}>High end ▶</button>
             </div>
-            <button type="button" className="mt-3 text-xs text-[#c9b48a] underline" onClick={() => setPendingLayoff(null)}>cancel</button>
+            <button type="button" className="mt-3 font-script text-[16px] text-deli-green/60 hover:text-deli-red hover:underline" onClick={() => setPendingLayoff(null)}>cancel</button>
           </div>
         </div>
       )}
