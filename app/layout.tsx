@@ -1,7 +1,7 @@
 import './globals.css';
 import { ClerkProvider } from '@clerk/nextjs';
 import type { ReactNode } from 'react';
-import { displayFont, bodyFont } from '../lib/ui/fonts';
+import { displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont } from '../lib/ui/fonts';
 
 export const metadata = {
   title: 'kortn — Kalooki',
@@ -20,7 +20,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
+      <html lang="en" className={[displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont].map((f) => f.variable).join(' ')}>
         <body>{children}</body>
       </html>
     </ClerkProvider>
