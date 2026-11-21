@@ -32,10 +32,10 @@ The kitchen's panels, fonts and buttons looked like 1990s web components: thick 
     - **Actions:** a filled green pill, **Set the table** (→ `/create`), and an outlined pill, **Join with a code**. Tapping Join turns it into an inline code input with a Join button, so the separate join panel is gone.
     - **Today's tables:** a ribbon banner, then one **deli ticket** per game:
       - a red stamped circle ("NO." with the number), the players in condensed caps (you first, scores in red, out players greyed with "out"), and a meta line ("played two days ago", or "waiting · 1/3 seated");
-      - a dotted leader to a **Play** pill (red when it's your move) or **Open** for a waiting room;
+      - a dotted leader to a **Play** pill (red **Your move** when it's your move) or **Open** for a waiting room;
       - a muted text link **abandon** (or **delete** for the host of a waiting room).
     - **Sign-off:** "Pull up a chair — there's always a seat at the table." in script.
-  - **"Your turn!":** a gold price tag hanging on string, swinging, on any game where it's the viewer's turn.
+- **Your turn** (user feedback: the swinging tag was dropped): on a game where it's the viewer's move, the Play pill turns red and reads **Your move**, and the meta line reads "your turn" in red.
 - **Leaderboard auto-rotates** (user addition):
   - It advances to the next non-empty list every **6 s**, in order (vs par → pts → wins → kalookis → treasures), with the existing slide transition.
   - A thin red progress line fills under the active choice.
@@ -60,7 +60,7 @@ The kitchen's panels, fonts and buttons looked like 1990s web components: thick 
 ## Constraints
 
 - No new npm dependencies. Fonts come through `next/font/google`, alongside the existing `lib/ui/fonts.ts` exports, which other pages still use.
-- Reduced motion: no swing, no tag swing, no auto-rotation (plus everything already covered).
+- Reduced motion: no swing, no auto-rotation (plus everything already covered).
 - The existing behaviour tests keep passing: count-up, leaderboard switching, game-row "out", game ordering and view-transition structure.
 
 ## Approaches
