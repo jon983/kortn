@@ -14,10 +14,10 @@ export function TurnRibbon(): ReactElement {
 
 export function OpponentSeat({
   name, avatarUrl, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
-  meldOrientation = 'row', visibleCount, side, media,
+  meldOrientation = 'row', visibleCount, side, media, centreHand = false,
 }: {
   name: string; avatarUrl?: string | null;
-  /** Live video circle (video call): above the plate on side seats, beside it on the top seat; renders nothing when off. */
+  /** Live video circle (video call): above the plate on side seats; on the top seat beside the plate (phones) or left of plate and cards (wider). Renders nothing when off. */
   media?: ReactNode; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
   melds: TableMeld[]; onMeldClick?: (meldId: string) => void; armedMeldIds?: string[]; flashMeldIds?: string[];
   /** Side seats (left/right) stack their melds vertically; the top seat lays them in a row. */
@@ -26,6 +26,8 @@ export function OpponentSeat({
   visibleCount?: number;
   /** Left/right edge seats show a sideways (rotated) hand stacked vertically on the outer edge. */
   side?: 'left' | 'right';
+  /** The only top seat: balance the video with an empty column so the cards stay centred. */
+  centreHand?: boolean;
 }): ReactElement {
   // Prefer the real per-card packs; fall back to alternating if not provided.
   const allPacks: Pack[] = handPacks && handPacks.length
@@ -81,22 +83,25 @@ export function OpponentSeat({
     );
   }
 
-  // --- Top seat: horizontal hand, melds in a row. The video hangs beside the
-  // plate (not above it); the matching empty third column keeps the plate
-  // centred over the hand, and collapses when there's no video. ---
+  // --- Top seat: horizontal hand, melds in a row. Phones: the video hangs
+  // beside the plate. Wider screens: it sits to the left of plate and cards
+  // together, so it costs no height. For a lone top seat the matching empty
+  // third column keeps the cards centred; it collapses when there's no video.
+  // Several top seats share the row, so they skip that balancing width. ---
   return (
     <div className="flex shrink-0 flex-col items-center text-center">
-      <div data-plate-row className="grid grid-cols-[1fr_auto_1fr] items-center">
-        <div className="col-start-1 row-start-1 flex justify-end pr-2 empty:pr-0">{media}</div>
+      <div data-seat-grid className={`grid grid-cols-[1fr_auto_1fr] items-center ${centreHand ? '' : 'sm:grid-cols-[auto_auto]'}`}>
+        <div className="col-start-1 row-start-1 flex justify-end pr-2 empty:pr-0 sm:[grid-row:1/span_2] sm:pr-3">{media}</div>
         <div className="col-start-2 row-start-1">{plate}</div>
-      </div>
-      <div className="w-40">
-        <div className="mt-1 flex min-h-[3.5rem] justify-center">
-          {packs.map((pack, i) => (
-            <span key={i} data-cardback className="-ml-2.5 first:ml-0">
-              <CardBack pack={pack} size="sm" />
-            </span>
-          ))}
+        {/* Phones: a narrow box the hand overflows (as before). Wider: the hand's own width, so the video never overlaps it. */}
+        <div className="col-span-full row-start-2 w-40 justify-self-center sm:[grid-column:2] sm:w-auto">
+          <div className="mt-1 flex min-h-[3.5rem] justify-center">
+            {packs.map((pack, i) => (
+              <span key={i} data-cardback className="-ml-2.5 first:ml-0">
+                <CardBack pack={pack} size="sm" />
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       <div className={`mt-1 flex justify-center gap-2 ${

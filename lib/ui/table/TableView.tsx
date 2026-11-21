@@ -439,6 +439,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         meldOrientation={orientation}
         visibleCount={dealing ? (dealCounts[o.seat] ?? 0) : undefined}
         side={side}
+        centreHand={!side && seating.top.length === 1}
       />
     </div>
   );
