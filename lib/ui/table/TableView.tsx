@@ -19,6 +19,7 @@ import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
 import { CallProvider, CallControls, SeatVideo } from './call';
+import { TableSurface } from './TableSurface';
 import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
@@ -484,11 +485,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
   return (
     <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
-    <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center portrait:bg-[url(/art/table-surface-portrait.jpg)] text-bone">
+    <div ref={rootRef} className="relative flex min-h-screen flex-col text-bone">
       {/* status bar: the deli's green header with printed tags. */}
       {/* Phones: controls on one row, whose move on a full-width row beneath.
           Wider: left controls · whose move (centred) · right controls. */}
-      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-deli-green px-3 py-2 text-xs text-deli-cream shadow-[0_4px_14px_rgba(0,0,0,.35)] sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
+      <div data-table-header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-deli-green px-3 py-2 text-xs text-deli-cream shadow-[0_2px_0_var(--color-deli-cream),0_6px_16px_rgba(0,0,0,.4)] sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
         <span className="flex items-center gap-2 justify-self-start sm:gap-3">
           <Link href="/" className={`${HEADER_TAG} whitespace-nowrap`}>
             Kitchen
@@ -589,10 +590,13 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         </div>
       )}
 
+      {/* The table: the photo starts below the header; seats, piles and your hand sit on it. */}
+      <div className="relative isolate flex min-h-0 flex-1 flex-col">
+      <TableSurface />
       {/* Main table area: side seats flank a centre column (top seats + piles). */}
       <div className="flex min-h-0 flex-1">
         {seating.left.length > 0 && (
-          <div className="flex flex-col justify-center gap-6 p-2">
+          <div data-seat-column="left" className="table-seat-inset flex flex-col justify-center gap-6 p-2">
             {seating.left.map((o) => renderOpp(o, 'column', 'left'))}
           </div>
         )}
@@ -626,7 +630,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         </div>
 
         {seating.right.length > 0 && (
-          <div className="flex flex-col justify-center gap-6 p-2">
+          <div data-seat-column="right" className="table-seat-inset flex flex-col justify-center gap-6 p-2">
             {seating.right.map((o) => renderOpp(o, 'column', 'right'))}
           </div>
         )}
@@ -720,6 +724,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             })()}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Laying-down tray: floats over the upper-centre of the table so staging
