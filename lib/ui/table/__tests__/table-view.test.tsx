@@ -55,6 +55,12 @@ describe('TableView', () => {
     expect(row.className).toContain('grid-cols-[1fr_minmax(0,auto)_1fr]');
     expect(row.children[1].hasAttribute('data-hand')).toBe(true);
   });
+  it('the table photo: landscape by default, the portrait one on upright screens', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    const root = container.firstElementChild!;
+    expect(root.className).toContain('bg-[url(/art/table-surface.jpg)]');
+    expect(root.className).toContain('portrait:bg-[url(/art/table-surface-portrait.jpg)]');
+  });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);
     expect(screen.getByText('Hand 1')).toBeInTheDocument();
