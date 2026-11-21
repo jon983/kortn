@@ -1,7 +1,7 @@
 import type { RuntimeDeps, SubmitResult } from './deps';
 import {
   upsertUser, addPlayer, listPlayers, getMatch, getMatchByJoinCode,
-  updateMatchStatus, updatePlayer, initGameState, reseatOne, abandonMatch, removePlayer,
+  updateMatchStatus, updatePlayer, initGameState, reseatOne, abandonMatch, removePlayer, claimForDeal,
   loadGameState, saveGameState, OptimisticLockError,
   createMatch as createMatchRow,
 } from '../db';
@@ -50,8 +50,7 @@ export async function joinLobby(
   return { matchId: match.id, seatIndex };
 }
 
-async function reseatPlayers(deps: RuntimeDeps, matchId: string): Promise<void> {
-  const players = await listPlayers(deps.db, matchId);
+async function reseatPlayers(deps: RuntimeDeps, matchId: string, players: { seatIndex: number }[]): Promise<void> {
   const targets = shuffle(players.map((_, i) => i), deps.rng);
   for (let i = 0; i < players.length; i++) await reseatOne(deps.db, matchId, players[i].seatIndex, -(i + 1));
   for (let i = 0; i < players.length; i++) await reseatOne(deps.db, matchId, -(i + 1), targets[i]);
@@ -65,16 +64,23 @@ export async function startGame(
   if (!match) return { ok: false, reason: 'No such match' };
   if (match.createdBy !== input.userId) return { ok: false, reason: 'Only the creator can start' };
   if (match.status !== 'lobby') return { ok: false, reason: 'Already started' };
+  if ((await listPlayers(deps.db, input.matchId)).length !== match.seats) return { ok: false, reason: 'Seats not filled' };
+
+  // Claim the table first (one atomic statement): from here a guest can no longer leave,
+  // so the players we read next are exactly the ones who'll be dealt in.
+  if (!(await claimForDeal(deps.db, input.matchId))) return { ok: false, reason: 'Already started' };
   const players = await listPlayers(deps.db, input.matchId);
-  if (players.length !== match.seats) return { ok: false, reason: 'Seats not filled' };
+  if (players.length !== match.seats) {
+    await updateMatchStatus(deps.db, input.matchId, 'lobby'); // someone left just before the claim
+    return { ok: false, reason: 'Seats not filled' };
+  }
 
   for (const p of players) await updatePlayer(deps.db, input.matchId, p.seatIndex, { bitsPaid: 4 });
-  await reseatPlayers(deps, input.matchId);
+  await reseatPlayers(deps, input.matchId, players);
 
   const seed = Math.floor(deps.rng() * 2_147_483_647);
   const state = engineStartMatch({ seats: match.seats, seed });
   await initGameState(deps.db, input.matchId, state);
-  await updateMatchStatus(deps.db, input.matchId, 'active');
   await deps.pubsub.publish('match:' + input.matchId, state);
   return { ok: true };
 }
@@ -129,7 +135,7 @@ export async function leaveLobby(
   if (match.createdBy === input.userId) return { ok: false, reason: 'The host can delete the table instead' };
   const players = await listPlayers(deps.db, input.matchId);
   if (!players.some((p) => p.userId === input.userId)) return { ok: false, reason: 'Not seated at this table' };
-  await removePlayer(deps.db, input.matchId, input.userId);
+  if (!(await removePlayer(deps.db, input.matchId, input.userId))) return { ok: false, reason: 'This table has already been dealt' };
   await deps.pubsub.publish('match:' + input.matchId, { type: 'lobby', matchId: input.matchId });
   return { ok: true };
 }

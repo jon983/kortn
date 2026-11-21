@@ -10,6 +10,14 @@ export function setVolume(v: number): void {
   masterVolume = Math.max(0, Math.min(1, v));
 }
 
+/** Apply the volume the player chose at the table (saved in this browser), so mute holds everywhere. */
+export function loadSavedVolume(): void {
+  try {
+    const saved = parseFloat(localStorage.getItem('kortn-volume') ?? '');
+    if (!Number.isNaN(saved)) setVolume(saved);
+  } catch { /* storage blocked: keep the default */ }
+}
+
 function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

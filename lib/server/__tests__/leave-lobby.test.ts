@@ -49,3 +49,29 @@ describe('leaveLobby', () => {
     expect((await leaveLobby(d as any, { matchId, userId: 'guest' })).ok).toBe(false);
   });
 });
+
+describe('leaving vs dealing at the same moment', () => {
+  it('never deals a game with an empty chair', async () => {
+    const { db, d, matchId } = await setup();
+    await upsertUser(db as any, { id: 'third', displayName: 'third' });
+    await addPlayer(db as any, { matchId, userId: 'third', seatIndex: 2 });
+    const { startGame } = await import('../matches');
+    const [dealt, left] = await Promise.all([
+      startGame(d as any, { matchId, userId: 'host' }),
+      leaveLobby(d as any, { matchId, userId: 'guest' }),
+    ]);
+    const seated = await listPlayers(db as any, matchId);
+    const [m] = await (db as any).select().from(matches).where(eq(matches.id, matchId));
+    // Exactly one of them wins, and the table is consistent either way.
+    expect(dealt.ok !== left.ok).toBe(true);
+    if (dealt.ok) { expect(m.status).toBe('active'); expect(seated).toHaveLength(3); }
+    else { expect(m.status).toBe('lobby'); expect(seated).toHaveLength(2); }
+  });
+
+  it('removes nobody once the table has been dealt (the delete itself checks)', async () => {
+    const { db, matchId } = await setup('active');
+    const { removePlayer } = await import('../../db/repositories/players');
+    expect(await removePlayer(db as any, matchId, 'guest')).toBe(false);
+    expect(await listPlayers(db as any, matchId)).toHaveLength(2);
+  });
+});

@@ -24,7 +24,7 @@ export interface HomeViewProps {
 export function HomeView({ userId, myName, stats, boards, minHands, games }: HomeViewProps) {
   return (
     <RoomBackdrop plate="room-home" kitchenLink={false} ambient>
-      <KitchenLive hasLobby={games.some((g) => g.status === 'lobby')} yourTurnIds={games.filter((g) => g.yourTurn).map((g) => g.id)} />
+      <KitchenLive games={games} />
       <HomeHeader name={myName} />
       <main className="mx-auto max-w-[860px] px-3 pb-12 sm:px-5">
         <ShopSign name={myName} className="settle pb-2" />
