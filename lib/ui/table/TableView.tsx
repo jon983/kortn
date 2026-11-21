@@ -541,7 +541,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
           <span className="flex flex-col items-end text-[10px] leading-tight sm:flex-row sm:items-center sm:gap-2 sm:text-xs">
-            <span className="whitespace-nowrap text-[#c9b48a]">Hand {view.roundNumber}</span>
+            <span className="whitespace-nowrap text-[#c9b48a]">Hand: {view.roundNumber}</span>
             <span className="whitespace-nowrap text-[#c9a24b]">Pot: {view.pot} bits</span>
           </span>
         </span>
