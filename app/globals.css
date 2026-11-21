@@ -65,6 +65,21 @@ body { background: #201811; color: var(--color-bone); }
 .settle { animation: settle 500ms cubic-bezier(.2, .7, .3, 1) both; }
 @keyframes settle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
+/* Brass buttons: an occasional gleam sweeps across (staggered via --sheen-delay)… */
+.btn-sheen { position: relative; overflow: hidden; isolation: isolate; }
+.btn-sheen::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 226, 160, .42) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: btn-sheen 4.5s ease-in-out var(--sheen-delay, 0s) infinite;
+}
+@keyframes btn-sheen { 0%, 70% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+.btn-sheen:disabled::after { animation: none; display: none; }
+/* …and they lift slightly under the pointer. */
+.btn-lift { transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease; }
+.btn-lift:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0, 0, 0, .45); }
+.btn-lift:not(:disabled):active { transform: translateY(0); box-shadow: 0 3px 6px rgba(0, 0, 0, .4); }
+
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
   .amb-drift, .amb-glow, .amb-shaft { animation: none !important; }

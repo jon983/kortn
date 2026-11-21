@@ -40,7 +40,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
           <Framed tilt={false} title="Create a new game" className="settle" style={{ animationDelay: '180ms' }}>
             <div className="flex flex-col items-center gap-2 p-1">
               <p className="text-center text-xs text-ink/65">Set the table and send friends the code.</p>
-              <Link href="/create" className="w-full"><LampButton className="w-full !py-2">Set the table</LampButton></Link>
+              <Link href="/create" className="w-full"><LampButton className="w-full !py-2" sheenDelay={0.3}>Set the table</LampButton></Link>
             </div>
           </Framed>
           <Framed tilt={false} title="Join a new game" className="settle" style={{ animationDelay: '270ms' }}>
@@ -50,7 +50,7 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
 
         <Framed tilt={false} title="Rejoin an existing game" className="settle order-first md:order-none" style={{ animationDelay: '360ms' }}>
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
-          {games.map((g) => <GameRow key={g.id} {...g} />)}
+          {games.map((g, i) => <GameRow key={g.id} {...g} index={i} />)}
         </Framed>
       </main>
     </RoomBackdrop>

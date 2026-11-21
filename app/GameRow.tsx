@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { DeleteGameButton } from './DeleteGameButton';
 import { EndGameButton } from './EndGameButton';
 import { timeAgo } from '../lib/ui/time-ago';
@@ -13,10 +14,12 @@ export interface GameRowProps {
   players: { name: string; score: number | null; out?: boolean }[];
   isHost: boolean;
   now?: Date;
+  /** Position in the list — staggers the Play button's gleam. */
+  index?: number;
 }
 
 /** One game in the front-room list: who's playing + scores up top, details below, actions on the right. */
-export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now }: GameRowProps) {
+export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now, index = 0 }: GameRowProps) {
   const href = `/match/${id}/${status === 'lobby' ? 'lobby' : 'table'}`;
   const meta = [
     `Game #${number}`,
@@ -47,7 +50,8 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
       <div className="flex shrink-0 items-center gap-1.5 sm:col-start-2 sm:row-span-2 sm:row-start-1">
         <Link
           href={href}
-          className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 py-1 text-center text-xs font-bold uppercase tracking-wider text-bone shadow hover:brightness-110"
+          style={{ '--sheen-delay': `${0.6 + index * 0.7}s` } as CSSProperties}
+          className="btn-sheen btn-lift rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 py-1 text-center text-xs font-bold uppercase tracking-wider text-bone shadow hover:brightness-110"
         >
           {status === 'lobby' ? 'Open' : 'Play'}
         </Link>
