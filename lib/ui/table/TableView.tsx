@@ -17,7 +17,6 @@ import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
-import { Avatar } from '../Avatar';
 import { CallProvider, CallControls, SeatVideo } from './call';
 import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
@@ -37,7 +36,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   function addSpace() {
     setOrder((prev) => {
       const base = prev ?? sortHand(view.you.hand).map((c) => c.id);
-      return [...base, `${SPACE_PREFIX}${++spaceSeq.current}`];
+      // New spaces start at the left; drag one into place (or off either end to remove).
+      return [`${SPACE_PREFIX}${++spaceSeq.current}`, ...base];
     });
   }
   function sortHandCards() {
@@ -613,11 +613,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
           <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
-          <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
-            <Avatar name={view.seatNames[view.seat]} src={view.seatAvatars?.[view.seat]} size={20} />
-            <span>{view.seatNames[view.seat]}</span>
-          </div>
-          <div className={`${SEAT_LABEL} text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
+          {/* No name label for yourself — just your count (highlighted on your turn). */}
+          <div className={`${SEAT_LABEL} text-[11px] ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-[#e6d3a8]'}`}>{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
         <div className="mt-2 flex items-stretch justify-center gap-3">
