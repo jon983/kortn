@@ -54,8 +54,9 @@ export function OpponentSeat({
   // --- Side seats: sideways hand (rotated 90°) stacked vertically on the outer
   // edge, with the melds column inboard toward the centre of the table. ---
   if (side) {
+    // Small screens: just the name plate (it already says how many cards) — no backs.
     const hand = (
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center max-sm:hidden">
         {packs.map((pack, i) => (
           <div key={i} data-cardback className="relative h-5 w-14 first:mt-1">
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90">
@@ -93,8 +94,8 @@ export function OpponentSeat({
       <div data-seat-grid className={`grid grid-cols-[1fr_auto_1fr] items-center ${centreHand ? '' : 'sm:grid-cols-[auto_auto]'}`}>
         <div className="col-start-1 row-start-1 flex justify-end pr-2 empty:pr-0 sm:[grid-row:1/span_2] sm:pr-3">{media}</div>
         <div className="col-start-2 row-start-1">{plate}</div>
-        {/* Phones: a narrow box the hand overflows (as before). Wider: the hand's own width, so the video never overlaps it. */}
-        <div className="col-span-full row-start-2 w-40 justify-self-center sm:[grid-column:2] sm:w-auto">
+        {/* Small screens: hidden — the plate says how many cards. Wider: the hand's own width, so the video never overlaps it. */}
+        <div className="col-span-full row-start-2 w-40 justify-self-center max-sm:hidden sm:[grid-column:2] sm:w-auto">
           <div className="mt-1 flex min-h-[3.5rem] justify-center">
             {packs.map((pack, i) => (
               <span key={i} data-cardback className="-ml-2.5 first:ml-0">
