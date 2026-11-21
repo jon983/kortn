@@ -14,6 +14,7 @@ export function AmbientRoom({ plate }: { plate: string }) {
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <div className="amb-drift" style={{ backgroundImage: `url(/art/${plate}.jpg)` }} />
       <div className="amb-shaft" />
+      <div className="amb-warm" />
       <div className="amb-glow" />
       {MOTES.map((m, i) => (
         <i
@@ -22,7 +23,10 @@ export function AmbientRoom({ plate }: { plate: string }) {
           style={{
             left: `${m.left}%`, top: `${m.top}%`, width: m.size, height: m.size,
             filter: m.blur ? `blur(${m.blur}px)` : undefined,
-            '--dur': `${m.duration}s`, '--delay': `-${m.delay}s`, '--dx': `${m.driftX}px`,
+            '--dur': `${m.duration}s`, '--delay': `-${m.delay}s`, '--tw': `${m.twinkle}s`,
+            '--x1': `${m.path[0][0]}px`, '--y1': `${m.path[0][1]}px`,
+            '--x2': `${m.path[1][0]}px`, '--y2': `${m.path[1][1]}px`,
+            '--x3': `${m.path[2][0]}px`, '--y3': `${m.path[2][1]}px`,
           } as CSSProperties}
         />
       ))}

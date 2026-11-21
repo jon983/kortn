@@ -26,16 +26,25 @@ body { background: #201811; color: var(--color-bone); }
   from { transform: scale(1.05) translate(0, 0); }
   to   { transform: scale(1.14) translate(-2%, -1.5%); }
 }
-/* Candlelight from the chandelier: a warm glow near the top that flickers. */
+/* Candlelight from the chandelier: a bright warm halo near the top that flickers… */
 .amb-glow {
   position: absolute; inset: 0;
-  background: radial-gradient(55% 40% at 50% 10%, rgba(255, 186, 104, .34), transparent 70%);
+  background:
+    radial-gradient(14% 10% at 50% 7%, rgba(255, 214, 140, .75), transparent 70%),
+    radial-gradient(48% 34% at 50% 8%, rgba(255, 170, 80, .42), transparent 72%);
   mix-blend-mode: screen;
-  animation: amb-flicker 3.2s infinite;
+  animation: amb-flicker 2.6s infinite;
+}
+/* …and its light flickers faintly across the whole room, so it shows in the margins too. */
+.amb-warm {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 160, 70, .16), rgba(255, 140, 60, .06) 60%, transparent 85%);
+  mix-blend-mode: screen;
+  animation: amb-flicker 3.7s infinite reverse;
 }
 @keyframes amb-flicker {
-  0%, 100% { opacity: .85 } 12% { opacity: .62 } 18% { opacity: .95 } 40% { opacity: .74 }
-  55% { opacity: 1 } 70% { opacity: .7 } 85% { opacity: .92 }
+  0%, 100% { opacity: .8 } 9% { opacity: .5 } 14% { opacity: .95 } 31% { opacity: .62 }
+  44% { opacity: 1 } 58% { opacity: .55 } 66% { opacity: .9 } 80% { opacity: .68 } 90% { opacity: .97 }
 }
 /* A soft shaft of window light falling across the room, slowly breathing. */
 .amb-shaft {
@@ -45,21 +54,23 @@ body { background: #201811; color: var(--color-bone); }
   animation: amb-breathe 12s ease-in-out infinite;
 }
 @keyframes amb-breathe { 0%, 100% { opacity: .55 } 50% { opacity: 1 } }
-/* Dust motes drifting up through the light. Per-mote timing via CSS variables. */
+/* Dust motes wandering slowly in every direction, twinkling as they catch the light. */
 .amb-mote {
   position: absolute; border-radius: 9999px;
-  background: rgba(255, 233, 190, .85);
-  box-shadow: 0 0 4px rgba(255, 220, 160, .6);
-  opacity: 0;
-  animation: amb-float var(--dur, 14s) linear var(--delay, 0s) infinite;
+  background: rgba(255, 236, 196, .95);
+  box-shadow: 0 0 5px rgba(255, 220, 160, .7);
+  animation:
+    amb-wander var(--dur, 24s) ease-in-out var(--delay, 0s) infinite alternate,
+    amb-twinkle var(--tw, 5s) ease-in-out var(--delay, 0s) infinite;
   will-change: transform, opacity;
 }
-@keyframes amb-float {
-  0%   { transform: translate(0, 0); opacity: 0; }
-  12%  { opacity: .9; }
-  85%  { opacity: .55; }
-  100% { transform: translate(var(--dx, 20px), -70vh); opacity: 0; }
+@keyframes amb-wander {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(var(--x1, 20px), var(--y1, -30px)); }
+  66%  { transform: translate(var(--x2, -15px), var(--y2, 25px)); }
+  100% { transform: translate(var(--x3, 10px), var(--y3, -10px)); }
 }
+@keyframes amb-twinkle { 0%, 100% { opacity: .2; } 50% { opacity: .9; } }
 
 /* Panels settle into place on arrival (staggered via inline animation-delay). */
 /* Longhands on purpose: no shorthand, so the per-panel animation-delay utilities aren't reset. */
@@ -101,7 +112,7 @@ body { background: #201811; color: var(--color-bone); }
 
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
-  .amb-drift, .amb-glow, .amb-shaft { animation: none !important; }
+  .amb-drift, .amb-glow, .amb-warm, .amb-shaft { animation: none !important; }
   .amb-mote { animation: none !important; display: none; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
