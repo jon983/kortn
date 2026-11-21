@@ -10,7 +10,7 @@ The kitchen (home page) should feel like a warm, lived-in room you've walked int
 
 - **Ambient room, always running, slow and subtle:**
   - The room photo drifts with a gentle zoom over about 30 seconds.
-  - Candlelight from the chandelier flickers softly.
+  - Sunlight from the windows shifts slowly and irregularly, as if clouds drift past. *(Revised after review of the preview: a candle flicker read as metronomic and the chandelier is mostly hidden behind the panels.)*
   - **Dust is a feature.** About 20 motes of varied size and blur drift up at different speeds through a faint shaft of light from the window.
 - **Arrival:**
   - Panels settle in one after another, rising slightly and fading in. This plays once per visit and doesn't loop.
@@ -54,7 +54,7 @@ The user chose approach 1, with dust as a feature.
 
 - **`RoomBackdrop`** (`lib/ui/RoomBackdrop.tsx`) gains an `ambient` option, on for the kitchen. It renders:
   - the drifting photo layer;
-  - the candle-glow layer (a radial gradient near the chandelier, with an opacity flicker);
+  - window-sunlight layers (one per window, plus a faint room wash) on long, uneven, mutually prime cycles (19s / 27s / 41s) so the light never falls into a rhythm;
   - the light shaft (a soft diagonal gradient band, slowly breathing in opacity);
   - the dust layer (about 20 absolutely positioned motes with randomised size, start position, duration and delay, generated deterministically so server and client match);
   - the existing vignette.
@@ -70,7 +70,7 @@ The user chose approach 1, with dust as a feature.
 
 ## Left to the builder
 
-- Exact timings, easings, colours of the glow and shaft, and mote counts and sizes within the limits above. Tune by eye against the real backdrop.
+- Exact timings, easings, colours of the sunlight and shaft, and mote counts and sizes within the limits above. Tune by eye against the real backdrop.
 - Where the light shaft sits relative to the window in `room-home.jpg`.
 - Whether the page transition needs a named element. The default crossfade is fine unless something obvious, like the header, should stay fixed.
 

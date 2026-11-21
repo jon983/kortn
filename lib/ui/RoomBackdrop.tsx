@@ -16,7 +16,7 @@ export function KitchenLink({ className = '' }: { className?: string }) {
 
 export function RoomBackdrop({ plate, children, kitchenLink = true, ambient = false }: {
   plate?: string; children: ReactNode; kitchenLink?: boolean;
-  /** Bring the room to life (drift, candle glow, light shaft, dust). */
+  /** Bring the room to life (drift, shifting window sunlight, light shaft, dust). */
   ambient?: boolean;
 }) {
   return (

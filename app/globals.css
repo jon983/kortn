@@ -26,34 +26,35 @@ body { background: #201811; color: var(--color-bone); }
   from { transform: scale(1.05) translate(0, 0); }
   to   { transform: scale(1.14) translate(-2%, -1.5%); }
 }
-/* Candlelight from the chandelier: a bright warm halo near the top that flickers… */
-.amb-glow {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(14% 10% at 50% 7%, rgba(255, 214, 140, .75), transparent 70%),
-    radial-gradient(48% 34% at 50% 8%, rgba(255, 170, 80, .42), transparent 72%);
-  mix-blend-mode: screen;
-  animation: amb-flicker 2.6s infinite;
+/* Sunlight through the two windows, shifting slowly and irregularly as if clouds
+   drift past. Each layer has its own long, uneven cycle (19s / 27s / 41s); the
+   cycles don't line up, so the combined light never falls into a visible rhythm. */
+.amb-sun-l, .amb-sun-r, .amb-sun-room {
+  position: absolute; inset: 0; mix-blend-mode: screen; will-change: opacity;
 }
-/* …and its light flickers faintly across the whole room, so it shows in the margins too. */
-.amb-warm {
-  position: absolute; inset: 0;
-  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 160, 70, .16), rgba(255, 140, 60, .06) 60%, transparent 85%);
-  mix-blend-mode: screen;
-  animation: amb-flicker 3.7s infinite reverse;
+.amb-sun-l {
+  background: radial-gradient(38% 55% at 4% 32%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  animation: amb-clouds-a 19s ease-in-out infinite;
 }
-@keyframes amb-flicker {
-  0%, 100% { opacity: .8 } 9% { opacity: .5 } 14% { opacity: .95 } 31% { opacity: .62 }
-  44% { opacity: 1 } 58% { opacity: .55 } 66% { opacity: .9 } 80% { opacity: .68 } 90% { opacity: .97 }
+.amb-sun-r {
+  background: radial-gradient(38% 55% at 96% 30%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  animation: amb-clouds-b 27s ease-in-out -9s infinite;
 }
+.amb-sun-room {
+  background: linear-gradient(180deg, rgba(255, 236, 200, .10), rgba(255, 225, 180, .04) 60%, transparent);
+  animation: amb-clouds-c 41s ease-in-out -17s infinite;
+}
+@keyframes amb-clouds-a { 0% { opacity: .9 } 14% { opacity: .65 } 23% { opacity: .7 } 41% { opacity: 1 } 58% { opacity: .45 } 66% { opacity: .5 } 83% { opacity: .95 } 100% { opacity: .9 } }
+@keyframes amb-clouds-b { 0% { opacity: .55 } 19% { opacity: .95 } 33% { opacity: 1 } 47% { opacity: .6 } 71% { opacity: .85 } 79% { opacity: .4 } 100% { opacity: .55 } }
+@keyframes amb-clouds-c { 0% { opacity: .7 } 27% { opacity: 1 } 52% { opacity: .35 } 61% { opacity: .45 } 88% { opacity: .9 } 100% { opacity: .7 } }
 /* A soft shaft of window light falling across the room, slowly breathing. */
 .amb-shaft {
   position: absolute; inset: -10% -20%;
   background: linear-gradient(115deg, transparent 18%, rgba(255, 236, 196, .18) 30%, rgba(255, 236, 196, .07) 42%, transparent 52%);
   mix-blend-mode: screen;
-  animation: amb-breathe 12s ease-in-out infinite;
+  animation: amb-breathe 23s ease-in-out -5s infinite;
 }
-@keyframes amb-breathe { 0%, 100% { opacity: .55 } 50% { opacity: 1 } }
+@keyframes amb-breathe { 0% { opacity: .6 } 21% { opacity: .9 } 37% { opacity: 1 } 62% { opacity: .45 } 80% { opacity: .75 } 100% { opacity: .6 } }
 /* Dust motes wandering slowly in every direction, twinkling as they catch the light. */
 .amb-mote {
   position: absolute; border-radius: 9999px;
@@ -115,7 +116,7 @@ body { background: #201811; color: var(--color-bone); }
 
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
-  .amb-drift, .amb-glow, .amb-warm, .amb-shaft { animation: none !important; }
+  .amb-drift, .amb-sun-l, .amb-sun-r, .amb-sun-room, .amb-shaft { animation: none !important; }
   .amb-mote { animation: none !important; display: none; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
