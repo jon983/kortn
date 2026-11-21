@@ -37,8 +37,8 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
       // Only release when focus actually leaves the leaderboard (not when it moves between choices).
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) rot.hold('focus', false); }}
     >
-      <div role="tablist" aria-label="Leaderboards" className="mt-2 flex flex-wrap items-baseline justify-center gap-x-3.5 gap-y-1">
-        <span aria-hidden className="font-script text-[19px] text-deli-red">Choice of:</span>
+      <div aria-hidden className="mt-1 text-center font-script text-[19px] leading-none text-deli-red">Choice of:</div>
+      <div role="tablist" aria-label="Leaderboards" className="mt-1 flex flex-nowrap items-baseline justify-center gap-x-2.5 sm:gap-x-3.5">
         {TABS.map((x) => {
           const on = x.key === tab;
           return (
@@ -48,7 +48,7 @@ export function LeaderboardTabs({ boards, meId, minHands }: { boards: Leaderboar
               role="tab"
               aria-selected={on}
               onClick={() => rot.select(x.key)}
-              className={`relative pb-1 font-cond text-[15px] font-extrabold uppercase tracking-[.08em] transition-opacity ${on ? 'opacity-100' : 'opacity-50 hover:opacity-80'}`}
+              className={`relative whitespace-nowrap pb-1 font-cond text-[14px] font-extrabold uppercase tracking-[.06em] transition-opacity sm:text-[15px] sm:tracking-[.08em] ${on ? 'opacity-100' : 'opacity-50 hover:opacity-80'}`}
             >
               {x.label}
               {on && (
