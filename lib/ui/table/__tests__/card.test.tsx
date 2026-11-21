@@ -22,8 +22,20 @@ describe('Card', () => {
     render(<Card card={{ id: 'A-joker', kind: 'joker', pack: 'A' } as any} />);
     expect(screen.getByText(/joker/i)).toBeInTheDocument();
   });
-  it('CardBack references the pack art url', () => {
-    const { container } = render(<CardBack pack="B" />);
-    expect(container.innerHTML).toContain('/art/card-back-red.png');
+  it('CardBack draws pack A in deli green and pack B in tomato red', () => {
+    const { container } = render(<><CardBack pack="A" /><CardBack pack="B" /></>);
+    expect(container.querySelector('[data-pack="A"] svg [fill="#1d5446"]')).not.toBeNull();
+    expect(container.querySelector('[data-pack="B"] svg [fill="#c8402f"]')).not.toBeNull();
+  });
+  it('CardBack carries the K monogram and no image url', () => {
+    const { container } = render(<CardBack pack="A" />);
+    expect(container.innerHTML).not.toContain('card-back-');
+    expect(container.querySelector('svg')!.textContent).toContain('K');
+  });
+  it('two CardBacks do not share pattern ids', () => {
+    const { container } = render(<><CardBack pack="A" /><CardBack pack="A" size="sm" /></>);
+    const ids = [...container.querySelectorAll('pattern')].map((p) => p.id);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
   });
 });
