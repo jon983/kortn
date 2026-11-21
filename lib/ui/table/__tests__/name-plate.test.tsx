@@ -41,4 +41,13 @@ describe('name plates', () => {
     const shared = seat({ media: <span /> }).container.querySelector('[data-seat-grid]')!;
     expect(shared.className).toContain('sm:grid-cols-[auto_auto]');
   });
+  it('small screens show just the name plate — no card backs — for top and side seats', () => {
+    for (const side of [undefined, 'left'] as const) {
+      const { container, unmount } = seat({ side });
+      const backs = container.querySelector('[data-cardback]')!;
+      expect(backs.closest('.max-sm\\:hidden')).not.toBeNull();
+      expect(container.querySelector('[data-plate]')!.closest('.max-sm\\:hidden')).toBeNull();
+      unmount();
+    }
+  });
 });

@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card as CardFace } from './Card';
 import type { Card } from '../../kalooki';
 
@@ -20,6 +20,37 @@ export function sortHand(cards: Card[]): Card[] {
 /** An entry in the hand row: a real card, or a spacer separator (card === null). */
 export interface HandItem { id: string; card: Card | null }
 
+// Hand geometry (px): md cards are w-24; spacers are w-7 with ml-2 either side.
+const CARD_W = 96, SPACE_W = 28, SPACE_GAP = 8;
+const BASE_OVERLAP = 40;  // the usual fan (-ml-10)
+const MIN_SHOW = 18;      // never hide a card's corner index (rank + suit)
+
+/** Total width of the hand row when fanned cards overlap by `overlap` px. */
+export function handWidth(items: HandItem[], overlap: number): number {
+  let w = 0;
+  items.forEach((it, i) => {
+    const own = it.card == null ? SPACE_W : CARD_W;
+    if (i === 0) w += own;
+    else if (it.card == null || items[i - 1].card == null) w += SPACE_GAP + own;
+    else w += own - overlap;
+  });
+  return w;
+}
+
+/**
+ * How far each card overlaps the one before it: the usual 40px when the hand
+ * fits, more on narrow screens so the whole hand shows at once — but always
+ * leaving each card's corner index visible (if it still can't fit, it scrolls).
+ */
+export function fanOverlap(items: HandItem[], width: number): number {
+  if (!width) return BASE_OVERLAP;
+  const extra = handWidth(items, BASE_OVERLAP) - width;
+  if (extra <= 0) return BASE_OVERLAP;
+  const fanned = items.filter((it, i) => i > 0 && it.card != null && items[i - 1].card != null).length;
+  if (!fanned) return BASE_OVERLAP;
+  return Math.min(CARD_W - MIN_SHOW, Math.ceil(BASE_OVERLAP + extra / fanned));
+}
+
 const DRAG_THRESHOLD = 6; // px of movement before a press becomes a drag (vs a tap)
 
 export function Hand({
@@ -32,6 +63,18 @@ export function Hand({
   // Pointer-based drag so it works with touch (iPad) as well as mouse.
   const drag = useRef<{ id: string; startX: number; active: boolean; pointerId: number } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Measure the room we have, so the fan can tighten to fit (phones).
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const overlap = fanOverlap(items, width);
 
   const isSpace = (id: string) => items.find((i) => i.id === id)?.card == null;
 
@@ -83,18 +126,21 @@ export function Hand({
     }
   }
 
+  // "safe" centring: if the hand still overflows, it scrolls from the first
+  // card rather than clipping the start.
   return (
-    <div ref={containerRef} className="flex justify-center overflow-x-auto pt-6 pb-2">
+    <div ref={containerRef} className="flex overflow-x-auto pt-6 pb-2 [justify-content:safe_center]">
       {items.map((item, i) => {
         const space = item.card == null;
         const prevSpace = i > 0 && items[i - 1].card == null;
         // Cards fan with overlap; a spacer (and the card after it) break the fan.
-        const margin = i === 0 ? '' : space || prevSpace ? 'ml-2' : '-ml-10';
+        const margin = i === 0 ? '' : space || prevSpace ? 'ml-2' : '';
+        const fan = i > 0 && !space && !prevSpace ? { marginLeft: -overlap } : undefined;
         return (
           <div
             key={item.id}
             data-card-id={item.id}
-            style={{ touchAction: 'none' }}
+            style={{ touchAction: 'none', ...fan }}
             className={`${margin} shrink-0 ${hiddenId === item.id ? 'opacity-0' : ''} ${activeId === item.id ? 'z-20 scale-105' : ''}`}
             onPointerDown={(e) => onPointerDown(e, item.id)}
             onPointerMove={onPointerMove}

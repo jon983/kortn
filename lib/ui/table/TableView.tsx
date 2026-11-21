@@ -651,18 +651,20 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         {/* Three columns with equal sides, so the hand stays centred whatever
             sits beside it (your video, the wider Sort/Add space pills). When
             space runs out the hand column shrinks and scrolls. */}
-        <div data-hand-row className="mt-2 grid grid-cols-[1fr_minmax(0,auto)_1fr] items-stretch gap-3">
-          <div className="flex justify-self-end gap-3">
+        {/* Phones: the four buttons in a row above, the hand the full width below.
+            Wider: three columns — Sort/Add space · hand · Meld/Discard. */}
+        <div data-hand-row className="mt-2 grid grid-cols-2 items-center gap-x-2 sm:grid-cols-[1fr_minmax(0,auto)_1fr] sm:items-stretch sm:gap-3">
+          <div className="col-start-1 row-start-1 flex justify-self-start gap-3 sm:justify-self-end">
             {/* Wider screens: your video sits at the side of your cards. */}
             {wide && <div className="flex shrink-0 items-center pt-6 pb-2"><SeatVideo seat={view.seat} className="h-24 w-24" /></div>}
             {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
-            <div className="flex shrink-0 flex-col justify-center gap-3 pt-6 pb-2">
+            <div className="flex shrink-0 flex-row gap-2 sm:flex-col sm:justify-center sm:gap-3 sm:pt-6 sm:pb-2">
               <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
               <button type="button" className={ctrlBtn} onClick={addSpace}>＋ Add space</button>
             </div>
           </div>
 
-          <div className="min-w-0" data-hand>
+          <div className="col-span-2 row-start-2 min-w-0 sm:col-span-1 sm:col-start-2 sm:row-start-1" data-hand>
             <Hand
               items={dealing
                 ? handInPlay.slice(0, dealCounts[view.seat] ?? 0).map((c) => ({ id: c.id, card: c }))
@@ -679,7 +681,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
 
           {/* right controls: Meld + Discard, centred with a gap. Always rendered
               (disabled when you can't act) so the column height never shifts. */}
-          <div className="flex shrink-0 flex-col justify-center gap-3 justify-self-start pt-6 pb-2">
+          <div className="col-start-2 row-start-1 flex shrink-0 flex-row gap-2 justify-self-end sm:col-start-3 sm:flex-col sm:justify-center sm:gap-3 sm:justify-self-start sm:pt-6 sm:pb-2">
             {(() => {
               const canAct = isMyTurn(view) && view.phase === 'awaitingDiscard';
               return (
