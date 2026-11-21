@@ -8,6 +8,7 @@ import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as se
 import { playAction, getTableView } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat, SEAT_LABEL, TurnRibbon } from './OpponentSeat';
+import { ChatIcon, SpeakerIcon, ScoresIcon } from './icons';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
@@ -30,6 +31,8 @@ const SPACE_PREFIX = '__space_';
 /** Header controls: cream-outlined tags in condensed caps on the green header. */
 const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
 /** Hand and pot: small printed price tags. */
+/** Icon-only header buttons: the same pill as the video-call buttons. */
+const ICON_TAG = 'flex items-center justify-center rounded-full border border-deli-cream/50 px-2 py-[3px] text-deli-cream hover:bg-deli-cream/10';
 const PRINTED_TAG = 'whitespace-nowrap rounded-[3px] bg-deli-cream px-1.5 font-sans-deli text-[9px] font-semibold uppercase leading-[1.45] tracking-[.14em] text-deli-green sm:py-px sm:text-[10.5px]';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
@@ -503,9 +506,9 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             type="button"
             aria-label={chatOpen ? 'Close chat' : 'Open chat'}
             onClick={() => setChatOpen((o) => !o)}
-            className={`${HEADER_TAG} relative !text-[13px]`}
+            className={`${ICON_TAG} relative`}
           >
-            💬
+            <ChatIcon />
             {!chatOpen && unread > 0 && (
               <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-deli-red px-1 font-sans-deli text-[9px] font-bold text-deli-cream">{unread}</span>
             )}
@@ -515,9 +518,9 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               type="button"
               aria-label="Volume"
               onClick={() => setVolOpen((o) => !o)}
-              className={`${HEADER_TAG} !text-[13px]`}
+              className={ICON_TAG}
             >
-              {volume === 0 ? '🔇' : volume < 0.5 ? '🔈' : '🔊'}
+              <SpeakerIcon volume={volume} />
             </button>
             {volOpen && (
               <div className="deli-paper absolute right-0 top-full z-50 mt-1.5 flex items-center gap-2 rounded-md px-3 py-2 text-deli-green shadow-xl">
@@ -542,7 +545,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             aria-label={showScores ? 'Hide scores' : 'Scores'}
             className={HEADER_TAG}
           >
-            <span className="sm:hidden" aria-hidden>📋</span>
+            <span className="sm:hidden" aria-hidden><ScoresIcon /></span>
             <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
           <span className="flex flex-col items-end gap-px sm:flex-row sm:items-center sm:gap-1.5">
