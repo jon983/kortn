@@ -555,15 +555,15 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* full scorecard (toggle) */}
       {showScores && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 p-6" onClick={() => setShowScores(false)}>
-          <div className="w-full max-w-3xl rounded-xl border-2 border-brass bg-[#2a1c12] p-6 text-bone shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Scorecard</h3>
+          <div className="deli-paper w-full max-w-3xl rounded-sm px-5 pb-5 pt-4 text-deli-green shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-baseline justify-between border-b-2 border-deli-red/70 pb-1">
+              <h3 className="font-cond text-[26px] font-black uppercase leading-none tracking-[.06em]">Scores</h3>
               <button
                 type="button"
                 onClick={() => setShowScores(false)}
-                className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+                className="font-script text-[18px] text-deli-green/60 hover:text-deli-red hover:underline"
               >
-                Close
+                close
               </button>
             </div>
             <ScorePad view={view} />

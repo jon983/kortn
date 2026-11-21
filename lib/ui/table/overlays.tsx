@@ -25,52 +25,54 @@ export function ScorePad({ view }: { view: ClientView }) {
   const history = view.history ?? [];
   const fmt = (n: number) => (n > 0 ? `+${n}` : `${n}`);
   const mark = (t: string) => (t === 'treasure' ? '★' : t === 'kalooki' ? '◆' : '');
+  const head = 'font-sans-deli text-[9.5px] font-semibold uppercase tracking-[.14em] text-deli-green/70';
+  const fig = 'font-script text-[17px] leading-[24px]';
   return (
-    <div className="mt-4 max-h-[50vh] overflow-auto rounded-lg border border-brass/30">
-      <table className="w-full text-right text-xs tabular-nums">
-        <thead className="sticky top-0 z-10 bg-[#2a1c12]">
-          <tr className="text-[#c9b48a]">
-            <th className="px-2 py-1 text-left font-normal" rowSpan={2}>Hand</th>
+    <div data-order-pad className="order-pad mt-3 max-h-[55vh] overflow-auto rounded-sm text-deli-green">
+      <table className="w-full text-right tabular-nums">
+        <thead className="sticky top-0 z-10 bg-deli-cream">
+          <tr>
+            <th className={`${head} px-2 py-1 text-left`} rowSpan={2}>Hand</th>
             {seats.map((s) => (
-              <th key={s.seat} colSpan={3} className="border-l border-brass/20 px-2 py-1 text-center font-bold text-bone">{s.name}</th>
+              <th key={s.seat} colSpan={3} className="border-l border-deli-green/20 px-2 py-1 text-center font-cond text-[14px] font-extrabold uppercase tracking-[.04em] [overflow-wrap:anywhere]">{s.name}</th>
             ))}
           </tr>
-          <tr className="text-[10px] uppercase tracking-wide text-[#c9b48a]">
+          <tr>
             {seats.map((s) => (
               <Fragment key={s.seat}>
-                <th className="border-l border-brass/20 px-1.5 py-0.5 font-normal">Pts</th>
-                <th className="px-1.5 py-0.5 font-normal">Tot</th>
-                <th className="px-1.5 py-0.5 font-normal">Bits</th>
+                <th className={`${head} border-l border-deli-green/20 px-1.5 py-0.5`}>Pts</th>
+                <th className={`${head} px-1.5 py-0.5`}>Tot</th>
+                <th className={`${head} px-1.5 py-0.5`}>Bits</th>
               </Fragment>
             ))}
           </tr>
         </thead>
         <tbody>
           {history.length === 0 && (
-            <tr><td colSpan={1 + seats.length * 3} className="px-2 py-3 text-center text-[#c9b48a]">First hand — no history yet.</td></tr>
+            <tr><td colSpan={1 + seats.length * 3} className="px-2 py-3 text-center font-script text-[18px] opacity-70">First hand — no history yet.</td></tr>
           )}
           {history.map((h) => (
-            <tr key={h.roundNumber} className="border-t border-white/5">
-              <td className="px-2 py-1 text-left">
+            <tr key={h.roundNumber}>
+              <td className={`${fig} px-2 text-left`}>
                 {h.roundNumber}
-                {h.goOutType !== 'normal' && <span className="ml-1 text-brass">{mark(h.goOutType)}</span>}
+                {h.goOutType !== 'normal' && <span className="ml-1 font-sans-deli text-[12px] text-deli-red">{mark(h.goOutType)}</span>}
               </td>
               {order.map((seat) => (
                 <Fragment key={seat}>
-                  <td className={`border-l border-brass/20 px-1.5 py-1 ${seat === h.winnerSeat ? 'font-bold text-brass' : ''}`}>{h.handPoints[seat]}</td>
-                  <td className="px-1.5 py-1">{h.scores[seat]}</td>
-                  <td className="px-1.5 py-1">{fmt(h.handBits[seat])}</td>
+                  <td className={`${fig} border-l border-deli-green/20 px-1.5 ${seat === h.winnerSeat ? 'text-deli-red' : ''}`}>{h.handPoints[seat]}</td>
+                  <td className={`${fig} px-1.5`}>{h.scores[seat]}</td>
+                  <td className={`${fig} px-1.5 opacity-75`}>{fmt(h.handBits[seat])}</td>
                 </Fragment>
               ))}
             </tr>
           ))}
-          <tr className="border-t-2 border-brass/50 font-bold text-brass">
-            <td className="px-2 py-1 text-left">Now</td>
+          <tr className="border-t-2 border-double border-deli-red/60 font-cond font-extrabold">
+            <td className="px-2 py-1 text-left text-[13px] uppercase tracking-[.08em]">Now</td>
             {seats.map((s) => (
               <Fragment key={s.seat}>
-                <td className="border-l border-brass/20 px-1.5 py-1 text-[#c9b48a]">·</td>
-                <td className="px-1.5 py-1">{s.score}</td>
-                <td className="px-1.5 py-1">{fmt(s.bits)}</td>
+                <td className="border-l border-deli-green/20 px-1.5 py-1 opacity-40">·</td>
+                <td className="px-1.5 py-1 text-[16px]">{s.score}</td>
+                <td className="px-1.5 py-1 text-[16px]">{fmt(s.bits)}</td>
               </Fragment>
             ))}
           </tr>

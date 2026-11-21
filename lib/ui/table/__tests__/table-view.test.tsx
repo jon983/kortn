@@ -62,4 +62,10 @@ describe('TableView', () => {
     expect(you.textContent).not.toContain('Ruth');
     expect(you.querySelector('[data-turn-ribbon]')).not.toBeNull();
   });
+  it('Scores opens the order pad', () => {
+    render(<TableView matchId="m1" initial={{ ...baseView, history: [] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Scores' }));
+    expect(screen.getByRole('heading', { name: 'Scores' })).toBeInTheDocument();
+    expect(screen.queryByText(/scorecard/i)).toBeNull();
+  });
 });

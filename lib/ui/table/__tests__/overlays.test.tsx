@@ -2,7 +2,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { RoundSummary, RebuyPrompt, MatchSummary } from '../overlays';
+import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from '../overlays';
 
 const view: any = { roundWinnerSeat: 0, goOutType: 'kalooki', pot: 18, seat: 1, seatNames: ['Ruth', 'Sol'], roundNumber: 8,
   history: [{ roundNumber: 8, dealerSeat: 1, winnerSeat: 0, goOutType: 'kalooki', handPoints: [0, 23], scores: [40, 77], handBits: [2, -2] }],
@@ -69,5 +69,10 @@ describe('overlays', () => {
     render(<MatchSummary view={{ ...view, matchAbandoned: true, matchWinnerSeat: null }} />);
     expect(screen.getByText(/game ended/i)).toBeInTheDocument();
     expect(screen.queryByText(/takes the pot/i)).toBeNull();
+  });
+  it('order pad keeps every hand row, on lined paper', () => {
+    const { container } = render(<ScorePad view={view} />);
+    expect(screen.getAllByRole('row').length).toBeGreaterThanOrEqual(3); // 2 head rows + hand 8 + Now
+    expect(container.querySelector('[data-order-pad]')).not.toBeNull();
   });
 });
