@@ -16,9 +16,13 @@ describe('RecordList', () => {
     render(<RecordList stats={some} />);
     expect(screen.getByText('Win rate')).toBeInTheDocument();
     expect(screen.getByText('Net bits')).toBeInTheDocument();
-    expect(screen.queryByText('Kalookis')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /more/i }));
+    // Five lines up front (balancing the leaderboard); the rest behind "More…".
     expect(screen.getByText('Kalookis')).toBeInTheDocument();
+    expect(screen.queryByText('Hands won')).toBeNull();
+    expect(screen.queryByText('Treasures')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /more/i }));
+    expect(screen.getByText('Treasures')).toBeInTheDocument();
+    expect(screen.getAllByText('Kalookis')).toHaveLength(1);
   });
   it('shows a plain dash for a stat with no data', () => {
     render(<RecordList stats={{ ...some, vsPar: null }} />);
