@@ -96,7 +96,7 @@ export function CallProvider({ fetchCredentials, enabled = true, children }: {
 }
 
 
-/** Small line icons (stroke = currentColor) so the call buttons match the brass UI. */
+/** Small line icons (stroke = currentColor) so the call buttons match the deli header tags. */
 function Icon({ children }: { children: ReactNode }) {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"
@@ -121,7 +121,7 @@ const MicIcon = ({ off = false }: { off?: boolean }) => (
 );
 const LeaveIcon = () => <Icon><path d="M18 6 6 18M6 6l12 12" /></Icon>;
 
-const ctrl = 'flex items-center justify-center rounded-md border px-2 py-1 hover:bg-brass/10 disabled:opacity-50';
+const ctrl = 'flex items-center justify-center rounded-full border px-2 py-[3px] hover:bg-deli-cream/10 disabled:opacity-50';
 
 /** Status-bar controls: 📹 to join; once in, mic / camera toggles and leave. */
 export function CallControls() {
@@ -139,7 +139,7 @@ export function CallControls() {
         disabled={state === 'joining'}
         aria-label="Join video call"
         title={error ? `Video call: ${error} — tap to retry` : 'Join the video call'}
-        className={`${ctrl} ${state === 'error' ? 'border-maroon text-[#e0a08a]' : 'border-brass/60 text-brass'}`}
+        className={`${ctrl} ${state === 'error' ? 'border-deli-red bg-deli-red/25 text-deli-cream' : 'border-deli-cream/50 text-deli-cream'}`}
       >
         {state === 'joining' ? <span className="block h-4 w-4 animate-pulse text-center leading-4">…</span> : <VideoIcon />}
       </button>
@@ -152,7 +152,7 @@ export function CallControls() {
         aria-label={mic.isOff ? 'Unmute' : 'Mute'}
         aria-pressed={!mic.isOff}
         onClick={() => daily?.setLocalAudio(mic.isOff)}
-        className={`${ctrl} ${mic.isOff ? 'border-maroon text-[#e0a08a]' : 'border-sage text-sage'}`}
+        className={`${ctrl} ${mic.isOff ? 'border-deli-red bg-deli-red/25 text-deli-cream' : 'border-deli-gold text-deli-gold'}`}
       >
         <MicIcon off={mic.isOff} />
       </button>
@@ -161,11 +161,11 @@ export function CallControls() {
         aria-label={cam.isOff ? 'Turn camera on' : 'Turn camera off'}
         aria-pressed={!cam.isOff}
         onClick={() => daily?.setLocalVideo(cam.isOff)}
-        className={`${ctrl} ${cam.isOff ? 'border-maroon text-[#e0a08a]' : 'border-sage text-sage'}`}
+        className={`${ctrl} ${cam.isOff ? 'border-deli-red bg-deli-red/25 text-deli-cream' : 'border-deli-gold text-deli-gold'}`}
       >
         <VideoIcon off={cam.isOff} />
       </button>
-      <button type="button" aria-label="Leave video call" onClick={() => void leave()} className={`${ctrl} border-maroon/70 text-[#e0a08a]`}>
+      <button type="button" aria-label="Leave video call" onClick={() => void leave()} className={`${ctrl} border-deli-red bg-deli-red text-deli-cream`}>
         <LeaveIcon />
       </button>
     </span>
@@ -191,7 +191,7 @@ function SeatVideoTile({ id, className }: { id: string; className: string }) {
   if (video.state !== 'playable') return null;
   return (
     <span className={`relative inline-block shrink-0 ${className}`}>
-      <span className={`block h-full w-full overflow-hidden rounded-full shadow-lg ring-2 ${speaker === id && !audio.isOff ? 'ring-sage' : 'ring-brass/70'}`}>
+      <span className={`block h-full w-full overflow-hidden rounded-full shadow-lg ring-2 ${speaker === id && !audio.isOff ? 'ring-deli-gold' : 'ring-deli-cream/80'}`}>
         <DailyVideo sessionId={id} fit="cover" automirror className="h-full w-full object-cover" />
       </span>
       {audio.isOff && (

@@ -161,12 +161,19 @@ body { background: #201811; color: var(--color-bone); }
 .deli-swing { transform-origin: 50% -30px; animation: deli-swing 6s ease-in-out infinite; }
 @keyframes deli-swing { 0%, 100% { transform: rotate(-.8deg); } 50% { transform: rotate(.8deg); } }
 
+/* ───────── The game table, deli style ───────── */
+.deli-ribbon--red { background: var(--color-deli-red); }
+/* "Your move" drops in once when your turn starts (no endless pulse). */
+.deli-ribbon-drop { animation: deli-ribbon-drop 260ms cubic-bezier(.2, .8, .3, 1.2) both; }
+@keyframes deli-ribbon-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
 @media (prefers-reduced-motion: reduce) {
   .amb-drift, .amb-sun-l, .amb-sun-r, .amb-sun-room, .amb-shaft { animation: none !important; }
   .amb-mote { animation: none !important; display: none; }
   .deli-swing { animation: none !important; transform: none !important; }
   .deli-progress { animation: none !important; }
+  .deli-ribbon-drop { animation: none !important; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
   .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }

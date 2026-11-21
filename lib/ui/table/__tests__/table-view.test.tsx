@@ -32,7 +32,7 @@ describe('TableView', () => {
   it('is read-only when not your turn', () => {
     render(<TableView matchId="m1" initial={{ ...baseView, currentTurn: 1 }} />);
     // Whose turn it is shows in the top bar; the draw affordance is not offered.
-    expect(screen.getByText(/sol.*turn/i)).toBeInTheDocument();
+    expect(screen.getByText("Sol's move")).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /draw stock/i })).toBeNull();
   });
   it('adds a space at the left end of your hand', () => {
@@ -44,5 +44,15 @@ describe('TableView', () => {
     expect(ids).toHaveLength(3);
     expect(ids[0]).not.toMatch(/^A-/); // the new spacer leads
     expect(ids.slice(1)).toEqual(['A-clubs-4', 'A-hearts-5']);
+  });
+  it('shows the Your move ribbon on your turn', () => {
+    render(<TableView matchId="m1" initial={baseView} />);
+    expect(screen.getByText('Your move')).toBeInTheDocument();
+    expect(screen.queryByText(/your turn/i)).toBeNull();
+  });
+  it('header shows hand and pot tags', () => {
+    render(<TableView matchId="m1" initial={baseView} />);
+    expect(screen.getByText('Hand 1')).toBeInTheDocument();
+    expect(screen.getByText('Pot 8 bits')).toBeInTheDocument();
   });
 });

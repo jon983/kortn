@@ -24,6 +24,10 @@ import type { ClientView, ServerAction } from '../../server';
 
 const ctrlBtn = 'rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 text-sm font-bold text-bone shadow disabled:cursor-not-allowed disabled:opacity-40';
 const SPACE_PREFIX = '__space_';
+/** Header controls: cream-outlined tags in condensed caps on the green header. */
+const HEADER_TAG = 'font-cond rounded-full border border-deli-cream/50 px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream hover:bg-deli-cream/10';
+/** Hand and pot: small printed price tags. */
+const PRINTED_TAG = 'whitespace-nowrap rounded-[3px] bg-deli-cream px-1.5 py-px font-sans-deli text-[9.5px] font-semibold uppercase tracking-[.14em] text-deli-green sm:text-[10.5px]';
 
 export function TableView({ matchId, initial, initialChat = [] }: { matchId: string; initial: ClientView; initialChat?: ChatLine[] }) {
   const { view, chat, connected } = useMatchStream(matchId, initial, initialChat, { fetchView: () => getTableView(matchId) });
@@ -460,12 +464,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   return (
     <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
     <div ref={rootRef} className="relative flex min-h-screen flex-col bg-[url(/art/table-surface.jpg)] bg-cover bg-center text-bone">
-      {/* status bar */}
-      {/* Phones: controls on one row, whose turn on a full-width row beneath.
-          Wider: left controls · whose turn (centred) · right controls. */}
-      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-black/60 px-3 py-2 text-xs backdrop-blur sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
+      {/* status bar: the deli's green header with printed tags. */}
+      {/* Phones: controls on one row, whose move on a full-width row beneath.
+          Wider: left controls · whose move (centred) · right controls. */}
+      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-deli-green px-3 py-2 text-xs text-deli-cream shadow-[0_4px_14px_rgba(0,0,0,.35)] sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
         <span className="flex items-center gap-2 justify-self-start sm:gap-3">
-          <Link href="/" className="whitespace-nowrap rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10">
+          <Link href="/" className={`${HEADER_TAG} whitespace-nowrap`}>
             ⌂ Kitchen
           </Link>
           {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
@@ -474,9 +478,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             onClick={() => window.location.reload()}
             title="Refresh the table"
             aria-label="Refresh the table"
-            className={`rounded-md border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide hover:bg-brass/10 ${
-              connected ? 'border-brass/60 text-brass' : 'animate-pulse border-amber-300 text-amber-300'
-            }`}
+            className={`${HEADER_TAG} ${connected ? '' : 'animate-pulse !border-deli-gold !text-deli-gold'}`}
           >
             ↻{!connected && <span className="hidden sm:inline"> Reconnecting…</span>}
           </button>
@@ -485,11 +487,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           {/* Phones: call buttons live on this second row so the top row never overflows. */}
           {!view.matchFinished && <span className="sm:hidden"><CallControls /></span>}
           {isMyTurn(view) ? (
-            <span className="animate-pulse rounded-full bg-brass px-4 py-1 text-base font-extrabold uppercase tracking-wide text-[#2a1c12] shadow-[0_0_16px_rgba(232,180,90,.6)]">
-              ● Your turn
+            <span key={`turn-${view.roundNumber}-${view.currentTurn}`} className="deli-ribbon deli-ribbon--red deli-ribbon-drop !px-7 !py-1.5 !text-[13px]">
+              Your move
             </span>
           ) : (
-            <span className="text-[#c9b48a]">{view.seatNames[view.currentTurn]}&apos;s turn</span>
+            <span className="font-script text-[19px] leading-none text-deli-cream/90">{`${view.seatNames[view.currentTurn]}'s move`}</span>
           )}
         </span>
         <span className="flex items-center gap-1.5 justify-self-end sm:gap-2">
@@ -498,11 +500,11 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             type="button"
             aria-label={chatOpen ? 'Close chat' : 'Open chat'}
             onClick={() => setChatOpen((o) => !o)}
-            className="relative rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+            className={`${HEADER_TAG} relative !text-[13px]`}
           >
             💬
             {!chatOpen && unread > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-maroon px-1 text-[9px] font-bold text-bone">{unread}</span>
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-deli-red px-1 font-sans-deli text-[9px] font-bold text-deli-cream">{unread}</span>
             )}
           </button>
           <span className="relative">
@@ -510,24 +512,24 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               type="button"
               aria-label="Volume"
               onClick={() => setVolOpen((o) => !o)}
-              className="rounded-md border border-brass/60 px-2 py-0.5 text-[13px] text-brass hover:bg-brass/10"
+              className={`${HEADER_TAG} !text-[13px]`}
             >
               {volume === 0 ? '🔇' : volume < 0.5 ? '🔈' : '🔊'}
             </button>
             {volOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 flex items-center gap-2 rounded-md border border-brass/60 bg-[#2a1c12] px-3 py-2 shadow-xl">
-                <span className="text-[11px] text-[#c9b48a]">Vol</span>
+              <div className="deli-paper absolute right-0 top-full z-50 mt-1.5 flex items-center gap-2 rounded-md px-3 py-2 text-deli-green shadow-xl">
+                <span className="font-sans-deli text-[10px] font-semibold uppercase tracking-[.14em]">Vol</span>
                 <input
                   type="range"
                   min={0}
                   max={100}
                   value={Math.round(volume * 100)}
                   aria-label="Sound volume"
-                  className="h-1 w-28 accent-brass"
+                  className="h-1 w-28 accent-deli-red"
                   onChange={(e) => onVolumeInput(Number(e.target.value) / 100)}
                   onPointerUp={() => { if (volumeRef.current > 0) playYourTurn(); }}
                 />
-                <span className="w-7 text-right text-[11px] tabular-nums text-brass">{Math.round(volume * 100)}</span>
+                <span className="w-7 text-right font-cond text-[13px] font-bold tabular-nums">{Math.round(volume * 100)}</span>
               </div>
             )}
           </span>
@@ -535,14 +537,14 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             type="button"
             onClick={() => setShowScores((s) => !s)}
             aria-label={showScores ? 'Hide scores' : 'Scores'}
-            className="rounded-md border border-brass/60 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brass hover:bg-brass/10"
+            className={HEADER_TAG}
           >
             <span className="sm:hidden" aria-hidden>📋</span>
             <span className="hidden sm:inline">{showScores ? 'Hide scores' : 'Scores'}</span>
           </button>
-          <span className="flex flex-col items-end text-[10px] leading-tight sm:flex-row sm:items-center sm:gap-2 sm:text-xs">
-            <span className="whitespace-nowrap text-[#c9b48a]">Hand: {view.roundNumber}</span>
-            <span className="whitespace-nowrap text-[#c9a24b]">Pot: {view.pot} bits</span>
+          <span className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-1.5">
+            <span className={PRINTED_TAG}>{`Hand ${view.roundNumber}`}</span>
+            <span className={PRINTED_TAG}>{`Pot ${view.pot} bits`}</span>
           </span>
         </span>
       </div>
