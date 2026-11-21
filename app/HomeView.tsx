@@ -21,7 +21,7 @@ export interface HomeViewProps {
 /** The front room: who you are, your stats, then create / join / rejoin. */
 export function HomeView({ userId, myName, stats, boards, minHands, games }: HomeViewProps) {
   return (
-    <RoomBackdrop plate="room-home" kitchenLink={false}>
+    <RoomBackdrop plate="room-home" kitchenLink={false} ambient>
       <HomeHeader name={myName} />
       {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
