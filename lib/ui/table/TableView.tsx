@@ -504,10 +504,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           {!view.matchFinished && <span className="sm:hidden"><CallControls /></span>}
           {isMyTurn(view) ? (
             <span key={`turn-${view.roundNumber}-${view.currentTurn}`} className="deli-ribbon deli-ribbon--red deli-ribbon-drop !px-7 !py-1 !text-[12px] sm:!py-1.5 sm:!text-[13px]">
-              Your move
+              Your turn
             </span>
           ) : (
-            <span className="font-script text-[19px] leading-none text-deli-cream/90">{`${view.seatNames[view.currentTurn]}'s move`}</span>
+            <span className="font-script text-[19px] leading-none text-deli-cream/90">{`${view.seatNames[view.currentTurn]}'s turn`}</span>
           )}
         </span>
         <span className="flex items-center gap-1.5 justify-self-end sm:gap-2">

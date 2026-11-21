@@ -18,10 +18,10 @@ describe('GameRow', () => {
     expect(screen.getByText('Rosemary').closest('[data-player]')).toHaveTextContent('147');
   });
 
-  it('marks a game where it is your move, quietly', () => {
+  it('marks a game where it is your turn, quietly', () => {
     render(<GameRow id="g" status="active" number={31} seats={2} lastActiveAt={new Date()} isHost={false} yourTurn
       players={[{ name: 'You', score: 16 }, { name: 'Rosemary', score: 137 }]} />);
-    expect(screen.getByRole('link', { name: 'Your move' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Your turn' })).toBeInTheDocument();
     expect(screen.getByText('your turn')).toBeInTheDocument();
   });
 
