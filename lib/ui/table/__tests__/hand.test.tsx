@@ -58,3 +58,27 @@ describe('Hand', () => {
     expect(onReorder).toHaveBeenLastCalledWith(['A-hearts-5', 'A-clubs-9']);
   });
 });
+
+describe('fanOverlap (the hand fits narrow screens)', () => {
+  it('keeps the usual overlap when there is room', async () => {
+    const { fanOverlap } = await import('../Hand');
+    const items = Array.from({ length: 13 }, (_, i) => card(nat(i + 2, 'clubs')));
+    expect(fanOverlap(items, 1200)).toBe(40);
+    expect(fanOverlap(items, 0)).toBe(40); // not measured yet
+  });
+  it('overlaps more so 13 cards fit a phone, but always leaves the corner index showing', async () => {
+    const { fanOverlap, handWidth } = await import('../Hand');
+    const items = Array.from({ length: 13 }, (_, i) => card(nat((i % 13) + 2, 'clubs')));
+    const ov = fanOverlap(items, 366);
+    expect(handWidth(items, ov)).toBeLessThanOrEqual(366);
+    expect(96 - ov).toBeGreaterThanOrEqual(18); // ≥18px of each card still visible
+  });
+  it('counts spacers, which never overlap', async () => {
+    const { fanOverlap, handWidth } = await import('../Hand');
+    const items = [card(nat(2, 'clubs')), card(nat(3, 'clubs')), space('s1'), ...Array.from({ length: 11 }, (_, i) => card(nat(i + 4, 'hearts')))];
+    const ov = fanOverlap(items, 440);
+    expect(handWidth(items, ov)).toBeLessThanOrEqual(440);
+    // too narrow even at the tightest fan: stop at the corner-index limit (the row scrolls)
+    expect(96 - fanOverlap(items, 300)).toBe(18);
+  });
+});

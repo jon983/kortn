@@ -168,6 +168,10 @@ body { background: #201811; color: var(--color-bone); }
 /* Table pills: they sit on felt, so they carry a cream edge to read against it. */
 .deli-pill--table { font-size: 14px; padding: 9px 18px; background: var(--color-deli-cream); color: var(--color-deli-green); box-shadow: inset 0 0 0 2px var(--color-deli-green), 0 4px 12px rgba(0, 0, 0, .35); }
 .deli-pill--table-go { font-size: 14px; padding: 9px 18px; background: var(--color-deli-green); color: var(--color-deli-cream); box-shadow: inset 0 0 0 2px var(--color-deli-cream), 0 4px 12px rgba(0, 0, 0, .35); }
+/* Phones: the four hand buttons share one row above the hand — compact them. */
+@media (max-width: 639px) {
+  .deli-pill--table, .deli-pill--table-go { font-size: 12px; padding: 8px 12px; letter-spacing: .08em; }
+}
 /* A meld settles onto the table as it lands. */
 .meld-land { animation: meld-land 260ms cubic-bezier(.2, .8, .3, 1.2) both; }
 @keyframes meld-land { 0% { opacity: 0; transform: scale(.94); } 70% { opacity: 1; transform: scale(1.02); } 100% { transform: none; } }

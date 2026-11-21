@@ -74,6 +74,15 @@ describe('TableView', () => {
     expect(container.querySelector('[data-seat-column="left"]')!.className).not.toContain('table-seat-inset');
     expect(container.querySelector('[data-seat-column="right"]')!.className).not.toContain('table-seat-inset');
   });
+  it('phones: the hand gets the full width, with the four buttons in a row above it', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    const row = container.querySelector('[data-hand-row]')!;
+    expect(row.className).toContain('grid-cols-2');
+    expect(row.className).toContain('sm:grid-cols-[1fr_minmax(0,auto)_1fr]');
+    const hand = row.querySelector('[data-hand]')!;
+    expect(hand.className).toContain('col-span-2');
+    expect(hand.className).toContain('row-start-2');
+  });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);
     expect(screen.getByText('Hand 1')).toBeInTheDocument();
