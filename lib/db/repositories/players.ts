@@ -61,3 +61,8 @@ export async function updatePlayer(
     .set(fields)
     .where(and(eq(matchPlayers.matchId, matchId), eq(matchPlayers.seatIndex, seatIndex)));
 }
+
+/** Take a player off a table (used before it's dealt). */
+export async function removePlayer(db: DB, matchId: string, userId: string): Promise<void> {
+  await db.delete(matchPlayers).where(and(eq(matchPlayers.matchId, matchId), eq(matchPlayers.userId, userId)));
+}

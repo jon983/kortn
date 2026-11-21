@@ -1,7 +1,7 @@
 'use server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-import { getProdDeps, createLobby, joinLobby, endMatch } from '../../lib/server';
+import { getProdDeps, createLobby, joinLobby, endMatch, leaveLobby } from '../../lib/server';
 import { db, getMatch, deleteMatch } from '../../lib/db';
 
 async function displayName(): Promise<string> {
@@ -44,6 +44,15 @@ export async function endGameAction(matchId: string): Promise<{ ok: boolean; rea
   const { userId } = await auth();
   if (!userId) return { ok: false, reason: 'unauthorized' };
   const res = await endMatch(getProdDeps(), { matchId, userId });
+  if (res.ok) revalidatePath('/');
+  return res.ok ? { ok: true } : { ok: false, reason: res.reason };
+}
+
+/** Leave a table that hasn't been dealt (guests only). */
+export async function leaveTableAction(matchId: string): Promise<{ ok: boolean; reason?: string }> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, reason: 'unauthorized' };
+  const res = await leaveLobby(getProdDeps(), { matchId, userId });
   if (res.ok) revalidatePath('/');
   return res.ok ? { ok: true } : { ok: false, reason: res.reason };
 }

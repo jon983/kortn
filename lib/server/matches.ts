@@ -1,7 +1,7 @@
 import type { RuntimeDeps, SubmitResult } from './deps';
 import {
   upsertUser, addPlayer, listPlayers, getMatch, getMatchByJoinCode,
-  updateMatchStatus, updatePlayer, initGameState, reseatOne, abandonMatch,
+  updateMatchStatus, updatePlayer, initGameState, reseatOne, abandonMatch, removePlayer,
   loadGameState, saveGameState, OptimisticLockError,
   createMatch as createMatchRow,
 } from '../db';
@@ -116,4 +116,20 @@ export async function endMatch(
     return { ok: true };
   }
   return { ok: false, reason: 'conflict' };
+}
+
+/** A seated guest leaves a table that hasn't been dealt yet. (The host deletes the table instead.) */
+export async function leaveLobby(
+  deps: RuntimeDeps,
+  input: { matchId: string; userId: string },
+): Promise<SubmitResult> {
+  const match = await getMatch(deps.db, input.matchId);
+  if (!match) return { ok: false, reason: 'No such table' };
+  if (match.status !== 'lobby') return { ok: false, reason: 'This table has already been dealt' };
+  if (match.createdBy === input.userId) return { ok: false, reason: 'The host can delete the table instead' };
+  const players = await listPlayers(deps.db, input.matchId);
+  if (!players.some((p) => p.userId === input.userId)) return { ok: false, reason: 'Not seated at this table' };
+  await removePlayer(deps.db, input.matchId, input.userId);
+  await deps.pubsub.publish('match:' + input.matchId, { type: 'lobby', matchId: input.matchId });
+  return { ok: true };
 }
