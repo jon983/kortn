@@ -30,6 +30,7 @@ export default async function Home() {
         m.status === 'active' ? loadGameState(db, m.id) : Promise.resolve(null),
       ]);
       const scores = game?.state.scores ?? null;
+      const statuses = game?.state.statuses ?? null;
       return {
         match: m,
         // You first, then everyone else in play order (as they sit round the table).
@@ -38,6 +39,7 @@ export default async function Home() {
           .map((p) => ({
             name: p.userId === userId ? 'You' : p.displayName,
             score: scores?.[p.seatIndex] ?? null,
+            out: statuses ? statuses[p.seatIndex] !== 'active' : false,
           })),
       };
     }),

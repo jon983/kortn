@@ -9,7 +9,8 @@ export interface GameRowProps {
   number: number;
   seats: number;
   lastActiveAt: Date;
-  players: { name: string; score: number | null }[];
+  /** `out`: busted / no longer in this game — shown greyed with "out" instead of points. */
+  players: { name: string; score: number | null; out?: boolean }[];
   isHost: boolean;
   now?: Date;
 }
@@ -32,8 +33,11 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
             <span className="text-ink/60">No players yet</span>
           ) : (
             players.map((p, i) => (
-              <span key={i} className="whitespace-nowrap">
-                {p.name}{p.score !== null && <b className="ml-1.5 tabular-nums text-walnut">{p.score}</b>}
+              <span key={i} data-player className={`whitespace-nowrap ${p.out ? 'text-ink/40' : ''}`}>
+                {p.name}
+                {p.out
+                  ? <span className="ml-1.5 text-[11px] uppercase tracking-wide">out</span>
+                  : p.score !== null && <b className="ml-1.5 tabular-nums text-walnut">{p.score}</b>}
               </span>
             ))
           )}
