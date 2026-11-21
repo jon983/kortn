@@ -10,7 +10,165 @@
   --color-maroon: #7a3746;
   --color-blueish: #4d6a8a;
   --color-ink: #3a4030;
+
+  /* Corner-deli print palette */
+  --color-deli-green: #1d5446;
+  --color-deli-cream: #f6efdc;
+  --color-deli-red: #c8402f;
+  --color-deli-gold: #e2bd4f;
+  --font-mark: var(--nf-mark), 'Arial Black', sans-serif;
+  --font-cond: var(--nf-cond), 'Arial Narrow', sans-serif;
+  --font-wide: var(--nf-wide), Arial, sans-serif;
+  --font-script: var(--nf-script), cursive;
+  --font-sans-deli: var(--nf-sans), system-ui, sans-serif;
 }
 
 :root { color-scheme: dark; }
 body { background: #201811; color: var(--color-bone); }
+
+/* ───────── Ambient room (kitchen): slow, subtle, transform/opacity only ───────── */
+.amb-drift {
+  position: absolute; inset: -6%;
+  background-size: cover; background-position: center;
+  animation: amb-drift 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes amb-drift {
+  from { transform: scale(1.05) translate(0, 0); }
+  to   { transform: scale(1.14) translate(-2%, -1.5%); }
+}
+/* Sunlight through the two windows, shifting slowly and irregularly as if clouds
+   drift past. Each layer has its own long, uneven cycle (19s / 27s / 41s); the
+   cycles don't line up, so the combined light never falls into a visible rhythm. */
+.amb-sun-l, .amb-sun-r, .amb-sun-room {
+  position: absolute; inset: 0; mix-blend-mode: screen; will-change: opacity;
+}
+.amb-sun-l {
+  background: radial-gradient(38% 55% at 4% 32%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  animation: amb-clouds-a 19s ease-in-out infinite;
+}
+.amb-sun-r {
+  background: radial-gradient(38% 55% at 96% 30%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  animation: amb-clouds-b 27s ease-in-out -9s infinite;
+}
+.amb-sun-room {
+  background: linear-gradient(180deg, rgba(255, 236, 200, .10), rgba(255, 225, 180, .04) 60%, transparent);
+  animation: amb-clouds-c 41s ease-in-out -17s infinite;
+}
+@keyframes amb-clouds-a { 0% { opacity: .9 } 14% { opacity: .65 } 23% { opacity: .7 } 41% { opacity: 1 } 58% { opacity: .45 } 66% { opacity: .5 } 83% { opacity: .95 } 100% { opacity: .9 } }
+@keyframes amb-clouds-b { 0% { opacity: .55 } 19% { opacity: .95 } 33% { opacity: 1 } 47% { opacity: .6 } 71% { opacity: .85 } 79% { opacity: .4 } 100% { opacity: .55 } }
+@keyframes amb-clouds-c { 0% { opacity: .7 } 27% { opacity: 1 } 52% { opacity: .35 } 61% { opacity: .45 } 88% { opacity: .9 } 100% { opacity: .7 } }
+/* A soft shaft of window light falling across the room, slowly breathing. */
+.amb-shaft {
+  position: absolute; inset: -10% -20%;
+  background: linear-gradient(115deg, transparent 18%, rgba(255, 236, 196, .18) 30%, rgba(255, 236, 196, .07) 42%, transparent 52%);
+  mix-blend-mode: screen;
+  animation: amb-breathe 23s ease-in-out -5s infinite;
+}
+@keyframes amb-breathe { 0% { opacity: .6 } 21% { opacity: .9 } 37% { opacity: 1 } 62% { opacity: .45 } 80% { opacity: .75 } 100% { opacity: .6 } }
+/* Dust motes wandering slowly in every direction, twinkling as they catch the light. */
+.amb-mote {
+  position: absolute; border-radius: 9999px;
+  background: rgba(255, 236, 196, .95);
+  box-shadow: 0 0 5px rgba(255, 220, 160, .7);
+  animation:
+    amb-wander var(--dur, 24s) ease-in-out var(--delay, 0s) infinite alternate,
+    amb-twinkle var(--tw, 5s) ease-in-out var(--delay, 0s) infinite;
+  will-change: transform, opacity;
+}
+@keyframes amb-wander {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(var(--x1, 20px), var(--y1, -30px)); }
+  66%  { transform: translate(var(--x2, -15px), var(--y2, 25px)); }
+  100% { transform: translate(var(--x3, 10px), var(--y3, -10px)); }
+}
+@keyframes amb-twinkle { 0%, 100% { opacity: .2; } 50% { opacity: .9; } }
+
+/* Panels settle into place on arrival (staggered via inline animation-delay). */
+/* Longhands on purpose: no shorthand, so the per-panel animation-delay utilities aren't reset. */
+.settle { animation-name: settle; animation-duration: 500ms; animation-timing-function: cubic-bezier(.2, .7, .3, 1); animation-fill-mode: both; }
+@keyframes settle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* Brass buttons: an occasional gleam sweeps across (staggered via --sheen-delay)… */
+.btn-sheen { position: relative; overflow: hidden; isolation: isolate; }
+.btn-sheen::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 226, 160, .42) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: btn-sheen 4.5s ease-in-out var(--sheen-delay, 0s) infinite;
+}
+@keyframes btn-sheen { 0%, 70% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+.btn-sheen:disabled::after { animation: none; display: none; }
+/* …and they lift slightly under the pointer. */
+.btn-lift { transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease; }
+.btn-lift:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 16px rgba(0, 0, 0, .45); }
+.btn-lift:not(:disabled):active { transform: translateY(0); box-shadow: 0 3px 6px rgba(0, 0, 0, .4); }
+
+/* ───────── View transitions (React <ViewTransition>) ───────── */
+::view-transition { pointer-events: none; } /* clicks pass through during a transition */
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-from-right { from { transform: translateX(8px); } }
+@keyframes vt-to-left { to { transform: translateX(-8px); } }
+@keyframes vt-from-below { from { transform: translateY(8px); } }
+@keyframes vt-rise { from { transform: translateY(6px); } }
+/* Leaderboard tabs: old list slides out left, new one in from the right. */
+::view-transition-old(.vt-tab) { animation: 140ms ease-out both vt-fade-out, 140ms ease-out both vt-to-left; }
+::view-transition-new(.vt-tab) { animation: 200ms ease-out 90ms both vt-fade-in, 260ms ease-out both vt-from-right; }
+/* Game rows: slide up into place; fade away when removed. */
+::view-transition-new(.vt-row-in) { animation: 260ms ease-out both vt-fade-in, 300ms ease-out both vt-from-below; }
+@keyframes vt-to-left-far { to { transform: translateX(-24px); } }
+::view-transition-old(.vt-row-out) { animation: 150ms ease-in both vt-fade-out, 180ms ease-in both vt-to-left-far; }
+/* The rows below wait for the removed one to slide away, then glide up into the gap. */
+::view-transition-group(.vt-row-move) { animation-duration: 260ms; animation-delay: 130ms; animation-timing-function: cubic-bezier(.2, .7, .3, 1); animation-fill-mode: both; }
+/* Page changes: a soft crossfade, the new page rising slightly. */
+::view-transition-old(.vt-page-out) { animation: 160ms ease-out both vt-fade-out; }
+::view-transition-new(.vt-page-in) { animation: 240ms ease-out 60ms both vt-fade-in, 300ms ease-out both vt-rise; }
+
+/* ───────── Corner-deli print styles ───────── */
+/* Always the Display optical size of the condensed face, whatever the font size. */
+.font-cond, .deli-pill { font-variation-settings: 'opsz' 72; }
+/* Cream stock with a faint printed-paper grain. */
+.deli-paper {
+  background-color: var(--color-deli-cream);
+  background-image: radial-gradient(rgba(90, 70, 40, .06) 1px, transparent 1.2px), radial-gradient(rgba(255, 255, 255, .35) 1px, transparent 1.2px);
+  background-size: 4px 4px, 7px 7px; background-position: 0 0, 2px 3px;
+}
+/* Ribbon banner: green band, wide spaced cream caps, notched ends. */
+.deli-ribbon {
+  background: var(--color-deli-green); color: var(--color-deli-cream);
+  font-family: var(--font-wide); font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+  letter-spacing: .3em; font-size: 11.5px; text-align: center; padding: 7px 30px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%, 12px 50%);
+}
+/* Menu line: label …… value, the dotted leader filling the gap. */
+.deli-leader { display: flex; align-items: baseline; gap: 8px; padding: 6px 2px; }
+.deli-leader > .lead { flex: 1; min-width: 12px; border-bottom: 2.5px dotted currentColor; opacity: .4; transform: translateY(-5px); }
+/* Pill buttons in shop-sign caps (lift comes from .btn-lift). */
+.deli-pill {
+  display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  font-family: var(--font-cond); font-weight: 800; text-transform: uppercase; letter-spacing: .12em;
+  font-size: 18px; line-height: 1; padding: 11px 28px; border-radius: 9999px; border: 0; cursor: pointer;
+}
+.deli-pill--green { background: var(--color-deli-green); color: var(--color-deli-cream); box-shadow: 0 6px 16px rgba(29, 84, 70, .35); }
+.deli-pill--outline { background: transparent; color: var(--color-deli-green); box-shadow: inset 0 0 0 2.5px var(--color-deli-green); }
+.deli-pill--red { background: var(--color-deli-red); color: var(--color-deli-cream); box-shadow: 0 6px 16px rgba(200, 64, 47, .35); }
+.deli-pill:disabled { opacity: .5; cursor: not-allowed; }
+/* Leaderboard rotation countdown: a thin red line filling under the current choice. */
+.deli-progress { background: var(--color-deli-red); transform-origin: left; animation: deli-progress 6s linear forwards; }
+@keyframes deli-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* The hanging sign sways slowly on its chains. */
+.deli-swing { transform-origin: 50% -30px; animation: deli-swing 6s ease-in-out infinite; }
+@keyframes deli-swing { 0%, 100% { transform: rotate(-.8deg); } 50% { transform: rotate(.8deg); } }
+
+/* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
+@media (prefers-reduced-motion: reduce) {
+  .amb-drift, .amb-sun-l, .amb-sun-r, .amb-sun-room, .amb-shaft { animation: none !important; }
+  .amb-mote { animation: none !important; display: none; }
+  .deli-swing { animation: none !important; transform: none !important; }
+  .deli-progress { animation: none !important; }
+  .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .btn-sheen::after { animation: none !important; display: none; }
+  .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

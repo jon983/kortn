@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { HomeView } from './HomeView';
 import { playOrderFrom } from '../lib/ui/table-geometry';
+import { isYourTurn } from '../lib/ui/deli/yourTurn';
 import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats, getHandAggregates, leaderboardsFrom, upsertUser } from '../lib/db';
 
 const MIN_HANDS = 10;
@@ -31,11 +32,13 @@ export default async function Home() {
       ]);
       const scores = game?.state.scores ?? null;
       const statuses = game?.state.statuses ?? null;
+      const mySeat = players.find((p) => p.userId === userId)?.seatIndex ?? null;
       return {
         match: m,
+        yourTurn: isYourTurn(game?.state ?? null, mySeat),
         // You first, then everyone else in play order (as they sit round the table).
         players: players
-          .sort(playOrderFrom(players.find((p) => p.userId === userId)?.seatIndex ?? null, m.seats))
+          .sort(playOrderFrom(mySeat, m.seats))
           .map((p) => ({
             name: p.userId === userId ? 'You' : p.displayName,
             score: scores?.[p.seatIndex] ?? null,
@@ -52,7 +55,7 @@ export default async function Home() {
       stats={stats}
       boards={boards}
       minHands={MIN_HANDS}
-      games={summaries.map(({ match: m, players }) => ({
+      games={summaries.map(({ match: m, players, yourTurn }) => ({
         id: m.id,
         status: m.status as 'lobby' | 'active',
         number: m.number,
@@ -60,6 +63,7 @@ export default async function Home() {
         lastActiveAt: m.lastActiveAt,
         players,
         isHost: m.createdBy === userId,
+        yourTurn,
       }))}
     />
   );

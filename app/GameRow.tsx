@@ -13,47 +13,60 @@ export interface GameRowProps {
   players: { name: string; score: number | null; out?: boolean }[];
   isHost: boolean;
   now?: Date;
+  /** Position in the list (reserved for staggered effects). */
+  index?: number;
+  /** It's the viewer's move in this game. */
+  yourTurn?: boolean;
 }
 
-/** One game in the front-room list: who's playing + scores up top, details below, actions on the right. */
-export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now }: GameRowProps) {
+/** Muted text link for the ticket's secondary action (abandon / delete). */
+const QUIET_LINK = 'font-script text-[16px] text-deli-green/55 hover:text-deli-red hover:underline disabled:opacity-40';
+
+/** One game as a deli queue ticket: stamped number, who's playing, a dotted leader to Play. */
+export function GameRow({ id, status, number, seats, lastActiveAt, players, isHost, now, yourTurn = false }: GameRowProps) {
   const href = `/match/${id}/${status === 'lobby' ? 'lobby' : 'table'}`;
-  const meta = [
-    `Game #${number}`,
-    status === 'lobby' ? `waiting · ${players.length}/${seats} seated` : `${seats} players`,
-    `${status === 'lobby' ? 'set up' : 'played'} ${timeAgo(lastActiveAt, now)}`,
-  ].join(' · ');
+  const meta = status === 'lobby'
+    ? `waiting · ${players.length}/${seats} seated`
+    : yourTurn ? 'your turn' : `played ${timeAgo(lastActiveAt, now)}`;
+  const action = status === 'lobby' ? 'Open' : yourTurn ? 'Your move' : 'Play';
   return (
-    // Phone: names span the full width, details + buttons share the line below.
-    // Wider: names over details on the left, buttons on the right.
-    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-dotted border-[#b0a98f] px-2 py-2">
-      <Link href={href} className="col-span-2 min-w-0 rounded hover:bg-black/5 sm:col-span-1">
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-lg leading-tight text-ink">
+    <div className="flex items-center gap-3 border-b border-dashed border-deli-green/30 px-1 py-3 last:border-b-0 sm:gap-3.5 sm:px-1.5">
+      {/* Stamped deli-ticket number */}
+      <div aria-label={`Game number ${number}`} className="grid h-12 w-12 flex-none place-items-center rounded-full bg-deli-red text-center text-deli-cream shadow-[inset_0_0_0_3px_var(--color-deli-red),inset_0_0_0_5px_var(--color-deli-cream)] sm:h-[58px] sm:w-[58px]">
+        <span className="leading-none">
+          <small className="block font-sans-deli text-[8px] font-semibold tracking-[.2em]">NO.</small>
+          <b className="font-cond text-[22px] font-black leading-[.85] sm:text-[26px]">{number}</b>
+        </span>
+      </div>
+
+      <Link href={href} className="min-w-0 flex-1">
+        <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 font-cond text-[21px] font-extrabold uppercase leading-[.95] sm:text-[25px]">
           {players.length === 0 ? (
-            <span className="text-ink/60">No players yet</span>
+            <span className="opacity-60">No players yet</span>
           ) : (
             players.map((p, i) => (
-              <span key={i} data-player className={`whitespace-nowrap ${p.out ? 'text-ink/40' : ''}`}>
+              // Long names wrap (even a single long word) rather than running under the Play pill.
+              <span key={i} data-player className={`min-w-0 [overflow-wrap:anywhere] ${p.out ? 'opacity-40' : ''}`}>
                 {p.name}
                 {p.out
-                  ? <span className="ml-1.5 text-[11px] uppercase tracking-wide">out</span>
-                  : p.score !== null && <b className="ml-1.5 tabular-nums text-walnut">{p.score}</b>}
+                  ? <span className="ml-1 font-sans-deli text-[10px] font-semibold tracking-[.14em]">out</span>
+                  : p.score !== null && <b className="ml-1 text-deli-red">{p.score}</b>}
               </span>
             ))
           )}
         </div>
+        <div className={`mt-0.5 font-sans-deli text-[10.5px] font-medium uppercase tracking-[.14em] ${yourTurn ? 'text-deli-red' : 'opacity-70'}`}>{meta}</div>
       </Link>
-      <div className="min-w-0 text-[11px] uppercase tracking-wide text-ink/55 sm:col-start-1">{meta}</div>
-      <div className="flex shrink-0 items-center gap-1.5 sm:col-start-2 sm:row-span-2 sm:row-start-1">
-        <Link
-          href={href}
-          className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 py-1 text-center text-xs font-bold uppercase tracking-wider text-bone shadow hover:brightness-110"
-        >
-          {status === 'lobby' ? 'Open' : 'Play'}
+
+      <span aria-hidden className="hidden min-w-6 flex-1 self-center border-b-[2.5px] border-dotted border-current opacity-35 sm:block" />
+
+      <div className="flex flex-none flex-col items-center gap-0.5">
+        <Link href={href} className={`deli-pill btn-lift !px-4 !py-2 !text-[15px] sm:!px-5 ${yourTurn ? 'deli-pill--red' : 'deli-pill--green'}`}>
+          {action}
         </Link>
         {status === 'lobby' && isHost
-          ? <DeleteGameButton matchId={id} />
-          : <EndGameButton matchId={id} label="Abandon" />}
+          ? <DeleteGameButton matchId={id} label="delete" className={QUIET_LINK} />
+          : <EndGameButton matchId={id} label="abandon" className={QUIET_LINK} />}
       </div>
     </div>
   );
