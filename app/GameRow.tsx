@@ -23,9 +23,11 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
     `${status === 'lobby' ? 'set up' : 'played'} ${timeAgo(lastActiveAt, now)}`,
   ].join(' · ');
   return (
-    <div className="flex items-center gap-3 border-b border-dotted border-[#b0a98f] px-2 py-3">
-      <Link href={href} className="min-w-0 flex-1 rounded hover:bg-black/5">
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-lg leading-tight text-ink">
+    // Phone: names span the full width, details + buttons share the line below.
+    // Wider: names over details on the left, buttons on the right.
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 border-b border-dotted border-[#b0a98f] px-2 py-2">
+      <Link href={href} className="col-span-2 min-w-0 rounded hover:bg-black/5 sm:col-span-1">
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-lg leading-tight text-ink">
           {players.length === 0 ? (
             <span className="text-ink/60">No players yet</span>
           ) : (
@@ -36,12 +38,12 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
             ))
           )}
         </div>
-        <div className="mt-1 text-[11px] uppercase tracking-wide text-ink/55">{meta}</div>
       </Link>
-      <div className="flex w-24 shrink-0 flex-col items-stretch gap-1.5">
+      <div className="min-w-0 text-[11px] uppercase tracking-wide text-ink/55 sm:col-start-1">{meta}</div>
+      <div className="flex shrink-0 items-center gap-1.5 sm:col-start-2 sm:row-span-2 sm:row-start-1">
         <Link
           href={href}
-          className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-1.5 text-center text-xs font-bold uppercase tracking-wider text-bone shadow hover:brightness-110"
+          className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-3 py-1 text-center text-xs font-bold uppercase tracking-wider text-bone shadow hover:brightness-110"
         >
           {status === 'lobby' ? 'Open' : 'Play'}
         </Link>

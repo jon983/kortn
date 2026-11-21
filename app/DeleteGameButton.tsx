@@ -14,7 +14,7 @@ export function DeleteGameButton({ matchId }: { matchId: string }) {
       <button
         type="submit"
         title="Delete game"
-        className={`w-full ${SECONDARY_ACTION}`}
+        className={SECONDARY_ACTION}
       >
         Delete
       </button>
