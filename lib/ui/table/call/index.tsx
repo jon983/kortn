@@ -95,7 +95,33 @@ export function CallProvider({ fetchCredentials, enabled = true, children }: {
   );
 }
 
-const ctrl = 'rounded-md border px-2 py-0.5 text-[13px] hover:bg-brass/10 disabled:opacity-50';
+
+/** Small line icons (stroke = currentColor) so the call buttons match the brass UI. */
+function Icon({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden className="block">
+      {children}
+    </svg>
+  );
+}
+const VideoIcon = ({ off = false }: { off?: boolean }) => (
+  <Icon>
+    <rect x="2" y="6" width="14" height="12" rx="2" />
+    <path d="m16 10.5 5-3v9l-5-3" />
+    {off && <path d="M3 3l18 18" />}
+  </Icon>
+);
+const MicIcon = ({ off = false }: { off?: boolean }) => (
+  <Icon>
+    <rect x="9" y="2" width="6" height="12" rx="3" />
+    <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4" />
+    {off && <path d="M3 3l18 18" />}
+  </Icon>
+);
+const LeaveIcon = () => <Icon><path d="M18 6 6 18M6 6l12 12" /></Icon>;
+
+const ctrl = 'flex items-center justify-center rounded-md border px-2 py-1 hover:bg-brass/10 disabled:opacity-50';
 
 /** Status-bar controls: 📹 to join; once in, mic / camera toggles and leave. */
 export function CallControls() {
@@ -115,7 +141,7 @@ export function CallControls() {
         title={error ? `Video call: ${error} — tap to retry` : 'Join the video call'}
         className={`${ctrl} ${state === 'error' ? 'border-maroon text-[#e0a08a]' : 'border-brass/60 text-brass'}`}
       >
-        {state === 'joining' ? '…' : '📹'}
+        {state === 'joining' ? <span className="block h-4 w-4 animate-pulse text-center leading-4">…</span> : <VideoIcon />}
       </button>
     );
   }
@@ -128,19 +154,19 @@ export function CallControls() {
         onClick={() => daily?.setLocalAudio(mic.isOff)}
         className={`${ctrl} ${mic.isOff ? 'border-maroon text-[#e0a08a]' : 'border-sage text-sage'}`}
       >
-        {mic.isOff ? '🔇' : '🎤'}
+        <MicIcon off={mic.isOff} />
       </button>
       <button
         type="button"
         aria-label={cam.isOff ? 'Turn camera on' : 'Turn camera off'}
         aria-pressed={!cam.isOff}
         onClick={() => daily?.setLocalVideo(cam.isOff)}
-        className={`${ctrl} ${cam.isOff ? 'border-maroon text-[#e0a08a] line-through' : 'border-sage text-sage'}`}
+        className={`${ctrl} ${cam.isOff ? 'border-maroon text-[#e0a08a]' : 'border-sage text-sage'}`}
       >
-        📷
+        <VideoIcon off={cam.isOff} />
       </button>
       <button type="button" aria-label="Leave video call" onClick={() => void leave()} className={`${ctrl} border-maroon/70 text-[#e0a08a]`}>
-        ✕
+        <LeaveIcon />
       </button>
     </span>
   );
