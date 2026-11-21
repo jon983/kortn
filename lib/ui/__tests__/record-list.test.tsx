@@ -25,4 +25,12 @@ describe('RecordList', () => {
     const line = screen.getByText('Hands vs par').closest('.deli-leader')!;
     expect(line).toHaveTextContent('—');
   });
+  it('net bits: up is green, down is red', () => {
+    const valueOf = () => screen.getByText('Net bits').closest('.deli-leader')!.lastElementChild!;
+    const { unmount } = render(<RecordList stats={{ ...some, netBits: 150 }} />);
+    expect(valueOf().className).toContain('text-deli-green');
+    unmount();
+    render(<RecordList stats={{ ...some, netBits: -40 }} />);
+    expect(valueOf().className).toContain('text-deli-red');
+  });
 });

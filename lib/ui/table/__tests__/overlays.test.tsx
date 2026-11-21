@@ -81,4 +81,13 @@ describe('overlays', () => {
     expect(screen.getAllByRole('row').length).toBeGreaterThanOrEqual(3); // 2 head rows + hand 8 + Now
     expect(container.querySelector('[data-order-pad]')).not.toBeNull();
   });
+  it('signed bits: gains green, losses red (order pad and payout)', () => {
+    const { unmount } = render(<ScorePad view={view} />);
+    expect(screen.getAllByText('+2')[0].className).toContain('text-deli-green');
+    expect(screen.getAllByText('-2')[0].className).toContain('text-deli-red');
+    unmount();
+    render(<MatchSummary view={{ ...view, payout: [4, -4] }} />);
+    expect(screen.getByText('+4').className).toContain('text-deli-green');
+    expect(screen.getByText('-4').className).toContain('text-deli-red');
+  });
 });
