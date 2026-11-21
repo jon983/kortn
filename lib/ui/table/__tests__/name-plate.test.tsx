@@ -24,4 +24,11 @@ describe('name plates', () => {
     expect(screen.getByText('Bartholomew-Featherstonehaugh').className).toContain('break-words');
     expect(container.querySelector('[data-plate]')!.className).toMatch(/max-w-\[34vw\]/);
   });
+  it('top seat: the video sits beside the plate, not above it', () => {
+    const { container } = seat({ media: <span data-testid="vid" /> });
+    const row = container.querySelector('[data-plate-row]')!;
+    expect(row).not.toBeNull();
+    expect(row.contains(screen.getByTestId('vid'))).toBe(true);
+    expect(row.contains(container.querySelector('[data-plate]'))).toBe(true);
+  });
 });

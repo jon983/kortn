@@ -17,7 +17,7 @@ export function OpponentSeat({
   meldOrientation = 'row', visibleCount, side, media,
 }: {
   name: string; avatarUrl?: string | null;
-  /** Live video circle (video call), shown above the name; renders nothing when off. */
+  /** Live video circle (video call): above the plate on side seats, beside it on the top seat; renders nothing when off. */
   media?: ReactNode; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
   melds: TableMeld[]; onMeldClick?: (meldId: string) => void; armedMeldIds?: string[]; flashMeldIds?: string[];
   /** Side seats (left/right) stack their melds vertically; the top seat lays them in a row. */
@@ -70,7 +70,7 @@ export function OpponentSeat({
     );
     return (
       <div className="flex shrink-0 flex-col items-center text-center">
-        {media}
+        <div className="mb-1.5 flex empty:hidden">{media}</div>
         {plate}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge */}
         <div className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -81,12 +81,16 @@ export function OpponentSeat({
     );
   }
 
-  // --- Top seat: horizontal hand, melds in a row. ---
+  // --- Top seat: horizontal hand, melds in a row. The video hangs beside the
+  // plate (not above it); the matching empty third column keeps the plate
+  // centred over the hand, and collapses when there's no video. ---
   return (
     <div className="flex shrink-0 flex-col items-center text-center">
-      {media}
+      <div data-plate-row className="grid grid-cols-[1fr_auto_1fr] items-center">
+        <div className="col-start-1 row-start-1 flex justify-end pr-2 empty:pr-0">{media}</div>
+        <div className="col-start-2 row-start-1">{plate}</div>
+      </div>
       <div className="w-40">
-        {plate}
         <div className="mt-1 flex min-h-[3.5rem] justify-center">
           {packs.map((pack, i) => (
             <span key={i} data-cardback className="-ml-2.5 first:ml-0">

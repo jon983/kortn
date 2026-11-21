@@ -425,7 +425,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <OpponentSeat
         name={view.seatNames[o.seat]}
         avatarUrl={view.seatAvatars?.[o.seat]}
-        media={<SeatVideo seat={o.seat} className="mb-1.5 h-16 w-16 sm:h-24 sm:w-24" />}
+        media={<SeatVideo seat={o.seat} className="h-16 w-16 sm:h-24 sm:w-24" />}
         handCount={o.handCount}
         handPacks={o.handPacks}
         score={o.score}
