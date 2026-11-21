@@ -15,7 +15,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // Seat→name map (fixed for the life of the match) so every pushed view carries names.
   const players = await listPlayersWithNames(deps.db, id);
   const names: (string | null)[] = [];
-  for (const p of players) names[p.seatIndex] = p.displayName;
+  const avatars: (string | null)[] = [];
+  for (const p of players) { names[p.seatIndex] = p.displayName; avatars[p.seatIndex] = p.avatarUrl; }
 
   const encoder = new TextEncoder();
   let cleanup: (() => Promise<void>) | null = null;
@@ -33,7 +34,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       const off = await deps.pubsub.subscribe('match:' + id, (msg) => {
         if (msg != null && typeof msg === 'object' && 'round' in (msg as Record<string, unknown>)) {
           // full MatchState → always redact per this client's seat
-          send(redactStateFor(msg as MatchState, seat, names));
+          send(redactStateFor(msg as MatchState, seat, names, avatars));
         } else {
           // lobby ping / non-state message (carries no hands)
           send(msg);
@@ -42,7 +43,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
       // initial catch-up
       const cur = await loadGameState(deps.db, id);
-      if (cur) send(redactStateFor(cur.state, seat, names));
+      if (cur) send(redactStateFor(cur.state, seat, names, avatars));
 
       // Keep-alive comment so idle connections (players thinking) aren't dropped
       // by proxies / mobile networks. EventSource ignores comment lines.

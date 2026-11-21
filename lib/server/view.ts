@@ -11,6 +11,7 @@ export async function loadClientView(db: DB, matchId: string, userId: string): P
   if (!loaded) return null;
   const players = await listPlayersWithNames(db, matchId);
   const names: (string | null)[] = [];
-  for (const p of players) names[p.seatIndex] = p.displayName;
-  return redactStateFor(loaded.state, seat, names);
+  const avatars: (string | null)[] = [];
+  for (const p of players) { names[p.seatIndex] = p.displayName; avatars[p.seatIndex] = p.avatarUrl; }
+  return redactStateFor(loaded.state, seat, names, avatars);
 }

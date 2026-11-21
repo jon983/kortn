@@ -25,6 +25,19 @@ describe('upsertUser', () => {
 });
 
 describe('incrementUserStats', () => {
+  it('keeps a stored avatar when re-upserted without one (create/join only know the name)', async () => {
+    const { db, client } = await makeTestDb();
+    close = () => client.close();
+    await upsertUser(db as any, { id: 'u1', displayName: 'A', avatarUrl: 'https://img/a.png' });
+    await upsertUser(db as any, { id: 'u1', displayName: 'A2' });
+    let [row] = await db.select().from(users).where(eq(users.id, 'u1'));
+    expect(row.displayName).toBe('A2');
+    expect(row.avatarUrl).toBe('https://img/a.png');
+    await upsertUser(db as any, { id: 'u1', displayName: 'A2', avatarUrl: 'https://img/b.png' });
+    [row] = await db.select().from(users).where(eq(users.id, 'u1'));
+    expect(row.avatarUrl).toBe('https://img/b.png');
+  });
+
   it('atomically increments provided stat columns', async () => {
     const { db, client } = await makeTestDb();
     close = () => client.close();
