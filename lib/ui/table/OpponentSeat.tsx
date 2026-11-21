@@ -1,7 +1,7 @@
 import { CardBack } from './CardBack';
 import { MeldPile } from './MeldPile';
 import type { TableMeld, Pack } from '../../kalooki';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Avatar } from '../Avatar';
 
 /** Dark, slightly blurred plate behind seat labels so they read on any table art. */
@@ -9,9 +9,11 @@ export const SEAT_LABEL = 'inline-block rounded-md bg-black/75 px-2 py-0.5 leadi
 
 export function OpponentSeat({
   name, avatarUrl, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
-  meldOrientation = 'row', visibleCount, side,
+  meldOrientation = 'row', visibleCount, side, media,
 }: {
-  name: string; avatarUrl?: string | null; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
+  name: string; avatarUrl?: string | null;
+  /** Live video circle (video call), shown above the name; renders nothing when off. */
+  media?: ReactNode; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
   melds: TableMeld[]; onMeldClick?: (meldId: string) => void; armedMeldIds?: string[]; flashMeldIds?: string[];
   /** Side seats (left/right) stack their melds vertically; the top seat lays them in a row. */
   meldOrientation?: 'row' | 'column';
@@ -60,6 +62,7 @@ export function OpponentSeat({
     );
     return (
       <div className="flex shrink-0 flex-col items-center text-center">
+        {media}
         {nameLine}
         {countLine}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge */}
@@ -74,6 +77,7 @@ export function OpponentSeat({
   // --- Top seat: horizontal hand, melds in a row. ---
   return (
     <div className="flex shrink-0 flex-col items-center text-center">
+      {media}
       <div className="w-40">
         {nameLine}
         <div className="mt-1 flex min-h-[3.5rem] justify-center">
