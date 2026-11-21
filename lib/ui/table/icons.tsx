@@ -26,3 +26,8 @@ export const SpeakerIcon = ({ volume }: { volume: number }) => (
 export const ScoresIcon = () => (
   <LineIcon><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h4" /></LineIcon>
 );
+
+/** Two arrows chasing round: reload the table. */
+export const RefreshIcon = () => (
+  <LineIcon><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></LineIcon>
+);

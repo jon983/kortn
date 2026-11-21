@@ -8,7 +8,7 @@ import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as se
 import { playAction, getTableView } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat, SEAT_LABEL, TurnRibbon } from './OpponentSeat';
-import { ChatIcon, SpeakerIcon, ScoresIcon } from './icons';
+import { ChatIcon, SpeakerIcon, ScoresIcon, RefreshIcon } from './icons';
 import { StockDiscard } from './StockDiscard';
 import { MeldPile } from './MeldPile';
 import { Card as CardFace } from './Card';
@@ -476,7 +476,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 bg-deli-green px-3 py-2 text-xs text-deli-cream shadow-[0_4px_14px_rgba(0,0,0,.35)] sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-4">
         <span className="flex items-center gap-2 justify-self-start sm:gap-3">
           <Link href="/" className={`${HEADER_TAG} whitespace-nowrap`}>
-            ⌂ Kitchen
+            Kitchen
           </Link>
           {/* Escape hatch for any glitch: a full reload re-syncs everything. */}
           <button
@@ -484,9 +484,9 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             onClick={() => window.location.reload()}
             title="Refresh the table"
             aria-label="Refresh the table"
-            className={`${HEADER_TAG} ${connected ? '' : 'animate-pulse !border-deli-gold !text-deli-gold'}`}
+            className={`${ICON_TAG} gap-1.5 ${connected ? '' : 'animate-pulse !border-deli-gold !text-deli-gold'}`}
           >
-            ↻{!connected && <span className="hidden sm:inline"> Reconnecting…</span>}
+            <RefreshIcon />{!connected && <span className="hidden font-cond text-[12px] font-extrabold uppercase tracking-[.12em] sm:inline">Reconnecting…</span>}
           </button>
         </span>
         <span className="order-last flex w-full items-center justify-center gap-3 sm:order-none sm:w-auto sm:justify-self-center">
