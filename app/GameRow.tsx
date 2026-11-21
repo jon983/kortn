@@ -16,7 +16,7 @@ export interface GameRowProps {
   now?: Date;
   /** Position in the list (reserved for staggered effects). */
   index?: number;
-  /** It's the viewer's move in this game. */
+  /** It's the viewer's turn in this game. */
   yourTurn?: boolean;
   /** Tables being set up (lobby): the code to share, and the host's name ("You" for the host). */
   joinCode?: string;
@@ -35,7 +35,7 @@ export function GameRow({ id, status, number, seats, lastActiveAt, players, isHo
   const meta = status === 'lobby'
     ? `waiting · ${players.length}/${seats} seated`
     : yourTurn ? 'your turn' : `played ${timeAgo(lastActiveAt, now)}`;
-  const action = status === 'lobby' ? 'Open' : yourTurn ? 'Your move' : 'Play';
+  const action = status === 'lobby' ? 'Open' : yourTurn ? 'Your turn' : 'Play';
   return (
     <div className="flex items-center gap-3 border-b border-dashed border-deli-green/30 px-1 py-3 last:border-b-0 sm:gap-3.5 sm:px-1.5">
       {/* Stamped deli-ticket number */}
