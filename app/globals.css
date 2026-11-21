@@ -152,6 +152,9 @@ body { background: #201811; color: var(--color-bone); }
 .deli-pill--outline { background: transparent; color: var(--color-deli-green); box-shadow: inset 0 0 0 2.5px var(--color-deli-green); }
 .deli-pill--red { background: var(--color-deli-red); color: var(--color-deli-cream); box-shadow: 0 6px 16px rgba(200, 64, 47, .35); }
 .deli-pill:disabled { opacity: .5; cursor: not-allowed; }
+/* Leaderboard rotation countdown: a thin red line filling under the current choice. */
+.deli-progress { background: var(--color-deli-red); transform-origin: left; animation: deli-progress 6s linear forwards; }
+@keyframes deli-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 /* The hanging sign sways slowly on its chains. */
 .deli-swing { transform-origin: 50% -30px; animation: deli-swing 6s ease-in-out infinite; }
 @keyframes deli-swing { 0%, 100% { transform: rotate(-.8deg); } 50% { transform: rotate(.8deg); } }
@@ -161,6 +164,7 @@ body { background: #201811; color: var(--color-bone); }
   .amb-drift, .amb-sun-l, .amb-sun-r, .amb-sun-room, .amb-shaft { animation: none !important; }
   .amb-mote { animation: none !important; display: none; }
   .deli-swing { animation: none !important; transform: none !important; }
+  .deli-progress { animation: none !important; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
   .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }
