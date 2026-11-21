@@ -2,15 +2,16 @@ import { CardBack } from './CardBack';
 import { MeldPile } from './MeldPile';
 import type { TableMeld, Pack } from '../../kalooki';
 import type { ReactElement } from 'react';
+import { Avatar } from '../Avatar';
 
 /** Dark, slightly blurred plate behind seat labels so they read on any table art. */
 export const SEAT_LABEL = 'inline-block rounded-md bg-black/75 px-2 py-0.5 leading-tight shadow-md backdrop-blur-sm';
 
 export function OpponentSeat({
-  name, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
+  name, avatarUrl, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
   meldOrientation = 'row', visibleCount, side,
 }: {
-  name: string; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
+  name: string; avatarUrl?: string | null; handCount: number; handPacks?: Pack[]; score: number; status: string; hasOpened?: boolean; isTurn: boolean;
   melds: TableMeld[]; onMeldClick?: (meldId: string) => void; armedMeldIds?: string[]; flashMeldIds?: string[];
   /** Side seats (left/right) stack their melds vertically; the top seat lays them in a row. */
   meldOrientation?: 'row' | 'column';
@@ -28,8 +29,9 @@ export function OpponentSeat({
 
   // Labels sit on a dark plate so they stay legible over the doily / pale felt.
   const nameLine = (
-    <div className={`${SEAT_LABEL} text-sm font-bold ${isTurn ? 'text-brass ring-1 ring-brass' : 'text-bone'} ${status !== 'active' ? 'opacity-60 line-through' : ''}`}>
-      {name}
+    <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isTurn ? 'text-brass ring-1 ring-brass' : 'text-bone'} ${status !== 'active' ? 'opacity-60' : ''}`}>
+      <Avatar name={name} src={avatarUrl} size={20} />
+      <span className={status !== 'active' ? 'line-through' : ''}>{name}</span>
     </div>
   );
   const countLine = <div className={`${SEAT_LABEL} mt-0.5 text-[11px] text-[#e6d3a8]`}>{handCount} cards · {score} pts</div>;

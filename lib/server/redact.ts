@@ -23,6 +23,8 @@ export interface ClientView {
   seat: number;
   /** Display name per seat index (falls back to "Seat N" when unknown). */
   seatNames: string[];
+  /** Profile picture per seat, or null (UI falls back to initials). */
+  seatAvatars: (string | null)[];
   you: SelfView;
   opponents: OpponentView[];
   stockCount: number;
@@ -49,7 +51,12 @@ export interface ClientView {
   history: RoundHistoryEntry[];
 }
 
-export function redactStateFor(state: MatchState, seat: number, names: (string | null)[] = []): ClientView {
+export function redactStateFor(
+  state: MatchState,
+  seat: number,
+  names: (string | null)[] = [],
+  avatars: (string | null)[] = [],
+): ClientView {
   const round = state.round;
   const seatNames = Array.from({ length: state.seats }, (_, i) => names[i] || `Seat ${i}`);
   const self = round.players[seat];
@@ -80,6 +87,7 @@ export function redactStateFor(state: MatchState, seat: number, names: (string |
   return {
     seat,
     seatNames,
+    seatAvatars: Array.from({ length: state.seats }, (_, i) => avatars[i] ?? null),
     you,
     opponents,
     stockCount: round.stock.length,

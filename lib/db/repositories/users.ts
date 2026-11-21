@@ -91,7 +91,8 @@ export async function upsertUser(db: DB, input: UpsertUserInput): Promise<void> 
       target: users.id,
       set: {
         displayName: input.displayName,
-        avatarUrl: input.avatarUrl ?? null,
+        // Only touch the avatar when the caller knows it (create/join pass just a name).
+        ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
         updatedAt: sql`now()`,
       },
     });

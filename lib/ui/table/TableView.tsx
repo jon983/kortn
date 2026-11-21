@@ -17,6 +17,7 @@ import { FlyingCard } from './FlyingCard';
 import { RoundSummary, RebuyPrompt, MatchSummary, ScorePad } from './overlays';
 import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
+import { Avatar } from '../Avatar';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
 
@@ -401,6 +402,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     <div key={o.seat} data-seat={o.seat}>
       <OpponentSeat
         name={view.seatNames[o.seat]}
+        avatarUrl={view.seatAvatars?.[o.seat]}
         handCount={o.handCount}
         handPacks={o.handPacks}
         score={o.score}
@@ -597,8 +599,9 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* viewer's area */}
       <div className="bg-gradient-to-t from-black/60 to-transparent p-3" data-you-seat>
         <div className="mb-1 text-center">
-          <div className={`${SEAT_LABEL} text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
-            {view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span>
+          <div className={`${SEAT_LABEL} inline-flex items-center gap-1.5 text-sm font-bold ${isMyTurn(view) ? 'text-brass ring-1 ring-brass' : 'text-bone'}`}>
+            <Avatar name={view.seatNames[view.seat]} src={view.seatAvatars?.[view.seat]} size={20} />
+            <span>{view.seatNames[view.seat]} <span className="text-[#c9b48a]">(you)</span></span>
           </div>
           <div className={`${SEAT_LABEL} ml-1 text-[11px] text-[#e6d3a8]`}>{view.you.handCount} cards · {view.you.score} pts</div>
         </div>
