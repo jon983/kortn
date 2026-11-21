@@ -171,6 +171,12 @@ body { background: #201811; color: var(--color-bone); }
 /* A meld settles onto the table as it lands. */
 .meld-land { animation: meld-land 260ms cubic-bezier(.2, .8, .3, 1.2) both; }
 @keyframes meld-land { 0% { opacity: 0; transform: scale(.94); } 70% { opacity: 1; transform: scale(1.02); } 100% { transform: none; } }
+/* The end-of-hand receipt: paper slides down, each line ticks in, a torn zig-zag foot. */
+.receipt-in { animation: receipt-in 400ms cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes receipt-in { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: none; } }
+.receipt-line { animation: receipt-line 160ms ease-out both; }
+@keyframes receipt-line { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.receipt-edge { -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; }
 /* The turn ribbon slides across the top of a name plate. */
 .plate-ribbon-in { transform-origin: left; animation: plate-ribbon-in 220ms ease-out both; }
 @keyframes plate-ribbon-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -182,7 +188,7 @@ body { background: #201811; color: var(--color-bone); }
   .amb-mote { animation: none !important; display: none; }
   .deli-swing { animation: none !important; transform: none !important; }
   .deli-progress { animation: none !important; }
-  .deli-ribbon-drop, .plate-ribbon-in, .meld-land { animation: none !important; }
+  .deli-ribbon-drop, .plate-ribbon-in, .meld-land, .receipt-in, .receipt-line { animation: none !important; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
   .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }
