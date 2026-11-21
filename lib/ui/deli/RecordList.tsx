@@ -16,7 +16,7 @@ export function RecordList({ stats }: { stats: UserStats }) {
       <LeaderLine label="Win rate" value={<CountUp value={pct} suffix="%" />} sub={`${stats.gamesWon} of ${stats.gamesPlayed} games`} />
       <LeaderLine label="Hands vs par" value={stats.vsPar == null ? '—' : <CountUp value={stats.vsPar} decimals={2} suffix="×" />} />
       <LeaderLine label="Points a hand" value={stats.avgPointsPerRound == null ? '—' : <CountUp value={stats.avgPointsPerRound} decimals={1} />} />
-      <LeaderLine label="Net bits" value={<CountUp value={stats.netBits} signed />} tone={stats.netBits > 0 ? 'red' : 'default'} />
+      <LeaderLine label="Net bits" value={<CountUp value={stats.netBits} signed />} tone={stats.netBits < 0 ? 'red' : 'default'} />
       {more && (
         <>
           <LeaderLine label="Games played" value={<CountUp value={stats.gamesPlayed} />} />

@@ -3,6 +3,7 @@ import { Fragment } from 'react';
 import Link from 'next/link';
 import type { ClientView } from '../../server';
 import { usePrint } from './usePrint';
+import { signTone } from '../signTone';
 
 /** A dim layer over the table; the overlay itself brings its own paper (receipt, ticket, sign). */
 function Scrim({ children }: { children: React.ReactNode }) {
@@ -61,7 +62,7 @@ export function ScorePad({ view }: { view: ClientView }) {
                 <Fragment key={seat}>
                   <td className={`${fig} border-l border-deli-green/20 px-1.5 ${seat === h.winnerSeat ? 'text-deli-red' : ''}`}>{h.handPoints[seat]}</td>
                   <td className={`${fig} px-1.5`}>{h.scores[seat]}</td>
-                  <td className={`${fig} px-1.5 opacity-75`}>{fmt(h.handBits[seat])}</td>
+                  <td className={`${fig} px-1.5 ${signTone(h.handBits[seat])}`}>{fmt(h.handBits[seat])}</td>
                 </Fragment>
               ))}
             </tr>
@@ -72,7 +73,7 @@ export function ScorePad({ view }: { view: ClientView }) {
               <Fragment key={s.seat}>
                 <td className="border-l border-deli-green/20 px-1.5 py-1 opacity-40">·</td>
                 <td className="px-1.5 py-1 text-[16px]">{s.score}</td>
-                <td className="px-1.5 py-1 text-[16px]">{fmt(s.bits)}</td>
+                <td className={`px-1.5 py-1 text-[16px] ${signTone(s.bits)}`}>{fmt(s.bits)}</td>
               </Fragment>
             ))}
           </tr>
@@ -202,8 +203,8 @@ export function MatchSummary({ view }: { view: ClientView }) {
         {view.payout && (
           <ul className="relative mx-auto mt-3 max-w-[260px] text-left" aria-label="Pot payout">
             {view.payout.map((b, seat) => (
-              <li key={seat} className={`deli-leader !py-0.5 font-cond text-[15px] font-extrabold uppercase ${seat === view.matchWinnerSeat ? 'text-deli-red' : ''}`}>
-                <span className="min-w-0 [overflow-wrap:anywhere]">{view.seatNames[seat]}</span><span className="sr-only">: </span><span className="lead" /><span className="tabular-nums">{fmt(b)}</span> <span className="font-sans-deli text-[10px] font-semibold normal-case opacity-70">bits</span>
+              <li key={seat} className="deli-leader !py-0.5 font-cond text-[15px] font-extrabold uppercase">
+                <span className="min-w-0 [overflow-wrap:anywhere]">{view.seatNames[seat]}</span><span className="sr-only">: </span><span className="lead" /><span className={`tabular-nums ${signTone(b)}`}>{fmt(b)}</span> <span className="font-sans-deli text-[10px] font-semibold normal-case opacity-70">bits</span>
               </li>
             ))}
           </ul>
