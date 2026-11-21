@@ -69,11 +69,11 @@ describe('TableView', () => {
     const { container } = render(<TableView matchId="m1" initial={baseView} />);
     expect(container.querySelector('[data-table-header]')!.className).toContain('var(--color-deli-cream)');
   });
-  it('side players sit in from the table edge (on the green, not the chrome)', () => {
+  it('side players keep to the screen edges (the table fills the width; plates may sit over the rim)', () => {
     const view = { ...baseView, seatNames: ['Ruth', 'Sol', 'Ines'], opponents: [...baseView.opponents, { ...baseView.opponents[0], seat: 2 }] };
     const { container } = render(<TableView matchId="m1" initial={view} />);
-    expect(container.querySelector('[data-seat-column="left"]')!.className).toContain('table-seat-inset');
-    expect(container.querySelector('[data-seat-column="right"]')!.className).toContain('table-seat-inset');
+    expect(container.querySelector('[data-seat-column="left"]')!.className).not.toContain('table-seat-inset');
+    expect(container.querySelector('[data-seat-column="right"]')!.className).not.toContain('table-seat-inset');
   });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);

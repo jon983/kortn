@@ -596,7 +596,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       {/* Main table area: side seats flank a centre column (top seats + piles). */}
       <div className="flex min-h-0 flex-1">
         {seating.left.length > 0 && (
-          <div data-seat-column="left" className="table-seat-inset flex flex-col justify-center gap-6 p-2">
+          <div data-seat-column="left" className="flex flex-col justify-center gap-6 p-2">
             {seating.left.map((o) => renderOpp(o, 'column', 'left'))}
           </div>
         )}
@@ -630,7 +630,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         </div>
 
         {seating.right.length > 0 && (
-          <div data-seat-column="right" className="table-seat-inset flex flex-col justify-center gap-6 p-2">
+          <div data-seat-column="right" className="flex flex-col justify-center gap-6 p-2">
             {seating.right.map((o) => renderOpp(o, 'column', 'right'))}
           </div>
         )}
