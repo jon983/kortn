@@ -197,19 +197,53 @@ body { background: #201811; color: var(--color-bone); }
 @keyframes deli-ribbon-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
-/* ---- Game table photo ----
- * The table top covers 88.9% x 81.3% of the landscape plate (2048x1374) and
- * 81.3% x 88.9% of the portrait plate (1073x1600). The photo always covers its
- * box, and is at least wide enough that the table spans 94% of the width — so
- * a little chrome and parquet show at the sides. On screens wider than the
- * plate, the top and bottom chrome fall just outside the box (the cream border
- * stays in view): width = max(94% / table-width share, cover). */
-.table-photo {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  aspect-ratio: 2048 / 1374; width: max(105.7cqw, 149.1cqh);
+/* ---- Game table photo: a nine-piece frame ----
+ * The photo is cut like a picture frame: 330px in from each edge of the
+ * 2048x1374 landscape plate (258px of the 1073x1600 portrait one). The four
+ * corners — floor, curved chrome, cream flourish — keep the photo's own
+ * proportions; the four edges stretch only along their length, so the chrome
+ * is the same thickness on every side. The corners are scaled to fit the area
+ * ("contain"), so the whole table, with a strip of parquet all round, always
+ * fits exactly — whatever the screen.
+ *
+ * Browsers soften the outer pixel of each frame piece, so whatever is beneath
+ * shows through as a hairline at the joins. Beneath the frame sit four copies
+ * of the photo at the corners' own scale, one pinned into each corner of the
+ * area (.table-under): at every join the pixels beneath are the same photo at
+ * the same scale, so nothing shows. The green middle is the photo again,
+ * stretched so its middle fills the space inside the frame.
+ *
+ * --s: photo px -> CSS px; --b: frame width (whole px); --pw/--ph: inner size.
+ * Defined on the surface, used by its children (whose container it is). */
+.table-surface {
+  --img: url(/art/table-surface.jpg); --img-w: 2048; --img-h: 1374; --cut: 330;
+  --s: min(100cqw / var(--img-w), 100cqh / var(--img-h));
+  --b: round(down, calc(var(--cut) * var(--s)), 1px);
+  --pw: calc(100cqw - 2 * var(--b));
+  --ph: calc(100cqh - 2 * var(--b));
 }
 @media (orientation: portrait) {
-  .table-photo { aspect-ratio: 1073 / 1600; width: max(115.6cqw, 67.1cqh); }
+  .table-surface { --img: url(/art/table-surface-portrait.jpg); --img-w: 1073; --img-h: 1600; --cut: 258; }
+}
+.table-under {
+  position: absolute; width: 50%; height: 50%;
+  background-image: var(--img); background-repeat: no-repeat;
+  background-size: calc(var(--img-w) * var(--s)) calc(var(--img-h) * var(--s));
+}
+.table-under--tl { left: 0; top: 0; background-position: 0 0; }
+.table-under--tr { right: 0; top: 0; background-position: 100% 0; }
+.table-under--bl { left: 0; bottom: 0; background-position: 0 100%; }
+.table-under--br { right: 0; bottom: 0; background-position: 100% 100%; }
+.table-frame {
+  position: absolute; inset: 0; box-sizing: border-box;
+  border-style: solid; border-width: var(--b);
+  border-image-source: var(--img);
+  border-image-slice: var(--cut);
+  border-image-repeat: stretch;
+  background-image: var(--img); background-repeat: no-repeat;
+  background-origin: padding-box; background-clip: padding-box;
+  background-size: calc(var(--pw) * var(--img-w) / (var(--img-w) - 2 * var(--cut))) calc(var(--ph) * var(--img-h) / (var(--img-h) - 2 * var(--cut)));
+  background-position: calc(var(--pw) * var(--cut) / (2 * var(--cut) - var(--img-w))) calc(var(--ph) * var(--cut) / (2 * var(--cut) - var(--img-h)));
 }
 
 @media (prefers-reduced-motion: reduce) {

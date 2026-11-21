@@ -61,15 +61,14 @@ describe('TableView', () => {
     const header = container.querySelector('[data-table-header]')!;
     expect(surface).not.toBeNull();
     expect(surface.parentElement!.contains(header)).toBe(false);
-    const photo = surface.querySelector('[data-table-photo]')!;
-    expect(photo.className).toContain('bg-[url(/art/table-surface.jpg)]');
-    expect(photo.className).toContain('portrait:bg-[url(/art/table-surface-portrait.jpg)]');
+    // the photo is drawn as a nine-piece frame that fits the area exactly (see .table-frame)
+    expect(surface.querySelector('[data-table-photo]')!.className).toContain('table-frame');
   });
   it('a cream trim line separates the header from the table', () => {
     const { container } = render(<TableView matchId="m1" initial={baseView} />);
     expect(container.querySelector('[data-table-header]')!.className).toContain('var(--color-deli-cream)');
   });
-  it('side players keep to the screen edges (the table fills the width; plates may sit over the rim)', () => {
+  it('side players keep to the screen edges (plates may sit over the rim)', () => {
     const view = { ...baseView, seatNames: ['Ruth', 'Sol', 'Ines'], opponents: [...baseView.opponents, { ...baseView.opponents[0], seat: 2 }] };
     const { container } = render(<TableView matchId="m1" initial={view} />);
     expect(container.querySelector('[data-seat-column="left"]')!.className).not.toContain('table-seat-inset');
