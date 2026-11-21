@@ -26,27 +26,27 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
       {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed title="Your record">
+          <Framed tilt={false} title="Your record">
             <StatsPanel stats={stats} />
           </Framed>
-          <Framed title="Leaderboards">
+          <Framed tilt={false} title="Leaderboards">
             <LeaderboardTabs boards={boards} meId={userId} minHands={minHands} />
           </Framed>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed title="Create a new game">
+          <Framed tilt={false} title="Create a new game">
             <div className="flex flex-col items-center gap-2 p-1">
               <p className="text-center text-xs text-ink/65">Set the table and send friends the code.</p>
               <Link href="/create" className="w-full"><LampButton className="w-full !py-2">Set the table</LampButton></Link>
             </div>
           </Framed>
-          <Framed title="Join a new game">
+          <Framed tilt={false} title="Join a new game">
             <JoinBox />
           </Framed>
         </div>
 
-        <Framed title="Rejoin an existing game" className="order-first md:order-none">
+        <Framed tilt={false} title="Rejoin an existing game" className="order-first md:order-none">
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
           {games.map((g) => <GameRow key={g.id} {...g} />)}
         </Framed>
