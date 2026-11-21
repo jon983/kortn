@@ -7,9 +7,9 @@ export function KitchenLink({ className = '' }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={`rounded-md border border-brass/70 bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brass shadow backdrop-blur hover:bg-black/75 ${className}`}
+      className={`font-cond rounded-full bg-deli-green px-3 py-1 text-[12px] font-extrabold uppercase tracking-[.12em] text-deli-cream shadow-[0_4px_12px_rgba(0,0,0,.3)] hover:brightness-110 ${className}`}
     >
-      ⌂ Kitchen
+      Kitchen
     </Link>
   );
 }
