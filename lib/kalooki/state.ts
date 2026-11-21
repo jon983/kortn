@@ -80,20 +80,38 @@ export interface MatchState {
   history?: RoundHistoryEntry[];
 }
 
-export function dealRound(opts: { seats: number; dealerSeat: number; rng: () => number }): RoundState {
+/** The first seat at or after `from` that's still in (wrapping round the table). */
+export function firstActiveFrom(statuses: SeatStatus[] | undefined, from: number, seats: number): number {
+  for (let k = 0; k < seats; k++) {
+    const s = (from + k) % seats;
+    if (!statuses || statuses[s] === 'active') return s;
+  }
+  return from % seats;
+}
+
+/**
+ * Deal a fresh hand. Only seats still in (`statuses` 'active') get 13 cards —
+ * a player who is out sits the hand out with an empty hand. The deal passes
+ * an out dealer on to the next seat still in, and the first turn goes to the
+ * seat still in after the dealer.
+ */
+export function dealRound(opts: { seats: number; dealerSeat: number; rng: () => number; statuses?: SeatStatus[] }): RoundState {
   const deck = shuffle(makeDeck(), opts.rng);
+  const inPlay = (s: number) => !opts.statuses || opts.statuses[s] === 'active';
   const players: PlayerState[] = [];
   let idx = 0;
   for (let s = 0; s < opts.seats; s++) {
+    if (!inPlay(s)) { players.push({ seat: s, hand: [], hasOpened: false }); continue; }
     players.push({ seat: s, hand: deck.slice(idx, idx + 13), hasOpened: false });
     idx += 13;
   }
+  const dealerSeat = firstActiveFrom(opts.statuses, opts.dealerSeat, opts.seats);
   const discard = [deck[idx]]; idx += 1;
   const stock = deck.slice(idx);
   return {
     players, melds: [], stock, discard,
-    turn: (opts.dealerSeat + 1) % opts.seats,
-    dealerSeat: opts.dealerSeat,
+    turn: firstActiveFrom(opts.statuses, dealerSeat + 1, opts.seats),
+    dealerSeat,
     phase: 'awaitingDraw', drawObligation: null, addedToOpponentThisTurn: false,
     finished: false, winnerSeat: null, goOutType: null,
   };

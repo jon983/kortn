@@ -79,6 +79,16 @@ describe('draw', () => {
     }
   });
 
+  it('drawJokerDecline still counts as the opening flip when a player who is out holds no cards', () => {
+    const { match: m } = openingStateWithJokerFlip();
+    const seat = m.round.turn;
+    const other = 1 - seat;
+    const players = m.round.players.map((p, i) => (i === other ? { ...p, hand: [] } : p));
+    const statuses = m.statuses.map((st, i) => (i === other ? 'busted' as const : st));
+    const r = applyAction({ ...m, statuses, round: { ...m.round, players } }, seat, { type: 'drawJokerDecline' }, makeRng(1));
+    expect(r.ok).toBe(true);
+  });
+
   it('rejects drawJokerDecline when it is not the opening flip', () => {
     const { match: m } = openingStateWithJokerFlip();
     const seat = m.round.turn;
