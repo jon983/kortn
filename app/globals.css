@@ -62,7 +62,8 @@ body { background: #201811; color: var(--color-bone); }
 }
 
 /* Panels settle into place on arrival (staggered via inline animation-delay). */
-.settle { animation: settle 500ms cubic-bezier(.2, .7, .3, 1) both; }
+/* Longhands on purpose: no shorthand, so the per-panel animation-delay utilities aren't reset. */
+.settle { animation-name: settle; animation-duration: 500ms; animation-timing-function: cubic-bezier(.2, .7, .3, 1); animation-fill-mode: both; }
 @keyframes settle { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 /* Brass buttons: an occasional gleam sweeps across (staggered via --sheen-delay)… */

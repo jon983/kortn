@@ -28,27 +28,27 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
       {/* Phones: rejoin comes first (the common case); wider screens lead with stats. */}
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-5 pb-12 pt-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed tilt={false} title="Your record" className="settle" style={{ animationDelay: '0ms' }}>
+          <Framed tilt={false} title="Your record" className="settle [animation-delay:90ms] md:[animation-delay:0ms]">
             <StatsPanel stats={stats} />
           </Framed>
-          <Framed tilt={false} title="Leaderboards" className="settle" style={{ animationDelay: '90ms' }}>
+          <Framed tilt={false} title="Leaderboards" className="settle [animation-delay:180ms] md:[animation-delay:90ms]">
             <LeaderboardTabs boards={boards} meId={userId} minHands={minHands} />
           </Framed>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Framed tilt={false} title="Create a new game" className="settle" style={{ animationDelay: '180ms' }}>
+          <Framed tilt={false} title="Create a new game" className="settle [animation-delay:270ms] md:[animation-delay:180ms]">
             <div className="flex flex-col items-center gap-2 p-1">
               <p className="text-center text-xs text-ink/65">Set the table and send friends the code.</p>
               <Link href="/create" className="w-full"><LampButton className="w-full !py-2" sheenDelay={0.3}>Set the table</LampButton></Link>
             </div>
           </Framed>
-          <Framed tilt={false} title="Join a new game" className="settle" style={{ animationDelay: '270ms' }}>
+          <Framed tilt={false} title="Join a new game" className="settle [animation-delay:360ms] md:[animation-delay:270ms]">
             <JoinBox />
           </Framed>
         </div>
 
-        <Framed tilt={false} title="Rejoin an existing game" className="settle order-first md:order-none" style={{ animationDelay: '360ms' }}>
+        <Framed tilt={false} title="Rejoin an existing game" className="settle [animation-delay:0ms] md:[animation-delay:360ms] order-first md:order-none">
           {games.length === 0 && <p className="p-2 text-sm text-ink/70">No games in progress — create or join one above.</p>}
           {games.map((g, i) => (
             // Rows slide in, and slide out when a game is abandoned or deleted.
