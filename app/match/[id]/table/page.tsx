@@ -11,7 +11,7 @@ export default async function TablePage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const match = await getMatch(db, id);
   if (!match) redirect('/');
-  if (match.status === 'lobby') redirect(`/match/${id}/lobby`);
+  if (match.status === 'lobby') redirect('/');
   const initial = await loadClientView(db, id, userId);
   if (!initial) redirect('/');
   const chatRows = await listRecentChatMessages(db, id);
