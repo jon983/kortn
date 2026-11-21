@@ -193,6 +193,34 @@ body { background: #201811; color: var(--color-bone); }
 @keyframes deli-ribbon-drop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
 /* Reduced motion: a still room, no entrances, no gleams, no view-transition animation. */
+/* ---- Game table photo ----
+ * The table top covers 88.9% x 81.3% of the landscape plate (2048x1374) and
+ * 81.3% x 88.9% of the portrait plate (1073x1600). Size the photo so the
+ * table fits its box with 3% of floor each side: width = min(94% of box
+ * width / table-width share, 94% of box height / table-height share x plate
+ * aspect). Edges fade into the dark-wood vignette behind. */
+.table-photo {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  aspect-ratio: 2048 / 1374; width: min(105.7cqw, 172.3cqh);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+  mask-composite: intersect;
+}
+@media (orientation: portrait) {
+  .table-photo { aspect-ratio: 1073 / 1600; width: min(115.6cqw, 70.9cqh); }
+}
+/* Side seats sit just inside the table's chrome edge on landscape screens.
+ * Same sizing as .table-photo, from the viewport (the table area is roughly
+ * the viewport less a 3rem header): table left edge + chrome (~2.5%). Only on
+ * screens tall enough for the table not to scroll — on short landscape phones
+ * the page scrolls, the table fills the width, and the seats keep their edge. */
+.table-seat-inset { --photo-w: min(105.7vw, (100dvh - 3rem) * 1.723); }
+@media (orientation: landscape) and (min-width: 640px) and (min-height: 600px) {
+  .table-seat-inset[data-seat-column="left"] { padding-left: max(.5rem, calc(50vw - var(--photo-w) * .42 + 4px)); }
+  .table-seat-inset[data-seat-column="right"] { padding-right: max(.5rem, calc(50vw - var(--photo-w) * .42 + 4px)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .amb-drift, .amb-sun-l, .amb-sun-r, .amb-sun-room, .amb-shaft { animation: none !important; }
   .amb-mote { animation: none !important; display: none; }

@@ -55,11 +55,25 @@ describe('TableView', () => {
     expect(row.className).toContain('grid-cols-[1fr_minmax(0,auto)_1fr]');
     expect(row.children[1].hasAttribute('data-hand')).toBe(true);
   });
-  it('the table photo: landscape by default, the portrait one on upright screens', () => {
+  it('the table photo starts below the header (landscape, or portrait on upright screens)', () => {
     const { container } = render(<TableView matchId="m1" initial={baseView} />);
-    const root = container.firstElementChild!;
-    expect(root.className).toContain('bg-[url(/art/table-surface.jpg)]');
-    expect(root.className).toContain('portrait:bg-[url(/art/table-surface-portrait.jpg)]');
+    const surface = container.querySelector('[data-table-surface]')!;
+    const header = container.querySelector('[data-table-header]')!;
+    expect(surface).not.toBeNull();
+    expect(surface.parentElement!.contains(header)).toBe(false);
+    const photo = surface.querySelector('[data-table-photo]')!;
+    expect(photo.className).toContain('bg-[url(/art/table-surface.jpg)]');
+    expect(photo.className).toContain('portrait:bg-[url(/art/table-surface-portrait.jpg)]');
+  });
+  it('a cream trim line separates the header from the table', () => {
+    const { container } = render(<TableView matchId="m1" initial={baseView} />);
+    expect(container.querySelector('[data-table-header]')!.className).toContain('var(--color-deli-cream)');
+  });
+  it('side players sit in from the table edge (on the green, not the chrome)', () => {
+    const view = { ...baseView, seatNames: ['Ruth', 'Sol', 'Ines'], opponents: [...baseView.opponents, { ...baseView.opponents[0], seat: 2 }] };
+    const { container } = render(<TableView matchId="m1" initial={view} />);
+    expect(container.querySelector('[data-seat-column="left"]')!.className).toContain('table-seat-inset');
+    expect(container.querySelector('[data-seat-column="right"]')!.className).toContain('table-seat-inset');
   });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);
