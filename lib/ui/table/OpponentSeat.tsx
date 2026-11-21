@@ -5,11 +5,11 @@ import type { ReactElement, ReactNode } from 'react';
 import { Avatar } from '../Avatar';
 
 /** Cream name-plate sign behind seat labels (deli style); reads on any table art. */
-export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1 pt-1.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
+export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1.5 pt-2.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
 
 /** The red ribbon across the top of whoever's turn it is (slides on as the turn arrives). */
 export function TurnRibbon(): ReactElement {
-  return <span data-turn-ribbon aria-hidden className="plate-ribbon-in absolute inset-x-0 top-0 h-[5px] bg-deli-red" />;
+  return <span data-turn-ribbon aria-hidden className="plate-ribbon-in absolute inset-x-0 top-0 h-[6px] bg-deli-red" />;
 }
 
 export function OpponentSeat({
@@ -36,7 +36,7 @@ export function OpponentSeat({
 
   // One cream plate: name (condensed caps) over the count line; the turn ribbon on top.
   const plate = (
-    <div data-plate className={`${SEAT_LABEL} text-center ${isTurn ? 'ring-2 ring-deli-red' : ''} ${status !== 'active' ? 'opacity-60' : ''}`}>
+    <div data-plate className={`${SEAT_LABEL} text-center ${status !== 'active' ? 'opacity-60' : ''}`}>
       {isTurn && <TurnRibbon key="ribbon" />}
       <div className="flex items-center justify-center gap-1.5">
         <Avatar name={name} src={avatarUrl} size={20} />

@@ -619,7 +619,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         <div className="mb-1 flex flex-wrap items-center justify-center gap-1">
           <SeatVideo seat={view.seat} className="mr-1 h-10 w-10 sm:h-12 sm:w-12" />
           {/* No name label for yourself — just your count (highlighted on your turn). */}
-          <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold ${isMyTurn(view) ? 'ring-2 ring-deli-red' : ''}`}>
+          <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold`}>
             {isMyTurn(view) && <TurnRibbon />}
             {view.you.handCount} cards · {view.you.score} pts
           </div>
