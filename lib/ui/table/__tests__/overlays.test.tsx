@@ -55,9 +55,15 @@ describe('overlays', () => {
     fireEvent.click(screen.getByRole('button', { name: /buy back in/i })); expect(onRebuy).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /decline/i })); expect(onDecline).toHaveBeenCalled();
   });
-  it('MatchSummary announces the winner', () => {
-    render(<MatchSummary view={view} />);
-    expect(screen.getByText(/winner/i)).toBeInTheDocument();
+  it('MatchSummary hangs a sign naming the winner', () => {
+    const { container } = render(<MatchSummary view={{ ...view, matchFinished: true }} />);
+    expect(screen.getByRole('heading', { name: 'Ruth takes the pot' })).toBeInTheDocument();
+    expect(container.querySelector('.deli-swing-in')).not.toBeNull();
+  });
+  it('RebuyPrompt keeps its price and choices, on a ticket', () => {
+    const { container } = render(<RebuyPrompt onRebuy={() => {}} onDecline={() => {}} />);
+    expect(screen.getByText(/Buy back in for 4 bits/)).toBeInTheDocument();
+    expect(container.querySelector('[data-ticket]')).not.toBeNull();
   });
   it('MatchSummary itemises the pot payout per seat', () => {
     render(<MatchSummary view={{ ...view, payout: [4, -4] }} />);

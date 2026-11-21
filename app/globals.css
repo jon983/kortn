@@ -184,6 +184,9 @@ body { background: #201811; color: var(--color-bone); }
     repeating-linear-gradient(180deg, transparent 0 23px, rgba(29, 84, 70, .14) 23px 24px);
   background-attachment: local;
 }
+/* The winner's sign swings in on its chains, then settles. */
+.deli-swing-in { transform-origin: 50% -28px; animation: deli-swing-in 1400ms cubic-bezier(.3, .6, .4, 1) both; }
+@keyframes deli-swing-in { 0% { opacity: 0; transform: rotate(-9deg) translateY(-14px); } 25% { opacity: 1; transform: rotate(5deg); } 50% { transform: rotate(-2.5deg); } 75% { transform: rotate(1deg); } 100% { transform: none; } }
 /* The turn ribbon slides across the top of a name plate. */
 .plate-ribbon-in { transform-origin: left; animation: plate-ribbon-in 220ms ease-out both; }
 @keyframes plate-ribbon-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -195,7 +198,7 @@ body { background: #201811; color: var(--color-bone); }
   .amb-mote { animation: none !important; display: none; }
   .deli-swing { animation: none !important; transform: none !important; }
   .deli-progress { animation: none !important; }
-  .deli-ribbon-drop, .plate-ribbon-in, .meld-land, .receipt-in, .receipt-line { animation: none !important; }
+  .deli-ribbon-drop, .plate-ribbon-in, .meld-land, .receipt-in, .receipt-line, .deli-swing-in { animation: none !important; }
   .settle { animation: none !important; opacity: 1 !important; transform: none !important; }
   .btn-sheen::after { animation: none !important; display: none; }
   .btn-lift, .btn-lift:hover, .btn-lift:active { transition: none !important; transform: none !important; }

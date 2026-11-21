@@ -145,49 +145,71 @@ export function RoundSummary({ view, onReady }: { view: ClientView; onReady: () 
 }
 
 export function RebuyPrompt({ canRebuy = true, onRebuy, onDecline }: { canRebuy?: boolean; onRebuy: () => void; onDecline: () => void }) {
-  return <Scrim><div className={PANEL}>
-    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">You're out — over 150</h3>
-    {canRebuy ? (
-      <>
-        <p className="mt-2 text-sm">Buy back in for 4 bits and re-enter at the current top score?</p>
-        <div className="mt-4 flex justify-center gap-3">
-          <button type="button" className="rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-4 py-2 font-bold" onClick={onRebuy}>Buy back in</button>
-          <button type="button" className="rounded-md border-2 border-sage-deep bg-[linear-gradient(180deg,#c6d0b3,#a6b589)] px-4 py-2 font-bold text-ink" onClick={onDecline}>Decline</button>
-        </div>
-      </>
-    ) : (
-      <>
-        <p className="mt-2 text-sm">Too few players remain under 150 to buy back in — this one&apos;s a wrap.</p>
-        <div className="mt-4 flex justify-center">
-          <button type="button" className="rounded-md border-2 border-sage-deep bg-[linear-gradient(180deg,#c6d0b3,#a6b589)] px-4 py-2 font-bold text-ink" onClick={onDecline}>OK</button>
-        </div>
-      </>
-    )}
-  </div></Scrim>;
+  // A tear-off ticket: red stub, dashed perforation, cream body.
+  return <Scrim>
+    <div data-ticket className="settle flex w-full max-w-[380px] overflow-hidden rounded-md text-deli-green shadow-2xl">
+      <div className="flex w-12 shrink-0 items-center justify-center bg-deli-red text-deli-cream">
+        <span className="-rotate-90 whitespace-nowrap font-cond text-[15px] font-black uppercase tracking-[.2em]">Back in?</span>
+      </div>
+      <div className="deli-paper flex-1 border-l-[3px] border-dashed border-deli-red/60 px-5 py-4 text-center">
+        <h3 className="font-cond text-[22px] font-black uppercase leading-none tracking-[.04em]">You&apos;re out — over 150</h3>
+        {canRebuy ? (
+          <>
+            <p className="mt-2 font-sans-deli text-[13px]">Buy back in for 4 bits and re-enter at the current top score?</p>
+            <div className="mt-4 flex justify-center gap-2.5">
+              <button type="button" className="deli-pill deli-pill--red btn-lift !px-4 !py-2 !text-[14px]" onClick={onRebuy}>Buy back in</button>
+              <button type="button" className="deli-pill deli-pill--outline btn-lift !px-4 !py-2 !text-[14px]" onClick={onDecline}>Decline</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 font-sans-deli text-[13px]">Too few players remain under 150 to buy back in — this one&apos;s a wrap.</p>
+            <div className="mt-4 flex justify-center">
+              <button type="button" className="deli-pill deli-pill--outline btn-lift !px-5 !py-2 !text-[14px]" onClick={onDecline}>OK</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  </Scrim>;
 }
 
 export function MatchSummary({ view }: { view: ClientView }) {
-  const back = <Link href="/" className="mt-4 inline-block rounded-md border-2 border-walnut-dark bg-[linear-gradient(180deg,#6b4a30,#402c1a)] px-5 py-2 font-bold">Back to the kitchen</Link>;
+  const back = <Link href="/" className="deli-pill deli-pill--green btn-lift mt-5 !text-[15px]">Back to the kitchen</Link>;
   if (view.matchAbandoned) {
-    return <Scrim><div className={PANEL}>
-      <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Game ended</h3>
-      <p className="mt-2">This game was ended early — no winner. Buy-ins are returned; bits won hand-by-hand stand.</p>
+    return <Scrim><div className={`${PANEL} settle`}>
+      <h3 className="font-cond text-[26px] font-black uppercase leading-none tracking-[.04em]">Game ended</h3>
+      <p className="mt-2 font-sans-deli text-[13px]">This game was ended early — no winner. Buy-ins are returned; bits won hand-by-hand stand.</p>
       {back}
     </div></Scrim>;
   }
   const fmt = (b: number) => (b > 0 ? `+${b}` : String(b));
-  return <Scrim><div className={PANEL}>
-    <h3 className="font-[family-name:var(--font-display)] text-2xl text-brass">Winner!</h3>
-    <p className="mt-2">{view.matchWinnerSeat !== null ? view.seatNames[view.matchWinnerSeat] : 'The winner'} takes the pot of {view.pot} bits.</p>
-    {view.payout && (
-      <ul className="mt-3 text-sm" aria-label="Pot payout">
-        {view.payout.map((b, seat) => (
-          <li key={seat} className={seat === view.matchWinnerSeat ? 'font-bold text-brass' : ''}>
-            {view.seatNames[seat]}: <span className="tabular-nums">{fmt(b)}</span> bits
-          </li>
-        ))}
-      </ul>
-    )}
-    {back}
-  </div></Scrim>;
+  const winner = view.matchWinnerSeat !== null ? view.seatNames[view.matchWinnerSeat] : 'The winner';
+  const chain = 'absolute top-0 h-[30px] w-[2px] bg-[repeating-linear-gradient(180deg,#c9a24b_0_5px,#8a6a2a_5px_7px)]';
+  // The winner's sign hangs on two chains and swings in once.
+  return <Scrim>
+    <div className="relative flex w-full max-w-[420px] flex-col items-center pt-[28px]">
+      <span aria-hidden className={`${chain} left-[22%]`} />
+      <span aria-hidden className={`${chain} right-[22%]`} />
+      <div className="deli-paper deli-swing-in relative w-full rounded-2xl px-6 pb-5 pt-5 text-center text-deli-green shadow-[0_18px_36px_rgba(0,0,0,.45)]
+        before:pointer-events-none before:absolute before:inset-[7px] before:rounded-[10px] before:border-2 before:border-deli-green
+        after:pointer-events-none after:absolute after:inset-[11px] after:rounded-[7px] after:border after:border-deli-green/45">
+        <h3 className="leading-none">
+          <span className="block break-words font-cond text-[clamp(34px,10vw,56px)] font-black uppercase leading-[.9]">{winner}</span>{' '}
+          <span className="mt-1 block font-script text-[28px] text-deli-red">takes the pot</span>
+        </h3>
+        <div className="mt-1 font-wide text-[10px] font-extrabold uppercase tracking-[.3em] [font-stretch:125%]">{`of ${view.pot} bits`}</div>
+        {view.payout && (
+          <ul className="relative mx-auto mt-3 max-w-[260px] text-left" aria-label="Pot payout">
+            {view.payout.map((b, seat) => (
+              <li key={seat} className={`deli-leader !py-0.5 font-cond text-[15px] font-extrabold uppercase ${seat === view.matchWinnerSeat ? 'text-deli-red' : ''}`}>
+                <span className="min-w-0 [overflow-wrap:anywhere]">{view.seatNames[seat]}</span><span className="sr-only">: </span><span className="lead" /><span className="tabular-nums">{fmt(b)}</span> <span className="font-sans-deli text-[10px] font-semibold normal-case opacity-70">bits</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {back}
+    </div>
+  </Scrim>;
 }
