@@ -108,6 +108,18 @@ describe('TableView', () => {
     expect(store.get('kortn-volume')).toBe('0.6');
     vi.unstubAllGlobals();
   });
+  it('the volume control lets you pick the your-turn sound (knock by default), and saves it', () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); } });
+    render(<TableView matchId="m1" initial={baseView} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Volume' }));
+    expect(screen.getByRole('button', { name: 'Knock' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Marimba' }));
+    expect(screen.getByRole('button', { name: 'Marimba' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Knock' })).toHaveAttribute('aria-pressed', 'false');
+    expect(store.get('kortn-turn-sound')).toBe('marimba');
+    vi.unstubAllGlobals();
+  });
   it('Scores opens the order pad', () => {
     render(<TableView matchId="m1" initial={{ ...baseView, history: [] }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Scores' }));

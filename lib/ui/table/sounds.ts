@@ -10,12 +10,13 @@ export function setVolume(v: number): void {
   masterVolume = Math.max(0, Math.min(1, v));
 }
 
-/** Apply the volume the player chose at the table (saved in this browser), so mute holds everywhere. */
+/** Apply the volume and your-turn sound the player chose at the table (saved in this browser), so they hold everywhere. */
 export function loadSavedVolume(): void {
   try {
     const saved = parseFloat(localStorage.getItem('kortn-volume') ?? '');
     if (!Number.isNaN(saved)) setVolume(saved);
   } catch { /* storage blocked: keep the default */ }
+  setTurnSound(savedTurnSound());
 }
 
 function getCtx(): AudioContext | null {
@@ -49,43 +50,115 @@ function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 
 }
 
 /**
- * One ringing overtone of a struck bell: a soft strike, then a long fade. Two
- * sines a hair apart (±0.7 Hz) beat slowly against each other, giving the
- * gentle shimmer of a singing bowl.
+ * One sine partial: a quick attack, then an exponential fade (time constant
+ * `tau` seconds). `glide` starts the pitch that much higher and lets it drop,
+ * like the thump of a knuckle on wood.
  */
-function ring(c: AudioContext, freq: number, gain: number, decay: number) {
-  const peak = gain * masterVolume;
-  if (peak <= 0) return;
-  const t0 = c.currentTime;
+function partial(c: AudioContext, at: number, freq: number, amp: number, tau: number, atk = 0.004, glide = 0) {
+  const t0 = c.currentTime + at;
+  const osc = c.createOscillator();
   const g = c.createGain();
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(peak / 2, t0 + 0.008); // two sines share it
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + decay);
-  g.connect(c.destination);
-  for (const beat of [-0.7, 0.7]) {
-    const osc = c.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq + beat;
-    osc.connect(g);
-    osc.start(t0);
-    osc.stop(t0 + decay + 0.05);
-  }
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq * (1 + glide), t0);
+  if (glide) osc.frequency.setTargetAtTime(freq, t0, 0.02);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(amp, t0 + atk);
+  g.gain.setTargetAtTime(0, t0 + atk, tau);
+  osc.connect(g).connect(c.destination);
+  osc.start(t0);
+  osc.stop(t0 + atk + tau * 9);
 }
 
-/** Singing-bowl overtones: [ratio to the fundamental, loudness, seconds to fade]. Higher ones fade sooner. */
-const BELL: [number, number, number][] = [
-  [1, 0.55, 3.2],
-  [2.71, 0.22, 2.2],
-  [5.15, 0.1, 1.3],
-  [8.43, 0.05, 0.7],
-];
-const BELL_PITCH = 660; // Hz; bright enough to carry over a video call
+let noiseBuf: AudioBuffer | null = null;
+/** A short burst of band-passed noise: the click of a knuckle or the snap of a card. */
+function click(c: AudioContext, at: number, centre: number, q: number, amp: number, tau: number) {
+  if (!noiseBuf) {
+    noiseBuf = c.createBuffer(1, Math.ceil(c.sampleRate * 0.25), c.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t0 = c.currentTime + at;
+  const src = c.createBufferSource();
+  const bp = c.createBiquadFilter();
+  const g = c.createGain();
+  src.buffer = noiseBuf;
+  bp.type = 'bandpass';
+  bp.frequency.value = centre;
+  bp.Q.value = q;
+  g.gain.setValueAtTime(amp, t0);
+  g.gain.setTargetAtTime(0, t0, tau);
+  src.connect(bp).connect(g).connect(c.destination);
+  src.start(t0);
+  src.stop(t0 + tau * 9);
+}
 
-/** A struck meditation bell, ringing out for about three seconds: "it's your turn". */
-export function playYourTurn(): void {
+/** The your-turn sounds a player can choose from (the volume control), each under a second. */
+export const TURN_SOUNDS = [
+  { id: 'knock', label: 'Knock' },
+  { id: 'marimba', label: 'Marimba' },
+  { id: 'ding', label: 'Ding' },
+  { id: 'pop', label: 'Pop' },
+  { id: 'snap', label: 'Card snap' },
+] as const;
+export type TurnSound = (typeof TURN_SOUNDS)[number]['id'];
+const isTurnSound = (v: unknown): v is TurnSound => TURN_SOUNDS.some((s) => s.id === v);
+
+// Recipes, each given a level (k) so they all peak at the same loudness.
+const RECIPES: Record<TurnSound, (c: AudioContext, k: number) => void> = {
+  // Two knocks on the wooden table.
+  knock: (c, k) => {
+    for (const at of [0, 0.16]) {
+      partial(c, at, 170, 1 * k, 0.035, 0.002, 0.4);
+      partial(c, at, 420, 0.5 * k, 0.02, 0.002);
+      partial(c, at, 900, 0.25 * k, 0.01, 0.001);
+      click(c, at, 1800, 1.5, 0.35 * k, 0.006);
+    }
+  },
+  // Two warm wooden notes, rising (G4 → C5).
+  marimba: (c, k) => {
+    for (const [at, f] of [[0, 392], [0.12, 523.25]]) {
+      partial(c, at, f, 1 * k, 0.16, 0.003);
+      partial(c, at, f * 3.93, 0.35 * k, 0.025, 0.002);
+      partial(c, at, f * 9.2, 0.08 * k, 0.008, 0.001);
+    }
+  },
+  // One light counter-bell ding, gone in about a second.
+  ding: (c, k) => {
+    for (const [r, a, tau] of [[1, 1, 0.22], [2.76, 0.3, 0.09], [5.4, 0.12, 0.04]]) partial(c, 0, 1320 * r, a * k, tau, 0.002);
+  },
+  // A soft, rounded pop, like a cork.
+  pop: (c, k) => {
+    partial(c, 0, 520, 1 * k, 0.045, 0.003, -0.35);
+    partial(c, 0, 1040, 0.15 * k, 0.02, 0.003, -0.35);
+  },
+  // A card flicked down on the felt: a snap, then a soft thud.
+  snap: (c, k) => {
+    click(c, 0, 2600, 0.9, 1 * k, 0.012);
+    click(c, 0.004, 600, 1.2, 0.6 * k, 0.03);
+    partial(c, 0.004, 110, 0.4 * k, 0.03, 0.003);
+  },
+};
+const LEVEL: Record<TurnSound, number> = { knock: 0.61, marimba: 0.49, ding: 0.59, pop: 0.77, snap: 1.15 };
+
+let turnSound: TurnSound = 'knock';
+/** Choose the your-turn sound (falls back to the knock for anything unknown). */
+export function setTurnSound(id: string): void {
+  turnSound = isTurnSound(id) ? id : 'knock';
+}
+/** The your-turn sound saved in this browser, or the knock. */
+export function savedTurnSound(): TurnSound {
+  try {
+    const v = localStorage.getItem('kortn-turn-sound');
+    return isTurnSound(v) ? v : 'knock';
+  } catch { return 'knock'; }
+}
+
+/** "It's your turn": the sound the player chose (two knocks by default). */
+export function playYourTurn(sound: TurnSound = turnSound): void {
+  if (masterVolume <= 0) return;
   const c = getCtx();
   if (!c) return;
-  for (const [ratio, gain, decay] of BELL) ring(c, BELL_PITCH * ratio, gain, decay);
+  RECIPES[sound](c, LEVEL[sound] * masterVolume);
 }
 
 /** Gentle three-note descending flourish — the hand has ended. */
