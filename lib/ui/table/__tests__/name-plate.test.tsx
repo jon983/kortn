@@ -50,4 +50,19 @@ describe('name plates', () => {
       unmount();
     }
   });
+  it('top seat: the melds start below the table’s cream line (a spacer shares the plate’s grid cell)', () => {
+    const { container } = seat({ melds: [{ id: 'm1', ownerSeat: 1, cards: [] } as any] });
+    const clear = container.querySelector('[data-line-clear]')!;
+    expect(clear).not.toBeNull();
+    expect(clear.className).toContain('table-line-clear');
+    // the spacer and the plate+cards overlap in one cell, so the cell is as tall as the taller of them
+    const cell = clear.parentElement!;
+    expect(cell.contains(container.querySelector('[data-seat-grid]'))).toBe(true);
+    expect(cell.className).toContain('grid');
+    // the melds come after that cell
+    expect(cell.nextElementSibling).not.toBeNull();
+  });
+  it('side seats have no line spacer', () => {
+    expect(seat({ side: 'left' }).container.querySelector('[data-line-clear]')).toBeNull();
+  });
 });
