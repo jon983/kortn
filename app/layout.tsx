@@ -7,7 +7,7 @@ import { displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFo
 // The favicon, home-screen icon and link-preview picture come from app/icon.tsx,
 // app/apple-icon.tsx and app/opengraph-image.tsx (drawn in lib/brand/images.tsx).
 export const metadata = {
-  metadataBase: new URL('https://www.kortn.com'),
+  metadataBase: new URL('https://kortn.com'),
   title: 'KORTN',
   description: 'Kalooki with the family, wherever they are.',
   openGraph: {
