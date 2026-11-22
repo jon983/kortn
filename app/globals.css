@@ -227,6 +227,10 @@ body { background: #201811; color: var(--color-bone); }
 @media (orientation: portrait) {
   .table-surface { --img: url(/art/table-surface-portrait.jpg); --img-w: 1073; --img-h: 1600; --cut: 258; }
 }
+/* The top seat's melds sit just below the table's cream double line.
+   --table-line (px from the top of the table area) is set by TableSurface;
+   the top seat starts 12px down (p-3 on its row), hence the -12px. */
+.table-line-clear { height: max(0px, calc(var(--table-line, 0px) + 6px - 12px)); }
 .table-under {
   position: absolute; width: 50%; height: 50%;
   background-image: var(--img); background-repeat: no-repeat;

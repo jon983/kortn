@@ -91,7 +91,11 @@ export function OpponentSeat({
   // Several top seats share the row, so they skip that balancing width. ---
   return (
     <div className="flex shrink-0 flex-col items-center text-center">
-      <div data-seat-grid className={`grid grid-cols-[1fr_auto_1fr] items-center ${centreHand ? '' : 'sm:grid-cols-[auto_auto]'}`}>
+      {/* An invisible spacer shares a cell with the plate and cards, reaching just
+          past the table's cream line: the melds start below whichever is taller. */}
+      <div className="grid">
+      <div data-line-clear aria-hidden className="table-line-clear [grid-area:1/1]" />
+      <div data-seat-grid className={`grid grid-cols-[1fr_auto_1fr] items-center self-start [grid-area:1/1] ${centreHand ? '' : 'sm:grid-cols-[auto_auto]'}`}>
         <div className="col-start-1 row-start-1 flex justify-end pr-2 empty:pr-0 sm:[grid-row:1/span_2] sm:pr-3">{media}</div>
         <div className="col-start-2 row-start-1">{plate}</div>
         {/* Small screens: hidden — the plate says how many cards. Wider: the hand's own width, so the video never overlaps it. */}
@@ -104,6 +108,7 @@ export function OpponentSeat({
             ))}
           </div>
         </div>
+      </div>
       </div>
       <div className={`mt-1 flex justify-center gap-2 ${
         meldOrientation === 'column' ? 'flex-col items-center' : 'max-w-[90vw] flex-nowrap gap-3 overflow-x-auto'
