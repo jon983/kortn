@@ -1,5 +1,6 @@
 import './globals.css';
 import { ClerkProvider } from '@clerk/nextjs';
+import { CLERK_TEXT, CLERK_URLS } from '../lib/clerk-setup';
 import type { ReactNode } from 'react';
 import { displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont } from '../lib/ui/fonts';
 
@@ -17,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={CLERK_TEXT} {...CLERK_URLS}>
       <html lang="en" className={[displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont].map((f) => f.variable).join(' ')}>
         <body>{children}</body>
       </html>

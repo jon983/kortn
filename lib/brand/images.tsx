@@ -2,8 +2,8 @@ import { ImageResponse } from 'next/og';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// Brand images drawn at build time (favicon, home-screen icon, link preview,
-// /logo.png) in the wordmark's own lettering. Colours match globals.css.
+// Brand images in the wordmark's own lettering (favicon and home-screen icon,
+// drawn at build time; /logo.png). Colours match globals.css.
 const GREEN = '#1d5446';
 const CREAM = '#f6efdc';
 
@@ -62,23 +62,18 @@ function Sign({ m, shadow }: { m: number; shadow: boolean }) {
 }
 
 /**
- * The logo on its own (transparent background), or, with `photo`, centred over
- * the dining room for link previews.
+ * The logo on its own, on a transparent background (/logo.png).
+ *
+ * The link-preview picture (app/opengraph-image.jpg) is this sign over the
+ * dining-room photo, rendered once and saved as a JPEG: a generated PNG of a
+ * photo is ~1.4 MB, too big for WhatsApp previews.
  */
-export async function signImage(width: number, height: number, opts: { photo?: boolean } = {}): Promise<ImageResponse> {
-  const m = Math.round(Math.min(width / (opts.photo ? 9 : 6.4), height / 1.9));
-  const room = opts.photo
-    ? `data:image/jpeg;base64,${(await readFile(join(process.cwd(), 'public/art/room-home.jpg'))).toString('base64')}`
-    : null;
+export async function signImage(width: number, height: number): Promise<ImageResponse> {
+  const m = Math.round(Math.min(width / 6.4, height / 1.9));
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        {room && (
-          // eslint-disable-next-line @next/next/no-img-element -- ImageResponse markup, not a page
-          <img src={room} alt="" width={width} height={height} style={{ position: 'absolute', inset: 0, objectFit: 'cover' }} />
-        )}
-        {room && <div style={{ position: 'absolute', inset: 0, background: 'rgba(20,16,10,.25)' }} />}
-        <Sign m={m} shadow={!!room} />
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Sign m={m} shadow={false} />
       </div>
     ),
     { width, height, fonts: await fonts() },
