@@ -15,6 +15,18 @@ describe('parlour kit', () => {
     const { container } = render(<RoomBackdrop plate="room-home"><i>x</i></RoomBackdrop>);
     expect(container.innerHTML).toContain('/art/room-home.jpg');
   });
+  it('the room is pinned to the screen, not stretched down the whole scrolling page', () => {
+    for (const ambient of [false, true]) {
+      const { container, unmount } = render(<RoomBackdrop plate="room-home" ambient={ambient}><i>x</i></RoomBackdrop>);
+      const layers = [...(container.firstElementChild as HTMLElement).children].filter((el) => el.tagName === 'DIV');
+      expect(layers.length).toBeGreaterThanOrEqual(3); // fallback, photo, vignette
+      for (const el of layers) {
+        expect(el.className).toContain('fixed');
+        expect(el.className).not.toMatch(/\babsolute\b/);
+      }
+      unmount();
+    }
+  });
   it('Framed shows its title', () => {
     render(<Framed title="At the table"><div>rows</div></Framed>);
     expect(screen.getByText('At the table')).toBeInTheDocument();

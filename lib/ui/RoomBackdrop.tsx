@@ -19,18 +19,20 @@ export function RoomBackdrop({ plate, children, kitchenLink = true, ambient = fa
   /** Bring the room to life (drift, shifting window sunlight, light shaft, dust). */
   ambient?: boolean;
 }) {
+  // The room layers are fixed to the screen: sized to the page they'd blow the
+  // photo up to fit a long scroll and show only a slice of the room.
   return (
     <div className="relative min-h-screen overflow-hidden isolate font-[family-name:var(--font-body)]">
       {/* base fallback gradient (always present) */}
-      <div className="absolute inset-0 -z-20"
+      <div className="fixed inset-0 -z-20"
         style={{ background: 'linear-gradient(180deg,#e7e1cf 0%,#e1dbc8 42%,var(--color-sage) 42.5%,var(--color-sage-deep) 82%,#7f8a94 82.5%,#67737d 100%)' }} />
       {/* photographic plate over the fallback */}
       {plate && (ambient ? <AmbientRoom plate={plate} /> : (
-        <div className="absolute inset-0 -z-10 bg-cover bg-center"
+        <div className="fixed inset-0 -z-10 bg-cover bg-center"
           style={{ backgroundImage: `url(/art/${plate}.jpg)` }} />
       ))}
       {/* vignette */}
-      <div className="pointer-events-none absolute inset-0 -z-[5]"
+      <div className="pointer-events-none fixed inset-0 -z-[5]"
         style={{ background: 'radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(30,26,18,.5) 100%)' }} />
       {kitchenLink && <KitchenLink className="fixed left-3 top-3 z-50" />}
       {children}

@@ -11,7 +11,7 @@ const MOTES = makeMotes(20, 11);
  */
 export function AmbientRoom({ plate }: { plate: string }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div className="amb-drift" style={{ backgroundImage: `url(/art/${plate}.jpg)` }} />
       <div className="amb-sun-room" />
       <div className="amb-sun-l" />
