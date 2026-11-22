@@ -1,12 +1,11 @@
 import { SignIn } from '@clerk/nextjs';
-import { RoomBackdrop } from '../../../../lib/ui/RoomBackdrop';
+import { AuthShell } from '../../AuthShell';
 
 export default function Page() {
   return (
-    <RoomBackdrop plate="room-home" kitchenLink={false}>
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <SignIn />
-      </div>
-    </RoomBackdrop>
+    <AuthShell>
+      {/* Clerk's own logo is off: our KORTN sign hangs above the box instead. */}
+      <SignIn appearance={{ options: { logoPlacement: 'none' } }} />
+    </AuthShell>
   );
 }
