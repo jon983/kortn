@@ -28,27 +28,29 @@ body { background: #201811; color: var(--color-bone); }
 
 /* ───────── Ambient room (kitchen): slow, subtle, transform/opacity only ───────── */
 .amb-drift {
-  position: absolute; inset: -6%;
+  position: absolute; inset: -3%;
   background-size: cover; background-position: center;
   animation: amb-drift 30s ease-in-out infinite alternate;
   will-change: transform;
 }
+/* Gentle: the doorway and both windows stay in view at either end of the drift. */
 @keyframes amb-drift {
-  from { transform: scale(1.05) translate(0, 0); }
-  to   { transform: scale(1.14) translate(-2%, -1.5%); }
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.05) translate(-1%, -.8%); }
 }
-/* Sunlight through the two windows, shifting slowly and irregularly as if clouds
+/* Sunlight through the two windows (left ~16%, right ~76% across, a third of the
+   way down in the room photo), shifting slowly and irregularly as if clouds
    drift past. Each layer has its own long, uneven cycle (19s / 27s / 41s); the
    cycles don't line up, so the combined light never falls into a visible rhythm. */
 .amb-sun-l, .amb-sun-r, .amb-sun-room {
   position: absolute; inset: 0; mix-blend-mode: screen; will-change: opacity;
 }
 .amb-sun-l {
-  background: radial-gradient(38% 55% at 4% 32%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  background: radial-gradient(26% 50% at 16% 33%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
   animation: amb-clouds-a 19s ease-in-out infinite;
 }
 .amb-sun-r {
-  background: radial-gradient(38% 55% at 96% 30%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
+  background: radial-gradient(26% 50% at 76% 33%, rgba(255, 240, 205, .42), rgba(255, 230, 185, .12) 55%, transparent 75%);
   animation: amb-clouds-b 27s ease-in-out -9s infinite;
 }
 .amb-sun-room {
