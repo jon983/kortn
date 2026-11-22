@@ -60,8 +60,6 @@ export function HomeView({ userId, myName, stats, boards, minHands, games }: Hom
                 </ViewTransition>
               ))}
             </section>
-
-            <p className="mt-5 text-center font-script text-[19px] text-deli-green sm:text-[21px]">Pull up a chair — there&apos;s always a seat at the table.</p>
           </div>
         </MenuBoard>
       </main>

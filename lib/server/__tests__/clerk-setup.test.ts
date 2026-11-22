@@ -17,5 +17,6 @@ describe('Clerk setup', () => {
     expect(CLERK_TEXT.signIn?.start?.title).toBe('Sign in to KORTN');
     expect(CLERK_TEXT.signUp?.start?.title).toBe('Sign up');
     expect(JSON.stringify(CLERK_TEXT)).not.toContain('applicationName');
+    expect(JSON.stringify(CLERK_TEXT)).not.toMatch(/pull up a chair/i);
   });
 });
