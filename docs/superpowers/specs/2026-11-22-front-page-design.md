@@ -16,7 +16,7 @@ Logged-out visitors to kortn.com land straight on Clerk's sign-in box, which sti
 ## Non-goals
 
 - No change for signed-in players: `/` still shows the kitchen.
-- No invite links, rules pages or marketing copy beyond a short "how it plays".
+- No invite links, rules pages, "how it plays" section or other marketing copy ("how it plays" was considered and dropped).
 - No change to Clerk's sign-in flow itself (fields, providers).
 
 ## Anti-goals
@@ -54,16 +54,11 @@ From the chosen mockup:
 - **Two buttons:**
   - **Pull up a chair:** green pill with a cream ring, goes to `/sign-up`.
   - **Sign in:** cream outline pill, goes to `/sign-in`.
-- **A cue at the foot of the first screen:** "▼ How it plays", which scrolls to the section below.
-- **How it plays:** a cream card with a ribbon header (the kitchen's `MenuBoard` / `Ribbon` look), and three numbered steps in red circles. Copy is my call; rules checked against the game code (two packs, one joker each, 40 to open):
-  1. **Set a table.** Share the code with family or friends.
-  2. **Thirteen cards each,** two packs and the jokers. Lay down sets and runs; you need 40 to open.
-  3. **Go out first,** keep your points low, and take the pot.
-
-  Then one script line: *"Video on, kettle on. Deal again soon."* and the two buttons again.
+- **Closing line,** under the buttons, in the script font, cream: *"Video on, kettle on, let's deal."* (the user's wording)
+- **One screen:** no scrolling sections; the sign, tagline, buttons and closing line sit together, centred on the room.
 - **Footer:** small print, "KORTN · Kalooki online".
-- **Phones:** the sign scales down to fit the width, the tagline wraps, and the buttons stack full-width. The first screen still shows the sign, the tagline and both buttons without scrolling.
-- **Motion:** the sign and card use the kitchen's existing `settle` entrance, and respect reduced motion as the kitchen does.
+- **Phones:** the sign scales down to fit the width, the tagline wraps, and the buttons stack full-width. Everything still fits on one screen without scrolling.
+- **Motion:** the sign and buttons use the kitchen's existing `settle` entrance, and respect reduced motion as the kitchen does.
 
 ### Routing
 
@@ -104,7 +99,7 @@ From the chosen mockup:
 ## Constraints
 
 - Next.js 16 App Router. Read the metadata, `ImageResponse` and app-icon docs in `node_modules/next/dist/docs/` first (AGENTS.md).
-- Tailwind 4, plus the existing deli components and classes: `Wordmark`, `MenuBoard`, `Ribbon`, `.deli-pill`, fonts in `lib/ui/fonts.ts`.
+- Tailwind 4, plus the existing deli components and classes: `Wordmark`, `.deli-pill`, fonts in `lib/ui/fonts.ts`.
 - No production database writes. The front page reads no data.
 - Brand colours: green `#1d5446`, cream `#f6efdc`, red `#c8402f`, gold `#e2bd4f`.
 
@@ -113,7 +108,7 @@ From the chosen mockup:
 - Exact sizes and spacing, matched to the mockup (`.superpowers/brainstorm/…/front-page-layouts.html`, option B, and `logo-favicon.html`).
 - Whether the hanging sign is a new shared component (front page, sign-in, OG image) or two variants of one.
 - How to test:
-  - Front page renders: sign, tagline, buttons pointing to `/sign-up` and `/sign-in`, the how-it-plays steps.
+  - Front page renders: sign, tagline, buttons pointing to `/sign-up` and `/sign-in`, the closing line.
   - `/` chooses the front page or the kitchen by sign-in state.
   - The proxy treats only `/` as newly public.
   - Icons respond with images.
