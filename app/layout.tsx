@@ -3,17 +3,15 @@ import { ClerkProvider } from '@clerk/nextjs';
 import type { ReactNode } from 'react';
 import { displayFont, bodyFont, markFont, condFont, wideFont, scriptFont, sansFont } from '../lib/ui/fonts';
 
+// The favicon, home-screen icon and link-preview picture come from app/icon.tsx,
+// app/apple-icon.tsx and app/opengraph-image.tsx (drawn in lib/brand/images.tsx).
 export const metadata = {
+  metadataBase: new URL('https://www.kortn.com'),
   title: 'KORTN',
-  description: 'Online Kalooki in the front room',
-  icons: {
-    icon: '/art/favicon.svg',
-    apple: '/art/apple-touch-icon.png',
-  },
+  description: 'Kalooki with the family, wherever they are.',
   openGraph: {
     title: 'KORTN',
-    description: 'Online Kalooki in the front room',
-    images: ['/art/vercel-avatar.png'],
+    description: 'Kalooki with the family, wherever they are.',
   },
 };
 
