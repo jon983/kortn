@@ -21,18 +21,17 @@ vi.mock('../../db', () => ({
 
 import Home from '../../../app/page';
 
-const TAGLINE = 'Kalooki with the family, wherever they are.';
 
 describe('/', () => {
   it('signed out: the front page', async () => {
     session.userId = null;
     render(await Home());
-    expect(screen.getByText(TAGLINE)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'KORTN, the card table' })).toBeInTheDocument();
   });
   it('signed in: the kitchen, never the front page', async () => {
     session.userId = 'u1';
     render(await Home());
     expect(screen.getByText('kitchen')).toBeInTheDocument();
-    expect(screen.queryByText(TAGLINE)).toBeNull();
+    expect(screen.queryByRole('img', { name: 'KORTN, the card table' })).toBeNull();
   });
 });
