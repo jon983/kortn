@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Hand, sortHand } from '../Hand';
 import type { Card } from '../../../kalooki';
 
@@ -80,5 +80,35 @@ describe('fanOverlap (the hand fits narrow screens)', () => {
     expect(handWidth(items, ov)).toBeLessThanOrEqual(440);
     // too narrow even at the tightest fan: stop at the corner-index limit (the row scrolls)
     expect(96 - fanOverlap(items, 300)).toBe(18);
+  });
+});
+
+describe('Hand fan during the deal', () => {
+  it('cards dealt one by one end up at the normal spacing when there is room (not squeezed into the first card’s width)', () => {
+    // Wider screens: the hand's grid column is only as wide as the hand asks for,
+    // up to the room available (1200px here). Simulate that layout.
+    const ROOM = 1200;
+    const contentWidth = (el: HTMLElement) => [...el.children].reduce((w, c, i) =>
+      w + 96 + (i === 0 ? 0 : parseFloat((c as HTMLElement).style.marginLeft || '0')), 0);
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get(this: HTMLElement) {
+      if (!this.querySelector(':scope > [data-card-id]')) return 0;
+      return Math.min(ROOM, this.style.width ? parseFloat(this.style.width) : contentWidth(this));
+    } });
+    const observers: (() => void)[] = [];
+    vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { observers.push(cb); } observe() {} disconnect() {} });
+    try {
+      const cards = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1, 2].map((r) => card(nat(r, 'spades')));
+      const props = { selectedIds: [], onToggle: () => {}, onReorder: () => {} };
+      const { container, rerender } = render(<Hand items={cards.slice(0, 1)} {...props} />);
+      for (let n = 2; n <= cards.length; n++) {
+        rerender(<Hand items={cards.slice(0, n)} {...props} />);
+        act(() => observers.forEach((cb) => cb()));
+      }
+      const fanned = [...container.querySelectorAll<HTMLElement>('[data-card-id]')].slice(1);
+      for (const el of fanned) expect(el.style.marginLeft).toBe('-40px');
+    } finally {
+      delete (HTMLElement.prototype as any).clientWidth; // back to jsdom's own (on Element)
+      vi.unstubAllGlobals();
+    }
   });
 });

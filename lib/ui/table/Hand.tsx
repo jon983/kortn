@@ -129,7 +129,15 @@ export function Hand({
   // "safe" centring: if the hand still overflows, it scrolls from the first
   // card rather than clipping the start.
   return (
-    <div ref={containerRef} className="flex overflow-x-auto pt-6 pb-2 [justify-content:safe_center]">
+    <div
+      ref={containerRef}
+      className="mx-auto flex max-w-full overflow-x-auto pt-6 pb-2 [justify-content:safe_center]"
+      // Ask for the hand's natural width (capped by max-w-full) and fan to fit
+      // what we get. Without this, the column on wider screens is only as wide
+      // as the cards already in it, so dealt cards kept squeezing into the
+      // first card's width.
+      style={{ width: handWidth(items, BASE_OVERLAP) }}
+    >
       {items.map((item, i) => {
         const space = item.card == null;
         const prevSpace = i > 0 && items[i - 1].card == null;
