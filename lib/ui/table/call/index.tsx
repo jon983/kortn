@@ -28,9 +28,11 @@ const remembered = () => { try { return localStorage.getItem(AUTO_KEY) === '1'; 
  * Owns the game's Daily call: created only when the player taps to join (or
  * rejoins automatically if they were in the call last time on this device).
  */
-export function CallProvider({ fetchCredentials, enabled = true, children }: {
+export function CallProvider({ fetchCredentials, enabled = true, volume = 1, children }: {
   fetchCredentials: () => Promise<Credentials>;
   enabled?: boolean;
+  /** How loud the other players are, 0..1 (0 mutes them). The video slider in the volume control. */
+  volume?: number;
   children: ReactNode;
 }) {
   const [call, setCall] = useState<DailyCall | null>(null);
@@ -89,12 +91,31 @@ export function CallProvider({ fetchCredentials, enabled = true, children }: {
     <CallCtx.Provider value={{ state, error, join, leave }}>
       <DailyProvider callObject={call}>
         {children}
-        {state === 'joined' && <DailyAudio />}
+        {state === 'joined' && <CallAudio volume={volume} />}
       </DailyProvider>
     </CallCtx.Provider>
   );
 }
 
+/**
+ * The other players' voices, at the chosen level. DailyAudio adds and swaps its
+ * audio elements as people join and speak, so new ones get the level too.
+ * (iPhones ignore an audio element's volume; there only 0 = muted takes effect.)
+ */
+function CallAudio({ volume }: { volume: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const v = Math.max(0, Math.min(1, volume));
+    const apply = () => el.querySelectorAll('audio').forEach((a) => { a.volume = v; a.muted = v === 0; });
+    apply();
+    const watch = new MutationObserver(apply);
+    watch.observe(el, { childList: true, subtree: true });
+    return () => watch.disconnect();
+  }, [volume]);
+  return <div ref={box} data-call-audio><DailyAudio /></div>;
+}
 
 /** Small line icons (stroke = currentColor) so the call buttons match the deli header tags. */
 function Icon({ children }: { children: ReactNode }) {

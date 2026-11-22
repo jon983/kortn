@@ -11,7 +11,7 @@ const fake = {
 };
 vi.mock('@daily-co/daily-react', () => ({
   DailyProvider: ({ children }: any) => <>{children}</>,
-  DailyAudio: () => null,
+  DailyAudio: () => <><audio data-testid="call-audio" /><audio data-testid="call-audio" /></>,
   DailyVideo: ({ sessionId }: any) => <video data-testid={`video-${sessionId}`} />,
   useDaily: () => fake.daily,
   useLocalSessionId: () => fake.localId,
@@ -93,5 +93,18 @@ describe('CallControls', () => {
     const creds = vi.fn(async () => ({ ok: true as const, url: 'u', token: 't' }));
     render(<CallProvider fetchCredentials={creds}><CallControls /></CallProvider>);
     await waitFor(() => expect(creds).toHaveBeenCalled());
+  });
+});
+
+describe('call volume', () => {
+  it('the video slider sets how loud the other players are (0 mutes them)', async () => {
+    localStorage.setItem('kortn:call:auto', '1'); // rejoin automatically
+    const creds = async () => ({ ok: true as const, url: 'u', token: 't' });
+    const { rerender } = render(<CallProvider fetchCredentials={creds} volume={0.3}><i /></CallProvider>);
+    const audios = await screen.findAllByTestId('call-audio') as HTMLAudioElement[];
+    expect(audios).toHaveLength(2);
+    for (const a of audios) { expect(a.volume).toBeCloseTo(0.3); expect(a.muted).toBe(false); }
+    rerender(<CallProvider fetchCredentials={creds} volume={0}><i /></CallProvider>);
+    for (const a of screen.getAllByTestId('call-audio') as HTMLAudioElement[]) expect(a.muted).toBe(true);
   });
 });

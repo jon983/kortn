@@ -1,6 +1,6 @@
 // lib/ui/table/TableView.tsx
 'use client';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
@@ -70,9 +70,12 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const [chatOpen, setChatOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const seenChat = useRef(0);
-  // Sound volume 0..1 (persisted); a ref mirrors it so the trigger effects read
-  // the latest value. 0 = muted. The slider lives in a popover off the top bar.
+  // Two levels 0..1, each persisted (0 = muted), in a popover off the top bar:
+  // `volume` is the your-turn chime (and hand-end flourish); a ref mirrors it so
+  // the trigger effects read the latest value. `videoVolume` is the other
+  // players' voices on the video call.
   const [volume, setVolume] = useState(1);
+  const [videoVolume, setVideoVolume] = useState(1);
   const [volOpen, setVolOpen] = useState(false);
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -140,6 +143,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     try {
       const saved = parseFloat(localStorage.getItem('kortn-volume') ?? '');
       if (!Number.isNaN(saved)) setVolume(Math.max(0, Math.min(1, saved)));
+      const savedVideo = parseFloat(localStorage.getItem('kortn-video-volume') ?? '');
+      if (!Number.isNaN(savedVideo)) setVideoVolume(Math.max(0, Math.min(1, savedVideo)));
     } catch { /* ignore */ }
   }, []);
   // Push volume into the sound engine and persist it whenever it changes.
@@ -147,6 +152,10 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
     setSoundVolume(volume);
     try { localStorage.setItem('kortn-volume', String(volume)); } catch { /* ignore */ }
   }, [volume]);
+  function onVideoVolumeInput(v: number) {
+    setVideoVolume(v);
+    try { localStorage.setItem('kortn-video-volume', String(v)); } catch { /* ignore */ }
+  }
   function onVolumeInput(v: number) {
     primeAudio(); // this interaction is a user gesture — unlock audio
     setVolume(v);
@@ -484,7 +493,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   }
 
   return (
-    <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished}>
+    <CallProvider fetchCredentials={() => joinCallAction(matchId)} enabled={!view.matchFinished} volume={videoVolume}>
     <div ref={rootRef} className="relative flex min-h-screen flex-col text-bone">
       {/* status bar: the deli's green header with printed tags. */}
       {/* Phones: controls on one row, whose move on a full-width row beneath.
@@ -536,22 +545,29 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
               onClick={() => setVolOpen((o) => !o)}
               className={ICON_TAG}
             >
-              <SpeakerIcon volume={volume} />
+              <SpeakerIcon volume={Math.max(volume, videoVolume)} />
             </button>
             {volOpen && (
-              <div className="deli-paper absolute right-0 top-full z-50 mt-1.5 flex items-center gap-2 rounded-md px-3 py-2 text-deli-green shadow-xl">
-                <span className="font-sans-deli text-[10px] font-semibold uppercase tracking-[.14em]">Vol</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(volume * 100)}
-                  aria-label="Sound volume"
-                  className="h-1 w-28 accent-deli-red"
-                  onChange={(e) => onVolumeInput(Number(e.target.value) / 100)}
-                  onPointerUp={() => { if (volumeRef.current > 0) playYourTurn(); }}
-                />
-                <span className="w-7 text-right font-cond text-[13px] font-bold tabular-nums">{Math.round(volume * 100)}</span>
+              <div className="deli-paper absolute right-0 top-full z-50 mt-1.5 grid grid-cols-[auto_auto_auto] items-center gap-x-2 gap-y-2.5 rounded-md px-3 py-2.5 text-deli-green shadow-xl">
+                {([
+                  { label: 'Video', value: videoVolume, onInput: onVideoVolumeInput, onRelease: undefined },
+                  { label: 'Your turn', value: volume, onInput: onVolumeInput, onRelease: () => { if (volumeRef.current > 0) playYourTurn(); } },
+                ] as const).map((row) => (
+                  <Fragment key={row.label}>
+                    <span className="whitespace-nowrap font-sans-deli text-[10px] font-semibold uppercase tracking-[.14em]">{row.label}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(row.value * 100)}
+                      aria-label={`${row.label} volume`}
+                      className="h-1 w-28 accent-deli-red"
+                      onChange={(e) => row.onInput(Number(e.target.value) / 100)}
+                      onPointerUp={row.onRelease}
+                    />
+                    <span className="w-7 text-right font-cond text-[13px] font-bold tabular-nums">{Math.round(row.value * 100)}</span>
+                  </Fragment>
+                ))}
               </div>
             )}
           </span>
