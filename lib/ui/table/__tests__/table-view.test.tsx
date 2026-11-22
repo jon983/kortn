@@ -95,6 +95,19 @@ describe('TableView', () => {
     expect(you.textContent).not.toContain('Ruth');
     expect(you.querySelector('[data-turn-ribbon]')).not.toBeNull();
   });
+  it('the volume control has two settings: video and your-turn chime, each saved', () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => { store.set(k, v); } });
+    render(<TableView matchId="m1" initial={baseView} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Volume' }));
+    const video = screen.getByRole('slider', { name: 'Video volume' });
+    const turn = screen.getByRole('slider', { name: 'Your turn volume' });
+    fireEvent.change(video, { target: { value: '25' } });
+    fireEvent.change(turn, { target: { value: '60' } });
+    expect(store.get('kortn-video-volume')).toBe('0.25');
+    expect(store.get('kortn-volume')).toBe('0.6');
+    vi.unstubAllGlobals();
+  });
   it('Scores opens the order pad', () => {
     render(<TableView matchId="m1" initial={{ ...baseView, history: [] }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Scores' }));
