@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore, t
 import Link from 'next/link';
 import { useMatchStream, type ChatLine } from './useMatchStream';
 import { ChatPanel } from './ChatPanel';
-import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume } from './sounds';
+import { playYourTurn, playHandEnd, unlockAudioOnce, primeAudio, setVolume as setSoundVolume, setTurnSound, savedTurnSound, TURN_SOUNDS, type TurnSound } from './sounds';
 import { playAction, getTableView } from '../../../app/actions/play';
 import { Hand, sortHand } from './Hand';
 import { OpponentSeat, SEAT_LABEL, TurnRibbon } from './OpponentSeat';
@@ -76,6 +76,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   // players' voices on the video call.
   const [volume, setVolume] = useState(1);
   const [videoVolume, setVideoVolume] = useState(1);
+  // Which your-turn sound plays (picked in the same popover; saved).
+  const [turnSound, setTurnSoundState] = useState<TurnSound>('knock');
   const [volOpen, setVolOpen] = useState(false);
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -146,12 +148,20 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       const savedVideo = parseFloat(localStorage.getItem('kortn-video-volume') ?? '');
       if (!Number.isNaN(savedVideo)) setVideoVolume(Math.max(0, Math.min(1, savedVideo)));
     } catch { /* ignore */ }
+    setTurnSoundState(savedTurnSound());
   }, []);
   // Push volume into the sound engine and persist it whenever it changes.
   useEffect(() => {
     setSoundVolume(volume);
     try { localStorage.setItem('kortn-volume', String(volume)); } catch { /* ignore */ }
   }, [volume]);
+  useEffect(() => { setTurnSound(turnSound); }, [turnSound]);
+  function onPickTurnSound(id: TurnSound) {
+    primeAudio(); // a user gesture — unlock audio
+    setTurnSoundState(id);
+    try { localStorage.setItem('kortn-turn-sound', id); } catch { /* ignore */ }
+    if (volumeRef.current > 0) playYourTurn(id); // let them hear it
+  }
   function onVideoVolumeInput(v: number) {
     setVideoVolume(v);
     try { localStorage.setItem('kortn-video-volume', String(v)); } catch { /* ignore */ }
@@ -568,6 +578,21 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
                     <span className="w-7 text-right font-cond text-[13px] font-bold tabular-nums">{Math.round(row.value * 100)}</span>
                   </Fragment>
                 ))}
+                {/* the your-turn sound: tap one to hear it and keep it */}
+                <span className="self-start whitespace-nowrap pt-1 font-sans-deli text-[10px] font-semibold uppercase tracking-[.14em]">Sound</span>
+                <div className="col-span-2 flex max-w-[11rem] flex-wrap gap-1">
+                  {TURN_SOUNDS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      aria-pressed={turnSound === t.id}
+                      onClick={() => onPickTurnSound(t.id)}
+                      className={`rounded-full border border-deli-green px-2 py-0.5 font-cond text-[12px] font-bold uppercase tracking-[.06em] ${turnSound === t.id ? 'bg-deli-green text-deli-cream' : 'hover:bg-deli-green/10'}`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </span>
