@@ -67,13 +67,14 @@ export function ScorePad({ view }: { view: ClientView }) {
               ))}
             </tr>
           ))}
-          <tr className="border-t-2 border-double border-deli-red/60 font-cond font-extrabold">
-            <td className="px-2 py-1 text-left text-[13px] uppercase tracking-[.08em]">Now</td>
+          <tr className="border-t-2 border-double border-deli-red/60">
+            <td className="px-2 py-1 text-left font-cond text-[13px] font-extrabold uppercase tracking-[.08em]">Now</td>
             {seats.map((s) => (
               <Fragment key={s.seat}>
                 <td className="border-l border-deli-green/20 px-1.5 py-1 opacity-40">·</td>
-                <td className="px-1.5 py-1 text-[16px]">{s.score}</td>
-                <td className={`px-1.5 py-1 text-[16px] ${signTone(s.bits)}`}>{fmt(s.bits)}</td>
+                {/* the totals are handwritten like the hand rows */}
+                <td className={`${fig} px-1.5 py-1`}>{s.score}</td>
+                <td className={`${fig} px-1.5 py-1 ${signTone(s.bits)}`}>{fmt(s.bits)}</td>
               </Fragment>
             ))}
           </tr>

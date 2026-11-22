@@ -90,4 +90,14 @@ describe('overlays', () => {
     expect(screen.getByText('+4').className).toContain('text-deli-green');
     expect(screen.getByText('-4').className).toContain('text-deli-red');
   });
+  it('order pad: the Now totals are handwritten like the hand rows', () => {
+    render(<ScorePad view={view} />);
+    const nowRow = screen.getByText('Now').closest('tr')!;
+    const hand = screen.getAllByText('77')[0]; // Sol's running total in hand 8
+    const now = [...nowRow.querySelectorAll('td')].find((td) => td.textContent === '12')!; // Sol's score now
+    expect(hand.className).toContain('font-script');
+    expect(now.className).toContain('font-script');
+    expect(now.className).not.toContain('font-cond');
+    expect(nowRow.className).not.toContain('font-cond');
+  });
 });
