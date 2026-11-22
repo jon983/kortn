@@ -10,7 +10,7 @@ import type { ClerkProvider } from '@clerk/nextjs';
 export const CLERK_URLS = { signInUrl: '/sign-in', signUpUrl: '/sign-up' } as const;
 
 /**
- * Clerk's box wording, in the deli voice ("Pull up a chair"). Every default
+ * Clerk's box wording. Every default
  * line that would show the Clerk app's name says KORTN instead, so the box
  * reads the same whichever Clerk keys are in use (a local .env.local may hold
  * another app's development keys).
@@ -28,7 +28,7 @@ export const CLERK_TEXT: NonNullable<ComponentProps<typeof ClerkProvider>['local
   },
   signUp: {
     start: {
-      title: 'Pull up a chair',
+      title: 'Sign up',
       subtitle: 'Make an account to join the table.',
     },
     emailLink: { subtitle: 'to continue to KORTN' },

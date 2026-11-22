@@ -159,6 +159,11 @@ body { background: #201811; color: var(--color-bone); }
 /* Pills that sit straight on the room photo (front page): a cream ring keeps them legible. */
 .deli-pill--on-photo { background: var(--color-deli-green); color: var(--color-deli-cream); box-shadow: 0 0 0 2px var(--color-deli-cream), 0 8px 20px rgba(0, 0, 0, .4); }
 .deli-pill--cream-outline { background: rgba(20, 16, 10, .18); color: var(--color-deli-cream); box-shadow: inset 0 0 0 2.5px var(--color-deli-cream), 0 8px 20px rgba(0, 0, 0, .25); }
+/* Keep the cream ring on hover/press (.btn-lift's hover shadow would otherwise replace it). */
+.deli-pill--on-photo.btn-lift:not(:disabled):hover { box-shadow: 0 0 0 2px var(--color-deli-cream), 0 8px 16px rgba(0, 0, 0, .45); }
+.deli-pill--on-photo.btn-lift:not(:disabled):active { box-shadow: 0 0 0 2px var(--color-deli-cream), 0 3px 6px rgba(0, 0, 0, .4); }
+.deli-pill--cream-outline.btn-lift:not(:disabled):hover { box-shadow: inset 0 0 0 2.5px var(--color-deli-cream), 0 8px 16px rgba(0, 0, 0, .45); }
+.deli-pill--cream-outline.btn-lift:not(:disabled):active { box-shadow: inset 0 0 0 2.5px var(--color-deli-cream), 0 3px 6px rgba(0, 0, 0, .4); }
 /* Leaderboard rotation countdown: a thin red line filling under the current choice. */
 .deli-progress { background: var(--color-deli-red); transform-origin: left; animation: deli-progress 6s linear forwards; }
 @keyframes deli-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
