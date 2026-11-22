@@ -1,6 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
 import { HomeView } from './HomeView';
+import { FrontPage } from './FrontPage';
 import { playOrderFrom } from '../lib/ui/table-geometry';
 import { isYourTurn } from '../lib/ui/deli/yourTurn';
 import { db, listMatchesForUser, listPlayersWithNames, loadGameState, getUserStats, getHandAggregates, leaderboardsFrom, upsertUser } from '../lib/db';
@@ -9,7 +9,8 @@ const MIN_HANDS = 10;
 
 export default async function Home() {
   const { userId } = await auth();
-  if (!userId) redirect('/sign-in');
+  // Not signed in: the front door, not the kitchen.
+  if (!userId) return <FrontPage />;
 
   // Keep our copy of name + picture in step with the account, so other players
   // see your avatar at the table. (No uploaded picture → initials.)
