@@ -48,12 +48,44 @@ function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 
   osc.stop(t0 + dur + 0.03);
 }
 
-/** Bright rising two-note chime — "it's your turn". */
+/**
+ * One ringing overtone of a struck bell: a soft strike, then a long fade. Two
+ * sines a hair apart (±0.7 Hz) beat slowly against each other, giving the
+ * gentle shimmer of a singing bowl.
+ */
+function ring(c: AudioContext, freq: number, gain: number, decay: number) {
+  const peak = gain * masterVolume;
+  if (peak <= 0) return;
+  const t0 = c.currentTime;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(peak / 2, t0 + 0.008); // two sines share it
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + decay);
+  g.connect(c.destination);
+  for (const beat of [-0.7, 0.7]) {
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq + beat;
+    osc.connect(g);
+    osc.start(t0);
+    osc.stop(t0 + decay + 0.05);
+  }
+}
+
+/** Singing-bowl overtones: [ratio to the fundamental, loudness, seconds to fade]. Higher ones fade sooner. */
+const BELL: [number, number, number][] = [
+  [1, 0.55, 3.2],
+  [2.71, 0.22, 2.2],
+  [5.15, 0.1, 1.3],
+  [8.43, 0.05, 0.7],
+];
+const BELL_PITCH = 660; // Hz; bright enough to carry over a video call
+
+/** A struck meditation bell, ringing out for about three seconds: "it's your turn". */
 export function playYourTurn(): void {
   const c = getCtx();
   if (!c) return;
-  tone(c, 659.25, 0, 0.18);   // E5
-  tone(c, 987.77, 0.11, 0.3); // B5
+  for (const [ratio, gain, decay] of BELL) ring(c, BELL_PITCH * ratio, gain, decay);
 }
 
 /** Gentle three-note descending flourish — the hand has ended. */
