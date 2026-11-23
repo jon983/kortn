@@ -20,7 +20,7 @@ export const CLERK_TEXT: NonNullable<ComponentProps<typeof ClerkProvider>['local
     start: {
       title: 'Sign in to KORTN',
       titleCombined: 'Continue to KORTN',
-      subtitle: 'Welcome back. Pull up a chair.',
+      subtitle: 'Welcome back.',
     },
     emailCode: { subtitle: 'to continue to KORTN' },
     emailLink: { subtitle: 'to continue to KORTN' },
