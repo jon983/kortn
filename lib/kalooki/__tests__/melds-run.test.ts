@@ -59,7 +59,45 @@ describe('validateRun', () => {
     expect(validateRun([nat(4, 'hearts'), nat(5, 'hearts')]).valid).toBe(false);
   });
 
-  it('rejects a joker that would resolve above the Ace', () => {
-    expect(validateRun([nat(13, 'hearts'), nat(14, 'hearts'), joker()]).valid).toBe(false);
+  it('a joker can never sit above the Ace: picked after K-A, it goes below as the Queen', () => {
+    const r = validateRun([nat(13, 'hearts'), nat(14, 'hearts'), joker()]);
+    expect(r.valid).toBe(true);
+    if (r.valid) expect(r.resolved.map((x) => x.rank)).toEqual([12, 13, 14]);
+  });
+  it('accepts the cards in any order, and resolves them in sequence', () => {
+    const r = validateRun([nat(6, 'hearts'), nat(4, 'hearts'), nat(5, 'hearts')]);
+    expect(r.valid).toBe(true);
+    if (r.valid) expect(r.resolved.map((x) => x.rank)).toEqual([4, 5, 6]);
+    const down = validateRun([nat(9, 'spades'), nat(8, 'spades'), nat(7, 'spades')]);
+    expect(down.valid).toBe(true);
+    if (down.valid) expect(down.resolved.map((x) => x.rank)).toEqual([7, 8, 9]);
+  });
+
+  it('out of order, a joker fills the gap', () => {
+    const r = validateRun([nat(6, 'clubs'), joker(), nat(4, 'clubs')]);
+    expect(r.valid).toBe(true);
+    if (r.valid) expect(r.resolved.map((x) => x.rank)).toEqual([4, 5, 6]);
+  });
+
+  it('out of order, a spare joker goes on the end that scores more', () => {
+    const r = validateRun([nat(6, 'clubs'), nat(5, 'clubs'), joker()]);
+    expect(r.valid).toBe(true);
+    if (r.valid) { expect(r.resolved.map((x) => x.rank)).toEqual([5, 6, 7]); expect(r.points).toBe(18); }
+    // at the top of the run there's no room above, so it goes below
+    const top = validateRun([nat(14, 'clubs'), joker(), nat(13, 'clubs')]);
+    expect(top.valid).toBe(true);
+    if (top.valid) expect(top.resolved.map((x) => x.rank)).toEqual([12, 13, 14]);
+  });
+
+  it('a joker placed in order stays where it was put', () => {
+    const r = validateRun([joker(), nat(5, 'hearts'), nat(6, 'hearts')]);
+    expect(r.valid).toBe(true);
+    if (r.valid) expect(r.resolved[0].rank).toBe(4);
+  });
+
+  it('still rejects what no order can make a run', () => {
+    expect(validateRun([nat(2, 'hearts'), nat(14, 'hearts'), nat(13, 'hearts')]).valid).toBe(false);
+    expect(validateRun([nat(7, 'hearts'), nat(4, 'hearts'), nat(6, 'hearts')]).valid).toBe(false);
+    expect(validateRun([nat(5, 'hearts'), nat(5, 'hearts', 'B'), nat(6, 'hearts')]).valid).toBe(false);
   });
 });

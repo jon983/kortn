@@ -48,4 +48,21 @@ describe('meld / opening gate', () => {
       expect(r.match.round.players[0].hand).toHaveLength(0);
     }
   });
+  it('lays a run down in sequence, however the cards were picked', () => {
+    const setK = [nat(13, 'clubs'), nat(13, 'hearts'), nat(13, 'spades')]; // 30
+    const run = [nat(6, 'diamonds'), nat(4, 'diamonds'), nat(5, 'diamonds')]; // 15
+    const m = fixture([...setK, ...run]);
+    const r = applyAction(m, 0, {
+      type: 'meld',
+      groups: [
+        { kind: 'set', cardIds: setK.map((c) => c.id) },
+        { kind: 'run', cardIds: run.map((c) => c.id) },
+      ],
+    }, () => 0.5);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const laid = r.match.round.melds.find((x) => x.kind === 'run')!;
+      expect(laid.cards.map((c) => (c.kind === 'natural' ? c.rank : 0))).toEqual([4, 5, 6]);
+    }
+  });
 });

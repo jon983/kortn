@@ -676,19 +676,23 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             </div>
           )}
 
-          {/* stock + discard sit vertically centred, and in the middle of the table
-              (padding evens out the side columns); the viewer's melds just below */}
-          <div data-piles className="flex flex-1 flex-col items-center justify-center gap-4 py-2" style={{ paddingLeft: centrePad.left, paddingRight: centrePad.right }}>
-            <StockDiscard
-              stockCount={view.stockCount}
-              stockPack={view.stockTopPack}
-              discardTop={discardHold ?? view.discard[view.discard.length - 1]}
-              stockRef={stockRef}
-              discardRef={discardRef}
-              onDrawStock={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
-              onTakeDiscard={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
-            />
-            <div className="flex flex-wrap justify-center gap-3 px-4">
+          {/* stock + discard sit in the middle of the table: vertically, as the middle of
+              three rows, and across (padding evens out the side columns). Your melds sit
+              at the foot of the bottom row, in front of you; they only push the piles up
+              once they need more than that row. */}
+          <div data-piles className="grid flex-1 grid-rows-[1fr_auto_1fr] justify-items-center gap-4 py-2" style={{ paddingLeft: centrePad.left, paddingRight: centrePad.right }}>
+            <div className="row-start-2">
+              <StockDiscard
+                stockCount={view.stockCount}
+                stockPack={view.stockTopPack}
+                discardTop={discardHold ?? view.discard[view.discard.length - 1]}
+                stockRef={stockRef}
+                discardRef={discardRef}
+                onDrawStock={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleDrawStock : undefined}
+                onTakeDiscard={!dealing && isMyTurn(view) && view.phase === 'awaitingDraw' ? handleTakeDiscard : undefined}
+              />
+            </div>
+            <div data-my-melds className="row-start-3 flex flex-wrap justify-center gap-3 self-end justify-self-stretch px-4">
               {view.melds
                 .filter((m) => m.ownerSeat === view.seat)
                 .map((m) => (
@@ -728,8 +732,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             {wide && <div className="flex shrink-0 items-center pt-6 pb-2"><SeatVideo seat={view.seat} className="h-24 w-24" /></div>}
             {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
             <div className="flex shrink-0 flex-row gap-2 sm:flex-col sm:justify-center sm:gap-3 sm:pt-6 sm:pb-2">
-              <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
-              <button type="button" className={ctrlBtn} onClick={addSpace}>＋ Add space</button>
+              <button type="button" className={ctrlBtn} onClick={sortHandCards}>Sort</button>
+              <button type="button" className={ctrlBtn} onClick={addSpace}>Add space</button>
             </div>
           </div>
 

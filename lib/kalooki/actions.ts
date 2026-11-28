@@ -155,7 +155,8 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
         }
         const v = validateMeld(cards, g.kind);
         if (!v.valid) return { ok: false, reason: v.reason };
-        built.push({ kind: g.kind, cards, points: v.points });
+        // A run lands in sequence, however the cards were picked.
+        built.push({ kind: g.kind, cards: v.resolved.map((r) => r.card), points: v.points });
       }
       const total = built.reduce((s, b) => s + b.points, 0);
       if (!player.hasOpened && total < 40) return { ok: false, reason: 'Opening meld must be at least 40 points.' };
@@ -280,7 +281,7 @@ export function applyAction(match: MatchState, seat: number, action: Action, rng
       const nv = validateMeld(newCards, action.newMeld.kind);
       if (!nv.valid) return { ok: false, reason: nv.reason };
       next.players[seat].hand = next.players[seat].hand.filter((c) => !used.has(c.id));
-      next.melds.push({ id: `m${match.roundNumber}-${next.melds.length}`, kind: action.newMeld.kind, ownerSeat: seat, cards: newCards });
+      next.melds.push({ id: `m${match.roundNumber}-${next.melds.length}`, kind: action.newMeld.kind, ownerSeat: seat, cards: nv.resolved.map((r) => r.card) });
       return { ok: true, match: withRound(match, next) };
     }
     case 'discard': {

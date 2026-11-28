@@ -115,4 +115,16 @@ describe('name plates', () => {
     const { container } = seat({ side: 'left', melds, heightBudget: 2000 });
     expect(container.querySelector<HTMLElement>('[data-melds]')!.dataset.meldRows).toBeUndefined();
   });
+  it('side seats mirror each other: video, plate and hand keep to the outer edge', () => {
+    const meld = { id: 'm1', ownerSeat: 1, kind: 'set', cards: [] } as any;
+    for (const side of ['left', 'right'] as const) {
+      const { container, unmount } = seat({ side, melds: [meld] });
+      const root = container.querySelector<HTMLElement>('[data-side-seat]')!;
+      expect(root.className).toContain(side === 'left' ? 'items-start' : 'items-end');
+      expect(root.className).not.toContain('items-center');
+      // the row is inset so the hand sits the same distance off the chrome on both sides
+      expect(container.querySelector('[data-seat-row]')!.className).toContain(`side-row-${side}`);
+      unmount();
+    }
+  });
 });

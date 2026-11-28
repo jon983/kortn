@@ -244,14 +244,17 @@ body { background: #201811; color: var(--color-bone); }
    the hand clears the chrome on narrower screens. */
 .side-hand > [data-cardback] { width: calc(56px * var(--side-hand-k, 1)); height: calc(20px * var(--side-hand-k, 1)); }
 .side-hand > [data-cardback] > span { scale: var(--side-hand-k, 1); }
-/* Side players' melds sit just inside the side cream lines. The seat row hugs the
-   screen edge (8px column padding) with the sideways hand outermost, so the gap
-   between hand and melds is the line's inset, plus 8px, less the padding and the
-   hand's width (56px x --side-hand-k). Phones hide the side hands and keep the
-   narrow gap. */
+/* Side seats mirror each other. On wider screens each seat row is inset from the
+   screen edge (past the column's 8px padding) so its hand ends 4px short of the
+   chrome on both sides, though the photo has less parquet on the left: inset =
+   strip - 4px - hand width - 8px. With melds, the gap between hand and melds
+   puts the melds 8px inside the cream line: line + 8px - (strip - 4px).
+   Phones hide the side hands, so no inset and the narrow gap. */
 @media (min-width: 640px) {
-  .side-melds-clear-left { column-gap: max(8px, calc(var(--table-line-left, 0px) - 56px * var(--side-hand-k, 1))); }
-  .side-melds-clear-right { column-gap: max(8px, calc(var(--table-line-right, 0px) - 56px * var(--side-hand-k, 1))); }
+  .side-row-left { margin-left: max(0px, calc(var(--table-edge-left, 0px) - 12px - 56px * var(--side-hand-k, 1))); }
+  .side-row-right { margin-right: max(0px, calc(var(--table-edge-right, 0px) - 12px - 56px * var(--side-hand-k, 1))); }
+  .side-melds-clear-left { column-gap: max(8px, calc(var(--table-line-left, 0px) - var(--table-edge-left, 0px) + 12px)); }
+  .side-melds-clear-right { column-gap: max(8px, calc(var(--table-line-right, 0px) - var(--table-edge-right, 0px) + 12px)); }
 }
 .table-under {
   position: absolute; width: 50%; height: 50%;
