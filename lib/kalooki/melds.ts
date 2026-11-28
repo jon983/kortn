@@ -23,7 +23,25 @@ export function validateSet(cards: Card[]): MeldResult {
   return { valid: true, kind: 'set', resolved, points };
 }
 
+/**
+ * A run in any order: the cards as given if they already read low to high
+ * (respecting where a joker was placed), otherwise sorted into sequence. A
+ * spare joker goes on whichever end scores more. `resolved` is in run order.
+ */
 export function validateRun(cards: Card[]): MeldResult {
+  const asGiven = validateRunInOrder(cards);
+  if (asGiven.valid) return asGiven;
+  let best: ValidMeld | null = null;
+  for (const end of ['high', 'low'] as const) {
+    const ordered = arrangeRun(cards, end);
+    const r = ordered && validateRunInOrder(ordered);
+    if (r && r.valid && (!best || r.points > best.points)) best = r;
+  }
+  return best ?? asGiven;
+}
+
+/** A run exactly as ordered: consecutive, low to high. */
+function validateRunInOrder(cards: Card[]): MeldResult {
   if (cards.length < 3) return { valid: false, reason: 'A run must have at least 3 cards.' };
   const nats = naturals(cards);
   if (nats.length === 0) return { valid: false, reason: 'A run needs at least one natural card.' };
