@@ -56,10 +56,11 @@ export function OpponentSeat({
   // edge, with the melds column inboard toward the centre of the table. ---
   if (side) {
     // Small screens: just the name plate (it already says how many cards) — no backs.
+    // Wider: .side-hand sizes the slots so the hand fits beside the table's chrome.
     const hand = (
-      <div className="flex flex-col items-center max-sm:hidden">
+      <div data-side-hand className="side-hand flex flex-col items-center max-sm:hidden">
         {packs.map((pack, i) => (
-          <div key={i} data-cardback className="relative h-5 w-14 first:mt-1">
+          <div key={i} data-cardback className="relative first:mt-1">
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90">
               <CardBack pack={pack} size="sm" />
             </span>

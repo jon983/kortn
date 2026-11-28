@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tableLineY, tableLineSides } from '../TableSurface';
+import { tableLineY, tableLineSides, sideHandScale } from '../TableSurface';
 
 describe('where the cream line sits on the table photo', () => {
   it('landscape: 258px down the photo, scaled with the table', () => {
@@ -15,5 +15,16 @@ describe('where the cream line sits on the table photo', () => {
     expect(tableLineSides(2048, 1374, false)).toEqual({ left: 238, right: 251 });
     expect(tableLineSides(1024, 2000, false)).toEqual({ left: 119, right: 126 });
     expect(tableLineSides(1073, 1600, true)).toEqual({ left: 202, right: 201 });
+  });
+  it('side hands shrink to clear the chrome on the narrower (left) parquet strip, 4px to spare', () => {
+    // Full-size photo: 102px of parquet on the left, room for the full 56px hand.
+    expect(sideHandScale(2048, 1374, false)).toBe(1);
+    // A laptop's table area (1512x787): 58px of parquet -> a 46px hand.
+    expect(sideHandScale(1512, 787, false)).toBeCloseTo(46.4 / 56, 2);
+    expect(sideHandScale(1512, 787, false)).toBeLessThan(1);
+    // Never under half size.
+    expect(sideHandScale(640, 300, false)).toBe(0.5);
+    // Portrait: the strip is ~99px either side.
+    expect(sideHandScale(1073, 1600, true)).toBe(1);
   });
 });

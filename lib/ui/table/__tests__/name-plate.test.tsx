@@ -80,6 +80,12 @@ describe('name plates', () => {
       unmount();
     }
   });
+  it('side hands are sized to fit beside the table’s chrome (.side-hand)', () => {
+    const { container } = seat({ side: 'left', handCount: 3 });
+    const hand = container.querySelector('[data-side-hand]')!;
+    expect(hand.className).toContain('side-hand');
+    expect(hand.querySelectorAll('[data-cardback]')).toHaveLength(3);
+  });
   it('side seats without melds keep the narrow gap', () => {
     const { container } = seat({ side: 'right', melds: [] });
     expect(container.querySelector('[data-seat-row]')!.className).not.toContain('side-melds-clear');

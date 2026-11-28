@@ -4,9 +4,11 @@ import { useEffect, useRef, type ReactElement } from 'react';
 // Must match .table-surface in globals.css: photo size, and how far down the
 // photo the bottom of the cream double line runs (it sits in the frame edge,
 // which scales evenly with the table).
-// The side lines' inner edges are measured in from each side of the photo.
-const LANDSCAPE = { w: 2048, h: 1374, line: 258, left: 238, right: 251 };
-const PORTRAIT = { w: 1073, h: 1600, line: 197, left: 202, right: 201 };
+// The side lines' inner edges are measured in from each side of the photo, and
+// so is the outer edge of the chrome (edgeL/edgeR: the parquet strip beside it).
+// The landscape photo's table sits off-centre: less parquet on the left.
+const LANDSCAPE = { w: 2048, h: 1374, line: 258, left: 238, right: 251, edgeL: 102, edgeR: 121 };
+const PORTRAIT = { w: 1073, h: 1600, line: 197, left: 202, right: 201, edgeL: 99, edgeR: 100 };
 
 const scaleOf = (p: typeof LANDSCAPE, width: number, height: number) => Math.min(width / p.w, height / p.h);
 
@@ -15,6 +17,17 @@ export function tableLineSides(width: number, height: number, portrait: boolean)
   const p = portrait ? PORTRAIT : LANDSCAPE;
   const s = scaleOf(p, width, height);
   return { left: Math.round(p.left * s), right: Math.round(p.right * s) };
+}
+
+/** The side seats' sideways hands: 56px wide at full size, starting 8px in from
+ *  the screen edge. Scale both alike so each clears the chrome by 4px on the
+ *  narrower parquet strip (never larger than full size, never under half). */
+export const SIDE_HAND_W = 56;
+export function sideHandScale(width: number, height: number, portrait: boolean): number {
+  const p = portrait ? PORTRAIT : LANDSCAPE;
+  const strip = Math.min(p.edgeL, p.edgeR) * scaleOf(p, width, height);
+  const k = (strip - 8 - 4) / SIDE_HAND_W;
+  return Math.round(Math.min(1, Math.max(0.5, k)) * 1000) / 1000;
 }
 
 /** Pixels from the top of the table area to the bottom of the cream line, at this size. */
@@ -34,7 +47,8 @@ export function tableLineY(width: number, height: number, portrait: boolean): nu
 export function TableSurface(): ReactElement {
   // Publish the lines' positions to the table area (--table-line, and
   // --table-line-left / -right), so seats can keep their melds inside them
-  // (.table-line-clear, .side-melds-clear-*).
+  // (.table-line-clear, .side-melds-clear-*); and --side-hand-k, so the side
+  // hands fit on the parquet beside the chrome (.side-hand).
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -46,6 +60,7 @@ export function TableSurface(): ReactElement {
       const sides = tableLineSides(el.clientWidth, el.clientHeight, portrait);
       area.style.setProperty('--table-line-left', `${sides.left}px`);
       area.style.setProperty('--table-line-right', `${sides.right}px`);
+      area.style.setProperty('--side-hand-k', String(sideHandScale(el.clientWidth, el.clientHeight, portrait)));
     };
     const ro = new ResizeObserver(update);
     ro.observe(el);
