@@ -65,4 +65,23 @@ describe('name plates', () => {
   it('side seats have no line spacer', () => {
     expect(seat({ side: 'left' }).container.querySelector('[data-line-clear]')).toBeNull();
   });
+  it('one card reads "1 card", not "1 cards"', () => {
+    seat({ handCount: 1, score: 43 });
+    expect(screen.getByText('1 card · 43 pts')).toBeInTheDocument();
+  });
+  it('side seats with melds move them inboard, clear of the table’s cream line (wider screens)', () => {
+    const meld = { id: 'm1', ownerSeat: 1, kind: 'set', cards: [] } as any;
+    for (const side of ['left', 'right'] as const) {
+      const { container, unmount } = seat({ side, melds: [meld] });
+      const row = container.querySelector('[data-seat-row]')!;
+      expect(row.className).toContain(`side-melds-clear-${side}`);
+      // the hand sits on the outer edge, so the gap is measured from the screen edge
+      expect(row.className).toContain(side === 'left' ? 'self-start' : 'self-end');
+      unmount();
+    }
+  });
+  it('side seats without melds keep the narrow gap', () => {
+    const { container } = seat({ side: 'right', melds: [] });
+    expect(container.querySelector('[data-seat-row]')!.className).not.toContain('side-melds-clear');
+  });
 });

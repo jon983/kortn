@@ -20,6 +20,7 @@ import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
 import { CallProvider, CallControls, SeatVideo } from './call';
 import { TableSurface } from './TableSurface';
+import { countLine } from './countLine';
 import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
 import type { ClientView, ServerAction } from '../../server';
@@ -685,7 +686,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           {/* No name label for yourself — just your count (highlighted on your turn). */}
           <div data-plate className={`${SEAT_LABEL} font-sans-deli text-[11px] font-semibold`}>
             {isMyTurn(view) && <TurnRibbon />}
-            {view.you.handCount} cards · {view.you.score} pts
+            {countLine(view.you.handCount, view.you.score)}
           </div>
         </div>
         <ActionBar view={view} onReturnDiscard={handleReturnDiscard} jokerOwed={jokerOwed} onReturnJoker={handleReturnJoker} />
