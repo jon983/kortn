@@ -3,6 +3,7 @@ import { MeldPile } from './MeldPile';
 import type { TableMeld, Pack } from '../../kalooki';
 import type { ReactElement, ReactNode } from 'react';
 import { Avatar } from '../Avatar';
+import { countLine } from './countLine';
 
 /** Cream name-plate sign behind seat labels (deli style); reads on any table art. */
 export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1.5 pt-2.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
@@ -44,7 +45,7 @@ export function OpponentSeat({
         <Avatar name={name} src={avatarUrl} size={20} />
         <span className={`font-cond min-w-0 break-words text-[13px] font-extrabold uppercase leading-none tracking-[.04em] sm:text-[15px] ${status !== 'active' ? 'line-through' : ''}`}>{name}</span>
       </div>
-      <div className="mt-0.5 font-sans-deli text-[10px] font-medium tracking-[.02em] opacity-80 sm:text-[10.5px]">{handCount} cards · {score} pts</div>
+      <div className="mt-0.5 font-sans-deli text-[10px] font-medium tracking-[.02em] opacity-80 sm:text-[10.5px]">{countLine(handCount, score)}</div>
     </div>
   );
   const meldPile = (m: TableMeld) => (
@@ -75,8 +76,10 @@ export function OpponentSeat({
       <div className="flex shrink-0 flex-col items-center text-center">
         <div className="mb-1.5 flex empty:hidden">{media}</div>
         {plate}
-        {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge */}
-        <div className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
+        {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge.
+            The row hugs the outer edge; with melds, the gap keeps them inboard of the
+            table's cream line (.side-melds-clear-*, wider screens). */}
+        <div data-seat-row className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse self-start' : 'flex-row self-end'} ${melds.length ? `side-melds-clear-${side}` : ''}`}>
           {meldsCol}
           {hand}
         </div>

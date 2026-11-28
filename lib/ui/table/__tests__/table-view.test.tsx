@@ -83,6 +83,10 @@ describe('TableView', () => {
     expect(hand.className).toContain('col-span-2');
     expect(hand.className).toContain('row-start-2');
   });
+  it('your plate says "1 card" when you hold one', () => {
+    const { container } = render(<TableView matchId="m1" initial={{ ...baseView, you: { ...baseView.you, hand: [nat(4, 'clubs')], handCount: 1, score: 1 } }} />);
+    expect(container.querySelector('[data-you-seat]')!.textContent).toContain('1 card · 1 pt');
+  });
   it('header shows hand and pot tags', () => {
     render(<TableView matchId="m1" initial={baseView} />);
     expect(screen.getByText('Hand 1')).toBeInTheDocument();

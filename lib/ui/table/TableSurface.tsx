@@ -4,13 +4,23 @@ import { useEffect, useRef, type ReactElement } from 'react';
 // Must match .table-surface in globals.css: photo size, and how far down the
 // photo the bottom of the cream double line runs (it sits in the frame edge,
 // which scales evenly with the table).
-const LANDSCAPE = { w: 2048, h: 1374, line: 258 };
-const PORTRAIT = { w: 1073, h: 1600, line: 197 };
+// The side lines' inner edges are measured in from each side of the photo.
+const LANDSCAPE = { w: 2048, h: 1374, line: 258, left: 238, right: 251 };
+const PORTRAIT = { w: 1073, h: 1600, line: 197, left: 202, right: 201 };
+
+const scaleOf = (p: typeof LANDSCAPE, width: number, height: number) => Math.min(width / p.w, height / p.h);
+
+/** Pixels in from the left and right edges of the table area to the inside of the side cream lines. */
+export function tableLineSides(width: number, height: number, portrait: boolean): { left: number; right: number } {
+  const p = portrait ? PORTRAIT : LANDSCAPE;
+  const s = scaleOf(p, width, height);
+  return { left: Math.round(p.left * s), right: Math.round(p.right * s) };
+}
 
 /** Pixels from the top of the table area to the bottom of the cream line, at this size. */
 export function tableLineY(width: number, height: number, portrait: boolean): number {
   const p = portrait ? PORTRAIT : LANDSCAPE;
-  return Math.round(p.line * Math.min(width / p.w, height / p.h));
+  return Math.round(p.line * scaleOf(p, width, height));
 }
 
 /**
@@ -22,8 +32,9 @@ export function tableLineY(width: number, height: number, portrait: boolean): nu
  * photo loads.
  */
 export function TableSurface(): ReactElement {
-  // Publish the line's position to the table area as --table-line, so the top
-  // seat can keep its melds below it (.table-line-clear).
+  // Publish the lines' positions to the table area (--table-line, and
+  // --table-line-left / -right), so seats can keep their melds inside them
+  // (.table-line-clear, .side-melds-clear-*).
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -32,6 +43,9 @@ export function TableSurface(): ReactElement {
     const update = () => {
       const portrait = window.matchMedia?.('(orientation: portrait)').matches ?? false;
       area.style.setProperty('--table-line', `${tableLineY(el.clientWidth, el.clientHeight, portrait)}px`);
+      const sides = tableLineSides(el.clientWidth, el.clientHeight, portrait);
+      area.style.setProperty('--table-line-left', `${sides.left}px`);
+      area.style.setProperty('--table-line-right', `${sides.right}px`);
     };
     const ro = new ResizeObserver(update);
     ro.observe(el);

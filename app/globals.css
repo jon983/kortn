@@ -239,6 +239,14 @@ body { background: #201811; color: var(--color-bone); }
    --table-line (px from the top of the table area) is set by TableSurface;
    the top seat starts 12px down (p-3 on its row), hence the -12px. */
 .table-line-clear { height: max(0px, calc(var(--table-line, 0px) + 6px - 12px)); }
+/* Side players' melds sit just inside the side cream lines. The seat row hugs the
+   screen edge (8px column padding) with the 56px sideways hand outermost, so the
+   gap between hand and melds is the line's inset, plus 8px, less those 64px.
+   Phones hide the side hands and keep the narrow gap. */
+@media (min-width: 640px) {
+  .side-melds-clear-left { column-gap: max(8px, calc(var(--table-line-left, 0px) + 8px - 64px)); }
+  .side-melds-clear-right { column-gap: max(8px, calc(var(--table-line-right, 0px) + 8px - 64px)); }
+}
 .table-under {
   position: absolute; width: 50%; height: 50%;
   background-image: var(--img); background-repeat: no-repeat;
