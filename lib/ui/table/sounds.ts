@@ -33,22 +33,6 @@ export function primeAudio(): void {
   getCtx();
 }
 
-function tone(c: AudioContext, freq: number, start: number, dur: number, gain = 1.0, type: OscillatorType = 'triangle') {
-  const peak = gain * masterVolume;
-  if (peak <= 0) return;
-  const osc = c.createOscillator();
-  const g = c.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  const t0 = c.currentTime + start;
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(peak, t0 + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  osc.connect(g).connect(c.destination);
-  osc.start(t0);
-  osc.stop(t0 + dur + 0.03);
-}
-
 /**
  * One sine partial: a quick attack, then an exponential fade (time constant
  * `tau` seconds). `glide` starts the pitch that much higher and lets it drop,
@@ -161,14 +145,32 @@ export function playYourTurn(sound: TurnSound = turnSound): void {
   RECIPES[sound](c, LEVEL[sound] * masterVolume);
 }
 
-/** Gentle three-note descending flourish — the hand has ended. */
+/**
+ * The hand has ended: a warm, rising vibraphone flourish. C5-E5-G5 rolled into
+ * a chord that settles on a ringing C6, over a soft low C. Each note is a
+ * mallet tone (a fundamental plus a quick overtone) with a barely detuned twin
+ * for a gentle shimmer. About a second and a quarter.
+ */
 export function playHandEnd(): void {
+  if (masterVolume <= 0) return;
   const c = getCtx();
   if (!c) return;
-  tone(c, 784.0, 0, 0.22);    // G5
-  tone(c, 659.25, 0.17, 0.22); // E5
-  tone(c, 523.25, 0.34, 0.42); // C5
+  const k = HAND_END_LEVEL * masterVolume;
+  const notes: [number, number, number][] = [
+    [0, 523.25, 0.35],    // C5
+    [0.09, 659.25, 0.35], // E5
+    [0.18, 783.99, 0.38], // G5
+    [0.3, 1046.5, 0.6],   // C6, left to ring
+  ];
+  for (const [at, f, tau] of notes) {
+    partial(c, at, f, 0.55 * k, tau, 0.004);
+    partial(c, at, f * 1.003, 0.25 * k, tau, 0.004); // the shimmer
+    partial(c, at, f * 4, 0.12 * k, 0.06, 0.002);    // the mallet's ping
+  }
+  partial(c, 0.3, 261.63, 0.35 * k, 0.5, 0.01); // C4 underneath
 }
+/** Keeps the flourish's chord (several notes ringing at once) about as loud as the turn sounds. */
+const HAND_END_LEVEL = 0.35;
 
 /** Prime/resume the audio context on the first user gesture. */
 export function unlockAudioOnce(): void {
