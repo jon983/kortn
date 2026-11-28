@@ -1,9 +1,22 @@
 import { CardBack } from './CardBack';
 import { MeldPile } from './MeldPile';
 import type { TableMeld, Pack } from '../../kalooki';
-import type { ReactElement, ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { Avatar } from '../Avatar';
 import { countLine } from './countLine';
+
+/** A meld pile on the table: a 96px card plus its 4px padding, top and bottom. */
+const PILE_H = 104;
+const PILE_GAP = 8;
+
+/**
+ * How many melds a side seat stacks in one column, so they fit in `availH`
+ * pixels (a further column starts inboard). At least one; never more than
+ * there are melds.
+ */
+export function meldRows(count: number, availH: number, pileH = PILE_H, gap = PILE_GAP): number {
+  return Math.max(1, Math.min(count, Math.floor((availH + gap) / (pileH + gap))));
+}
 
 /** Cream name-plate sign behind seat labels (deli style); reads on any table art. */
 export const SEAT_LABEL = 'relative inline-block max-w-[34vw] overflow-hidden rounded-[4px] bg-deli-cream px-2 pb-1.5 pt-2.5 leading-tight sm:max-w-[13rem] sm:px-2.5 text-deli-green shadow-[0_3px_10px_rgba(0,0,0,.4)]';
@@ -15,7 +28,7 @@ export function TurnRibbon(): ReactElement {
 
 export function OpponentSeat({
   name, avatarUrl, handCount, handPacks, score, status, isTurn, melds, onMeldClick, armedMeldIds, flashMeldIds,
-  meldOrientation = 'row', visibleCount, side, media, centreHand = false,
+  meldOrientation = 'row', visibleCount, side, media, centreHand = false, heightBudget,
 }: {
   name: string; avatarUrl?: string | null;
   /** Live video circle (video call): above the plate on side seats; on the top seat beside the plate (phones) or left of plate and cards (wider). Renders nothing when off. */
@@ -29,7 +42,22 @@ export function OpponentSeat({
   side?: 'left' | 'right';
   /** The only top seat: balance the video with an empty column so the cards stay centred. */
   centreHand?: boolean;
+  /** Side seats: the height their column has on screen (px). Melds that would run
+   *  past it wrap into further columns, inboard, instead of stretching the page. */
+  heightBudget?: number;
 }): ReactElement {
+  const seatRef = useRef<HTMLDivElement>(null);
+  const meldsRef = useRef<HTMLDivElement>(null);
+  const [rows, setRows] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const seatEl = seatRef.current, meldsEl = meldsRef.current;
+    if (!side || heightBudget == null || !seatEl || !meldsEl || melds.length === 0) { setRows(null); return; }
+    // Everything above the melds (video, plate) stays; the column has 8px padding top and bottom.
+    const above = meldsEl.getBoundingClientRect().top - seatEl.getBoundingClientRect().top;
+    const pileH = Math.max(0, ...Array.from(meldsEl.children, (c) => (c as HTMLElement).offsetHeight)) || PILE_H;
+    const r = meldRows(melds.length, heightBudget - 16 - above, pileH);
+    setRows(r >= melds.length ? null : r);
+  }, [side, heightBudget, melds.length]);
   // Prefer the real per-card packs; fall back to alternating if not provided.
   const allPacks: Pack[] = handPacks && handPacks.length
     ? handPacks
@@ -56,10 +84,11 @@ export function OpponentSeat({
   // edge, with the melds column inboard toward the centre of the table. ---
   if (side) {
     // Small screens: just the name plate (it already says how many cards) — no backs.
+    // Wider: .side-hand sizes the slots so the hand fits beside the table's chrome.
     const hand = (
-      <div className="flex flex-col items-center max-sm:hidden">
+      <div data-side-hand className="side-hand flex flex-col items-center max-sm:hidden">
         {packs.map((pack, i) => (
-          <div key={i} data-cardback className="relative h-5 w-14 first:mt-1">
+          <div key={i} data-cardback className="relative first:mt-1">
             <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90">
               <CardBack pack={pack} size="sm" />
             </span>
@@ -67,13 +96,25 @@ export function OpponentSeat({
         ))}
       </div>
     );
-    const meldsCol = (
-      <div className="flex flex-col items-center gap-2">
+    // One column of melds; if they'd run off the screen, a grid of that many rows
+    // filling columns inboard (right-to-left on the right seat).
+    const meldsCol = rows == null ? (
+      <div ref={meldsRef} data-melds className="flex flex-col items-center gap-2">
+        {melds.map(meldPile)}
+      </div>
+    ) : (
+      <div
+        ref={meldsRef}
+        data-melds
+        data-meld-rows={rows}
+        className="grid justify-items-center gap-2 *:[direction:ltr]"
+        style={{ gridTemplateRows: `repeat(${rows}, auto)`, gridAutoFlow: 'column', direction: side === 'right' ? 'rtl' : 'ltr' }}
+      >
         {melds.map(meldPile)}
       </div>
     );
     return (
-      <div className="flex shrink-0 flex-col items-center text-center">
+      <div ref={seatRef} className="flex shrink-0 flex-col items-center text-center">
         <div className="mb-1.5 flex empty:hidden">{media}</div>
         {plate}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge.

@@ -20,6 +20,7 @@ import { evaluateMeld, canOpen, isMyTurn } from './legality';
 import { seatAround } from '../table-geometry';
 import { CallProvider, CallControls, SeatVideo } from './call';
 import { TableSurface } from './TableSurface';
+import { useCentrePadding } from './useCentrePadding';
 import { countLine } from './countLine';
 import { joinCallAction } from '../../../app/actions/call';
 import { arrangeRun, type Action } from '../../kalooki';
@@ -107,6 +108,30 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const stockRef = useRef<HTMLDivElement>(null);
   const discardRef = useRef<HTMLDivElement>(null);
   const wide = useWide();
+  // The stock and discard stay in the middle of the table, whatever the side
+  // columns hold (a side seat's melds widen its column).
+  const leftColRef = useRef<HTMLDivElement>(null);
+  const rightColRef = useRef<HTMLDivElement>(null);
+  const centreColRef = useRef<HTMLDivElement>(null);
+  const centrePad = useCentrePadding(leftColRef, rightColRef, centreColRef);
+  // How tall the side columns can be with the page still fitting the screen:
+  // the window, less everything outside the seats row (header, your hand).
+  // Side seats wrap their melds to stay within it.
+  const mainRowRef = useRef<HTMLDivElement>(null);
+  const [sideBudget, setSideBudget] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const root = rootRef.current, row = mainRowRef.current;
+    if (!root || !row || typeof ResizeObserver === 'undefined') return;
+    const update = () => {
+      const next = Math.round(window.innerHeight - (root.offsetHeight - row.offsetHeight));
+      setSideBudget((b) => (b === next ? b : next));
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(root);
+    window.addEventListener('resize', update);
+    update();
+    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+  }, []);
   const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
@@ -464,6 +489,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         meldOrientation={orientation}
         visibleCount={dealing ? (dealCounts[o.seat] ?? 0) : undefined}
         side={side}
+        heightBudget={side ? sideBudget : undefined}
         centreHand={!side && seating.top.length === 1}
       />
     </div>
@@ -636,22 +662,23 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <div className="relative isolate flex min-h-0 flex-1 flex-col">
       <TableSurface />
       {/* Main table area: side seats flank a centre column (top seats + piles). */}
-      <div className="flex min-h-0 flex-1">
+      <div ref={mainRowRef} className="flex min-h-0 flex-1">
         {seating.left.length > 0 && (
-          <div data-seat-column="left" className="flex flex-col justify-center gap-6 p-2">
+          <div ref={leftColRef} data-seat-column="left" className="flex flex-col justify-center gap-6 p-2">
             {seating.left.map((o) => renderOpp(o, 'column', 'left'))}
           </div>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div ref={centreColRef} className="flex min-w-0 flex-1 flex-col">
           {seating.top.length > 0 && (
             <div className="flex flex-wrap justify-around gap-4 p-3">
               {seating.top.map((o) => renderOpp(o, 'row'))}
             </div>
           )}
 
-          {/* stock + discard sit vertically centred; the viewer's melds just below */}
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
+          {/* stock + discard sit vertically centred, and in the middle of the table
+              (padding evens out the side columns); the viewer's melds just below */}
+          <div data-piles className="flex flex-1 flex-col items-center justify-center gap-4 py-2" style={{ paddingLeft: centrePad.left, paddingRight: centrePad.right }}>
             <StockDiscard
               stockCount={view.stockCount}
               stockPack={view.stockTopPack}
@@ -672,7 +699,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         </div>
 
         {seating.right.length > 0 && (
-          <div data-seat-column="right" className="flex flex-col justify-center gap-6 p-2">
+          <div ref={rightColRef} data-seat-column="right" className="flex flex-col justify-center gap-6 p-2">
             {seating.right.map((o) => renderOpp(o, 'column', 'right'))}
           </div>
         )}
