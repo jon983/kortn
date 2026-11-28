@@ -732,8 +732,8 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
             {wide && <div className="flex shrink-0 items-center pt-6 pb-2"><SeatVideo seat={view.seat} className="h-24 w-24" /></div>}
             {/* left controls: Sort + Add space (always available; pt-6/pb-2 match the hand) */}
             <div className="flex shrink-0 flex-row gap-2 sm:flex-col sm:justify-center sm:gap-3 sm:pt-6 sm:pb-2">
-              <button type="button" className={ctrlBtn} onClick={sortHandCards}>↕ Sort</button>
-              <button type="button" className={ctrlBtn} onClick={addSpace}>＋ Add space</button>
+              <button type="button" className={ctrlBtn} onClick={sortHandCards}>Sort</button>
+              <button type="button" className={ctrlBtn} onClick={addSpace}>Add space</button>
             </div>
           </div>
 
