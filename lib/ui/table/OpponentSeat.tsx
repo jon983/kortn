@@ -114,13 +114,15 @@ export function OpponentSeat({
       </div>
     );
     return (
-      <div ref={seatRef} className="flex shrink-0 flex-col items-center text-center">
+      // Mirrored: video, plate and hand all keep to the outer edge, so the two side
+      // seats match whatever their melds add inboard.
+      <div ref={seatRef} data-side-seat={side} className={`flex shrink-0 flex-col text-center ${side === 'left' ? 'items-start' : 'items-end'}`}>
         <div className="mb-1.5 flex empty:hidden">{media}</div>
         {plate}
         {/* children are [melds, hand]; reverse on the left so the hand lands on the outer edge.
-            The row hugs the outer edge; with melds, the gap keeps them inboard of the
-            table's cream line (.side-melds-clear-*, wider screens). */}
-        <div data-seat-row className={`mt-3.5 flex items-start gap-2 ${side === 'left' ? 'flex-row-reverse self-start' : 'flex-row self-end'} ${melds.length ? `side-melds-clear-${side}` : ''}`}>
+            The row is inset so the hand sits just off the chrome (.side-row-*); with melds,
+            the gap keeps them inboard of the table's cream line (.side-melds-clear-*). */}
+        <div data-seat-row className={`mt-3.5 flex items-start gap-2 side-row-${side} ${side === 'left' ? 'flex-row-reverse self-start' : 'flex-row self-end'} ${melds.length ? `side-melds-clear-${side}` : ''}`}>
           {meldsCol}
           {hand}
         </div>

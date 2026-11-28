@@ -19,6 +19,13 @@ export function tableLineSides(width: number, height: number, portrait: boolean)
   return { left: Math.round(p.left * s), right: Math.round(p.right * s) };
 }
 
+/** Pixels of parquet beside the table on each side (screen edge to the chrome), at this size. */
+export function tableEdgeSides(width: number, height: number, portrait: boolean): { left: number; right: number } {
+  const p = portrait ? PORTRAIT : LANDSCAPE;
+  const s = scaleOf(p, width, height);
+  return { left: Math.round(p.edgeL * s), right: Math.round(p.edgeR * s) };
+}
+
 /** The side seats' sideways hands: 56px wide at full size, starting 8px in from
  *  the screen edge. Scale both alike so each clears the chrome by 4px on the
  *  narrower parquet strip (never larger than full size, never under half). */
@@ -47,8 +54,9 @@ export function tableLineY(width: number, height: number, portrait: boolean): nu
 export function TableSurface(): ReactElement {
   // Publish the lines' positions to the table area (--table-line, and
   // --table-line-left / -right), so seats can keep their melds inside them
-  // (.table-line-clear, .side-melds-clear-*); and --side-hand-k, so the side
-  // hands fit on the parquet beside the chrome (.side-hand).
+  // (.table-line-clear, .side-melds-clear-*); and the parquet strips beside the
+  // chrome (--table-edge-left / -right) with --side-hand-k, so the side hands
+  // fit there, the same distance from the table on both sides (.side-hand*).
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -60,6 +68,9 @@ export function TableSurface(): ReactElement {
       const sides = tableLineSides(el.clientWidth, el.clientHeight, portrait);
       area.style.setProperty('--table-line-left', `${sides.left}px`);
       area.style.setProperty('--table-line-right', `${sides.right}px`);
+      const edges = tableEdgeSides(el.clientWidth, el.clientHeight, portrait);
+      area.style.setProperty('--table-edge-left', `${edges.left}px`);
+      area.style.setProperty('--table-edge-right', `${edges.right}px`);
       area.style.setProperty('--side-hand-k', String(sideHandScale(el.clientWidth, el.clientHeight, portrait)));
     };
     const ro = new ResizeObserver(update);
