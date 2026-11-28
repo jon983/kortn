@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { OpponentSeat } from '../OpponentSeat';
+import { OpponentSeat, meldRows } from '../OpponentSeat';
 
 const seat = (over: Partial<Parameters<typeof OpponentSeat>[0]> = {}) =>
   render(<OpponentSeat name="Ines" handCount={13} score={43} status="active" isTurn={false} melds={[]} {...over} />);
@@ -89,5 +89,30 @@ describe('name plates', () => {
   it('side seats without melds keep the narrow gap', () => {
     const { container } = seat({ side: 'right', melds: [] });
     expect(container.querySelector('[data-seat-row]')!.className).not.toContain('side-melds-clear');
+  });
+  it('a side seat’s melds stack in one column while they fit on screen', () => {
+    expect(meldRows(4, 1000)).toBe(4);
+    expect(meldRows(1, 50)).toBe(1);
+  });
+  it('...and wrap into more columns when they would run off the bottom', () => {
+    // 104px piles, 8px apart: 330px holds three, 220px holds two (104 + 8 + 104 = 216).
+    expect(meldRows(4, 330)).toBe(3);
+    expect(meldRows(4, 220)).toBe(2);
+    expect(meldRows(4, 215)).toBe(1);
+  });
+  it('side seats lay their melds in a grid of that many rows, filling inboard', () => {
+    const melds = [1, 2, 3, 4].map((i) => ({ id: `m${i}`, ownerSeat: 1, kind: 'set', cards: [] }) as any);
+    for (const side of ['left', 'right'] as const) {
+      // 250px budget, less 16px of padding: two 104px piles per column.
+      const { container, unmount } = seat({ side, melds, heightBudget: 250 });
+      const grid = container.querySelector<HTMLElement>('[data-melds]')!;
+      expect(grid.dataset.meldRows).toBe('2');
+      expect(grid.style.gridAutoFlow).toBe('column');
+      expect(grid.style.direction).toBe(side === 'right' ? 'rtl' : 'ltr');
+      unmount();
+    }
+    // Plenty of room: one plain column.
+    const { container } = seat({ side: 'left', melds, heightBudget: 2000 });
+    expect(container.querySelector<HTMLElement>('[data-melds]')!.dataset.meldRows).toBeUndefined();
   });
 });

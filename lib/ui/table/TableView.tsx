@@ -114,6 +114,24 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
   const rightColRef = useRef<HTMLDivElement>(null);
   const centreColRef = useRef<HTMLDivElement>(null);
   const centrePad = useCentrePadding(leftColRef, rightColRef, centreColRef);
+  // How tall the side columns can be with the page still fitting the screen:
+  // the window, less everything outside the seats row (header, your hand).
+  // Side seats wrap their melds to stay within it.
+  const mainRowRef = useRef<HTMLDivElement>(null);
+  const [sideBudget, setSideBudget] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const root = rootRef.current, row = mainRowRef.current;
+    if (!root || !row || typeof ResizeObserver === 'undefined') return;
+    const update = () => {
+      const next = Math.round(window.innerHeight - (root.offsetHeight - row.offsetHeight));
+      setSideBudget((b) => (b === next ? b : next));
+    };
+    const ro = new ResizeObserver(update);
+    ro.observe(root);
+    window.addEventListener('resize', update);
+    update();
+    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+  }, []);
   const [flights, setFlights] = useState<import('./FlyingCard').Flight[]>([]);
   const [flyHiddenId, setFlyHiddenId] = useState<string | null>(null);
   const flightKey = useRef(0);
@@ -471,6 +489,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
         meldOrientation={orientation}
         visibleCount={dealing ? (dealCounts[o.seat] ?? 0) : undefined}
         side={side}
+        heightBudget={side ? sideBudget : undefined}
         centreHand={!side && seating.top.length === 1}
       />
     </div>
@@ -643,7 +662,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
       <div className="relative isolate flex min-h-0 flex-1 flex-col">
       <TableSurface />
       {/* Main table area: side seats flank a centre column (top seats + piles). */}
-      <div className="flex min-h-0 flex-1">
+      <div ref={mainRowRef} className="flex min-h-0 flex-1">
         {seating.left.length > 0 && (
           <div ref={leftColRef} data-seat-column="left" className="flex flex-col justify-center gap-6 p-2">
             {seating.left.map((o) => renderOpp(o, 'column', 'left'))}
