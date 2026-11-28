@@ -64,10 +64,14 @@ export interface MatchState {
   /** Between hands: which seats have clicked "Next hand". Reset when a new round is dealt. */
   readyNext?: boolean[];
   statuses: SeatStatus[];
-  /** Rebuy decision made (bought back OR declined / ruled out). */
+  /** The current bust's rebuy decision is made (bought back OR declined / ruled out).
+   *  Re-opened when a seat that bought back busts again with a buy-in left. */
   rebought: boolean[];
   /** Seats that actually paid to buy back in (absent on matches from before this was tracked). */
   boughtBack?: boolean[];
+  /** How many times each seat has bought back in (up to MAX_REBUYS). Absent on older
+   *  matches, where a seat in `boughtBack` counts as one; filled in at the next bust. */
+  rebuys?: number[];
   /** End-of-match bit settlement per seat (ante, rebuys, pot) — already folded into `bits`. */
   payout?: number[];
   /** Ended early by a player: no winner, no pot paid out; per-hand bits stand. */

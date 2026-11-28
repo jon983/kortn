@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyBusts, rebuy, matchWinner, awardPot, canRebuy, resolveImpossibleRebuys, inferBoughtBack } from '../scoring';
+import { applyBusts, rebuy, matchWinner, awardPot, canRebuy, resolveImpossibleRebuys, inferBoughtBack, rebuyCount, MAX_REBUYS } from '../scoring';
 import type { MatchState } from '../state';
 
 const base = (scores: number[], statuses: any[], pot = 12, rebought?: boolean[]): MatchState => ({
@@ -22,7 +22,7 @@ describe('match end', () => {
     expect(m.pot).toBe(16);
   });
 
-  it('rejects a second rebuy', () => {
+  it('rejects a rebuy once the bust is settled (declined or ruled out)', () => {
     expect(() => rebuy(base([151, 40], ['busted', 'active'], 12, [true, false]), 0)).toThrow();
   });
 
@@ -113,5 +113,65 @@ describe('inferBoughtBack', () => {
       history,
     };
     expect(inferBoughtBack(m)).toEqual([true, false, false, true]);
+  });
+});
+
+describe('buying back in twice', () => {
+  it('two buy-ins a match', () => {
+    expect(MAX_REBUYS).toBe(2);
+  });
+
+  it('a seat that bought back and busts again gets a second chance, then is out on the third bust', () => {
+    // seat 0 busts and buys back in (pot 12 -> 16)
+    let m = applyBusts(base([160, 40, 90], ['active', 'active', 'active'], 12));
+    expect(canRebuy(m, 0)).toBe(true);
+    m = rebuy(m, 0);
+    expect(m.rebuys).toEqual([1, 0, 0]);
+    expect(m.scores[0]).toBe(90);
+    // busts again: the decision re-opens, and a second buy-in is allowed (pot -> 20)
+    m = applyBusts({ ...m, scores: [170, 60, 100] });
+    expect(m.statuses[0]).toBe('busted');
+    expect(m.rebought[0]).toBe(false);
+    expect(canRebuy(m, 0)).toBe(true);
+    m = rebuy(m, 0);
+    expect(m.rebuys).toEqual([2, 0, 0]);
+    expect(m.pot).toBe(20);
+    expect(m.statuses[0]).toBe('active');
+    // third bust: no buy-ins left, so it's settled as out straight away
+    m = applyBusts({ ...m, scores: [180, 70, 110] });
+    expect(m.statuses[0]).toBe('busted');
+    expect(m.rebought[0]).toBe(true);
+    expect(canRebuy(m, 0)).toBe(false);
+    expect(() => rebuy(m, 0)).toThrow();
+  });
+
+  it('declining is still final', () => {
+    let m = applyBusts(base([160, 40, 90], ['active', 'active', 'active'], 12));
+    m = { ...m, rebought: [true, false, false] }; // declined
+    m = applyBusts({ ...m, scores: [160, 60, 100] });
+    expect(m.statuses[0]).toBe('busted');
+    expect(canRebuy(m, 0)).toBe(false);
+  });
+
+  it('each buy-in costs 4 bits at the end; it all still sums to zero', () => {
+    // 3 seats -> pot 12; seat 1 bought back twice (+8 -> 20); seat 0 wins.
+    const m: MatchState = {
+      ...base([90, 160, 170], ['active', 'busted', 'busted'], 20, [false, true, true]),
+      bits: [0, 0, 0],
+      boughtBack: [false, true, false],
+      rebuys: [0, 2, 0],
+    };
+    const done = awardPot(m);
+    expect(done.payout).toEqual([16, -12, -4]);
+    expect(done.bits.reduce((a, b) => a + b, 0)).toBe(0);
+  });
+
+  it('a match from before the count was kept: a seat marked as having bought back counts as one, and may buy back once more', () => {
+    const old: MatchState = { ...base([90, 40, 100], ['active', 'active', 'active'], 16, [true, false, false]), boughtBack: [true, false, false] };
+    expect(rebuyCount(old, 0)).toBe(1);
+    const busted = applyBusts({ ...old, scores: [170, 40, 100] });
+    expect(busted.rebuys).toEqual([1, 0, 0]);
+    expect(canRebuy(busted, 0)).toBe(true);
+    expect(rebuy(busted, 0).rebuys).toEqual([2, 0, 0]);
   });
 });
