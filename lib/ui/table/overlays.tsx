@@ -146,7 +146,12 @@ export function RoundSummary({ view, onReady }: { view: ClientView; onReady: () 
   </Scrim>;
 }
 
-export function RebuyPrompt({ canRebuy = true, onRebuy, onDecline }: { canRebuy?: boolean; onRebuy: () => void; onDecline: () => void }) {
+export function RebuyPrompt({ canRebuy = true, rebuysLeft = 2, onRebuy, onDecline }: {
+  canRebuy?: boolean;
+  /** Buy-ins you have left this match (two a match): the last one says so. */
+  rebuysLeft?: number;
+  onRebuy: () => void; onDecline: () => void;
+}) {
   // A tear-off ticket: red stub, dashed perforation, cream body.
   return <Scrim>
     <div data-ticket className="settle flex w-full max-w-[380px] overflow-hidden rounded-md text-deli-green shadow-2xl">
@@ -158,6 +163,9 @@ export function RebuyPrompt({ canRebuy = true, onRebuy, onDecline }: { canRebuy?
         {canRebuy ? (
           <>
             <p className="mt-2 font-sans-deli text-[13px]">Buy back in for 4 bits and re-enter at the current top score?</p>
+            <p data-rebuys-left className="mt-1 font-sans-deli text-[12px] opacity-75">
+              {rebuysLeft <= 1 ? 'This is your last buy-in.' : 'You can buy back in twice a match.'}
+            </p>
             <div className="mt-4 flex justify-center gap-2.5">
               <button type="button" className="deli-pill deli-pill--red btn-lift !px-4 !py-2 !text-[14px]" onClick={onRebuy}>Buy back in</button>
               <button type="button" className="deli-pill deli-pill--outline btn-lift !px-4 !py-2 !text-[14px]" onClick={onDecline}>Decline</button>

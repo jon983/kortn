@@ -8,6 +8,15 @@ export function handScore(hand: Card[]): number {
 const BIT_COST: Record<string, number> = { normal: 1, kalooki: 2, treasure: 4 };
 /** Every seat antes this many bits into the pot at the start; a rebuy costs the same again. */
 export const ANTE = 4;
+/** A seat may buy back in this many times a match, ANTE each time. */
+export const MAX_REBUYS = 2;
+
+/** How many times a seat has bought back in (older matches: one, if it's marked as having bought back). */
+export function rebuyCount(match: MatchState, seat: number): number {
+  if (match.rebuys) return match.rebuys[seat] ?? 0;
+  const bought = match.boughtBack ? match.boughtBack[seat] : match.rebought[seat] && match.statuses[seat] === 'active';
+  return bought ? 1 : 0;
+}
 
 /**
  * Tally hand-point penalties and bit payments for the round that just ended.
@@ -54,23 +63,33 @@ export function settleRound(match: MatchState): MatchState {
   return { ...match, scores, bits, history: [...(match.history ?? []), entry] };
 }
 
+/**
+ * Seats over 150 go bust. A seat busting again after buying back in gets a fresh
+ * rebuy decision if it has a buy-in left; otherwise it's out.
+ */
 export function applyBusts(match: MatchState): MatchState {
   const statuses = match.statuses.slice();
+  const rebought = match.rebought.slice();
+  const rebuys = Array.from({ length: match.seats }, (_, s) => rebuyCount(match, s));
   for (let s = 0; s < match.seats; s++) {
-    if (statuses[s] === 'active' && match.scores[s] > 150) statuses[s] = 'busted';
+    if (statuses[s] === 'active' && match.scores[s] > 150) {
+      statuses[s] = 'busted';
+      rebought[s] = rebuys[s] >= MAX_REBUYS;
+    }
   }
-  return { ...match, statuses };
+  return { ...match, statuses, rebought, rebuys };
 }
 
 const activeCount = (match: MatchState): number =>
   match.statuses.filter((s) => s === 'active').length;
 
 /**
- * A busted seat may buy back in (once) only while at least two seats are still
- * in — otherwise the match is already decided.
+ * A busted seat may buy back in (up to MAX_REBUYS times a match) only while at
+ * least two seats are still in — otherwise the match is already decided.
  */
 export function canRebuy(match: MatchState, seat: number): boolean {
-  return match.statuses[seat] === 'busted' && !match.rebought[seat] && activeCount(match) >= 2;
+  return match.statuses[seat] === 'busted' && !match.rebought[seat]
+    && rebuyCount(match, seat) < MAX_REBUYS && activeCount(match) >= 2;
 }
 
 /**
@@ -85,7 +104,7 @@ export function resolveImpossibleRebuys(match: MatchState): MatchState {
 
 export function rebuy(match: MatchState, seat: number): MatchState {
   if (match.statuses[seat] !== 'busted') throw new Error('Only a busted seat can rebuy.');
-  if (match.rebought[seat]) throw new Error('A seat may only rebuy once.');
+  if (match.rebought[seat] || rebuyCount(match, seat) >= MAX_REBUYS) throw new Error(`A seat may only buy back in ${MAX_REBUYS} times.`);
   if (!canRebuy(match, seat)) throw new Error('Too few players remain to buy back in.');
   const activeScores = match.scores.filter((_, s) => match.statuses[s] === 'active');
   const highest = activeScores.length ? Math.max(...activeScores) : 0;
@@ -97,7 +116,9 @@ export function rebuy(match: MatchState, seat: number): MatchState {
   rebought[seat] = true;
   const boughtBack = (match.boughtBack ?? new Array(match.seats).fill(false)).slice();
   boughtBack[seat] = true;
-  return { ...match, scores, statuses, rebought, boughtBack, pot: match.pot + ANTE };
+  const rebuys = Array.from({ length: match.seats }, (_, s) => rebuyCount(match, s));
+  rebuys[seat] += 1;
+  return { ...match, scores, statuses, rebought, boughtBack, rebuys, pot: match.pot + ANTE };
 }
 
 /**
@@ -154,8 +175,10 @@ export function inferBoughtBack(match: MatchState): boolean[] {
  */
 export function potPayout(match: MatchState, winnerSeat: number): number[] {
   const boughtBack = match.boughtBack ?? [];
-  return Array.from({ length: match.seats }, (_, s) =>
-    -ANTE - (boughtBack[s] ? ANTE : 0) + (s === winnerSeat ? match.pot : 0));
+  return Array.from({ length: match.seats }, (_, s) => {
+    const rebuys = match.rebuys ? (match.rebuys[s] ?? 0) : boughtBack[s] ? 1 : 0;
+    return -ANTE - rebuys * ANTE + (s === winnerSeat ? match.pot : 0);
+  });
 }
 
 /**

@@ -1,6 +1,6 @@
 // lib/server/redact.ts
 import {
-  layoutMeld,
+  layoutMeld, rebuyCount, MAX_REBUYS,
   type MatchState, type Card, type TableMeld, type Phase, type GoOutType, type SeatStatus, type Pack,
   type RoundHistoryEntry,
 } from '../kalooki';
@@ -13,6 +13,8 @@ export interface SelfView {
   jokerObligationIds: string[];
   /** Whether you've resolved a bust (rebought or declined). */
   rebought: boolean;
+  /** How many more times you may buy back in this match. */
+  rebuysLeft: number;
 }
 export interface OpponentView {
   seat: number; handCount: number; score: number; bits: number; status: SeatStatus; hasOpened: boolean;
@@ -71,6 +73,7 @@ export function redactStateFor(
     drawObligationId: round.turn === seat ? (round.drawObligation?.id ?? null) : null,
     jokerObligationIds: round.turn === seat ? (round.jokerObligation ?? []).slice() : [],
     rebought: state.rebought[seat] ?? false,
+    rebuysLeft: Math.max(0, MAX_REBUYS - rebuyCount(state, seat)),
   };
   const opponents: OpponentView[] = round.players
     .filter((p) => p.seat !== seat)

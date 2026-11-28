@@ -858,6 +858,7 @@ export function TableView({ matchId, initial, initialChat = [] }: { matchId: str
           canRebuy={
             [view.you.score, ...view.opponents.map((o) => o.score)].filter((s) => s <= 150).length >= 2
           }
+          rebuysLeft={view.you.rebuysLeft}
           onRebuy={() => submit({ type: 'rebuy' })}
           onDecline={() => submit({ type: 'decline' })}
         />

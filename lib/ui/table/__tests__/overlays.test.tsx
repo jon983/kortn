@@ -55,6 +55,13 @@ describe('overlays', () => {
     fireEvent.click(screen.getByRole('button', { name: /buy back in/i })); expect(onRebuy).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /decline/i })); expect(onDecline).toHaveBeenCalled();
   });
+  it('RebuyPrompt says you can buy back in twice, and flags the last one', () => {
+    const first = render(<RebuyPrompt rebuysLeft={2} onRebuy={() => {}} onDecline={() => {}} />);
+    expect(screen.getByText('You can buy back in twice a match.')).toBeInTheDocument();
+    first.unmount();
+    render(<RebuyPrompt rebuysLeft={1} onRebuy={() => {}} onDecline={() => {}} />);
+    expect(screen.getByText('This is your last buy-in.')).toBeInTheDocument();
+  });
   it('MatchSummary hangs a sign naming the winner', () => {
     const { container } = render(<MatchSummary view={{ ...view, matchFinished: true }} />);
     expect(screen.getByRole('heading', { name: 'Ruth takes the pot' })).toBeInTheDocument();
